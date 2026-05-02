@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kare Lojistik v13 | Kare Kara Harırah Sistemi</title>
+    <title>Kare Lojistik v13 | Güvenli & Pro Sistem</title>
     
     <!-- CSS & Kütüphaneler -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -15,6 +15,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
     
     <script>
         tailwind.config = { theme: { extend: { fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] }, colors: { primary: '#4F46E5', secondary: '#0F172A', surface: '#FFFFFF', background: '#F8FAFC' } } } }
@@ -62,7 +63,7 @@
     <div id="loginScreen" style="display:none;">
         <div class="w-11/12 max-w-md bg-slate-800 border border-slate-700 rounded-3xl p-8 shadow-2xl">
             <div class="text-center mb-8">
-                <div class="w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fa-solid fa-user-lock text-3xl text-indigo-400"></i></div>
+                <div class="w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fa-solid fa-user-shield text-3xl text-indigo-400"></i></div>
                 <h2 class="text-2xl font-bold text-white">Sisteme Giriş Yapın</h2>
             </div>
             <form id="loginForm" onsubmit="handleLogin(event); return false;" class="space-y-5">
@@ -548,9 +549,11 @@
 
     <!-- =============== GÜVENLİ MİMARİ JS =============== -->
     <script>
+        // YENİ EKLEDİĞİNİZ BİLGİLERLE GÜNCELLENMİŞ CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyBXlr2DGdcoT8_MLzcGFHomnbZyyfuQBto",
             authDomain: "kare-6172d.firebaseapp.com",
+            databaseURL: "https://kare-6172d-default-rtdb.europe-west1.firebasedatabase.app",
             projectId: "kare-6172d",
             storageBucket: "kare-6172d.firebasestorage.app",
             messagingSenderId: "56836825489",
@@ -561,6 +564,7 @@
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
 
+        // Sistemin kalbi Firestore'dur (Realtime Database değil).
         const db = firebase.firestore();
         const auth = firebase.auth();
 
@@ -840,7 +844,6 @@
             let balances = {}; 
             getDrivers().forEach(drv => { balances[drv] = getDriverBalance(drv); });
             
-            // Tüm masraf ve avansları sil
             for(const e of expenses) { await cExpenses.doc(e.id).delete(); }
             for(const a of advances) { await cAdvances.doc(a.id).delete(); }
             

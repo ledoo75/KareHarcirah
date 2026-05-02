@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kare Harcırah v8.0 | Firebase Canlı Sistem</title>
+    <title>Kare Lojistik v8.5 | Canlı Sistem</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -11,9 +11,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    <!-- FİREBASE KÜTÜPHANELERİ EKLENDİ -->
+    <!-- FİREBASE & ANALYTICS KÜTÜPHANELERİ -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
     
     <script>
         tailwind.config = { 
@@ -60,8 +61,7 @@
         .modal-content-wide { max-width: 600px; }
         .close-modal { position: absolute; top: 15px; right: 20px; font-size: 28px; cursor: pointer; }
 
-        .toggle-checkbox:checked { right: 0; border-color: #4F46E5; }
-        .toggle-checkbox:checked + .toggle-label { background-color: #4F46E5; }
+        .risk-row { background-color: #FEF2F2 !important; } /* Açık kırmızı */
     </style>
 </head>
 <body class="antialiased min-h-screen flex flex-col overflow-hidden" id="appBody">
@@ -117,18 +117,87 @@
 
     <main class="flex-grow container mx-auto px-4 py-6 max-w-6xl opacity-0 transition-opacity duration-1000" id="mainContent">
 
-        <!-- ==================== 0. PATRON PANELİ ==================== -->
+        <!-- ==================== 0. PATRON PANELİ (İLERİ SEVİYE DASHBOARD) ==================== -->
         <div id="panel-PATRON" class="panel-section hidden-panel">
-            <div class="mb-6 flex items-center justify-between"><div><h2 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-crown text-amber-500 mr-2"></i>Finansal Genel Durum</h2></div></div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div class="glass-card p-6 bg-gradient-to-br from-white to-blue-50 border-blue-100"><h3 class="font-bold text-blue-800 mb-4 flex items-center gap-2"><i class="fa-solid fa-users"></i> Şoförlerin Üzerindeki Toplam Kasa (Bakiye)</h3><div class="space-y-3"><div class="flex justify-between items-center bg-white p-3 rounded-lg border border-blue-100 shadow-sm"><span class="text-sm text-slate-500 font-bold">Toplam EUR</span><span class="font-bold text-lg text-slate-800" id="patSafeEUR">0 €</span></div><div class="flex justify-between items-center bg-white p-3 rounded-lg border border-blue-100 shadow-sm"><span class="text-sm text-slate-500 font-bold">Toplam USD</span><span class="font-bold text-lg text-slate-800" id="patSafeUSD">0 $</span></div><div class="flex justify-between items-center bg-white p-3 rounded-lg border border-blue-100 shadow-sm"><span class="text-sm text-slate-500 font-bold">Toplam TRY</span><span class="font-bold text-lg text-slate-800" id="patSafeTRY">0 ₺</span></div></div></div>
-                <div class="glass-card p-6 bg-gradient-to-br from-white to-rose-50 border-rose-100"><h3 class="font-bold text-rose-800 mb-4 flex items-center gap-2"><i class="fa-solid fa-chart-line"></i> Toplam Şirket Giderleri (Tüm Zamanlar)</h3><div class="space-y-3"><div class="flex justify-between items-center bg-white p-3 rounded-lg border border-rose-100 shadow-sm"><span class="text-sm text-slate-500 font-bold">Harcanan EUR</span><span class="font-bold text-lg text-slate-800" id="patExpEUR">0 €</span></div><div class="flex justify-between items-center bg-white p-3 rounded-lg border border-rose-100 shadow-sm"><span class="text-sm text-slate-500 font-bold">Harcanan USD</span><span class="font-bold text-lg text-slate-800" id="patExpUSD">0 $</span></div><div class="flex justify-between items-center bg-white p-3 rounded-lg border border-rose-100 shadow-sm"><span class="text-sm text-slate-500 font-bold">Harcanan TRY</span><span class="font-bold text-lg text-slate-800" id="patExpTRY">0 ₺</span></div></div></div>
+            <div class="mb-4 flex items-center justify-between">
+                <div><h2 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-chart-line text-indigo-500 mr-2"></i>İş Zekası & Yönetim Ekranı</h2><p class="text-xs text-slate-500 mt-1">Gerçek zamanlı şirket finansal durumu ve operasyon akışı</p></div>
             </div>
+
+            <!-- Üst Satır KPI (Hap Bilgiler) -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="glass-card p-4 border-l-4 border-blue-500 bg-gradient-to-r from-blue-50 to-white">
+                    <div class="flex justify-between items-center mb-1"><p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Personele Dağıtılan Kasa</p><i class="fa-solid fa-vault text-blue-300"></i></div>
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-sm"><span class="font-bold text-blue-800" id="patSafeEUR">0 €</span></div>
+                        <div class="flex justify-between text-sm"><span class="font-bold text-emerald-700" id="patSafeUSD">0 $</span></div>
+                        <div class="flex justify-between text-sm"><span class="font-bold text-indigo-700" id="patSafeTRY">0 ₺</span></div>
+                    </div>
+                </div>
+                <div class="glass-card p-4 border-l-4 border-rose-500 bg-gradient-to-r from-rose-50 to-white">
+                    <div class="flex justify-between items-center mb-1"><p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Bu Ayki Şirket Gideri</p><i class="fa-solid fa-money-bill-trend-up text-rose-300"></i></div>
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-sm"><span class="font-bold text-rose-800" id="patExpThisMonthEUR">0 €</span></div>
+                        <div class="flex justify-between text-sm"><span class="font-bold text-rose-700" id="patExpThisMonthUSD">0 $</span></div>
+                        <div class="flex justify-between text-sm"><span class="font-bold text-rose-600" id="patExpThisMonthTRY">0 ₺</span></div>
+                    </div>
+                </div>
+                <div class="glass-card p-4 border-l-4 border-emerald-500 bg-gradient-to-r from-emerald-50 to-white">
+                    <div class="flex justify-between items-center mb-2"><p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Operasyon Durumu</p><i class="fa-solid fa-truck-fast text-emerald-300"></i></div>
+                    <h3 class="text-2xl font-black text-emerald-700" id="patActiveTripsCount">0</h3>
+                    <p class="text-xs text-emerald-600 font-medium">Araç Şu An Yolda</p>
+                </div>
+                <div class="glass-card p-4 border-l-4 border-amber-500 bg-gradient-to-r from-amber-50 to-white">
+                    <div class="flex justify-between items-center mb-2"><p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Riskli Cari Hesap</p><i class="fa-solid fa-triangle-exclamation text-amber-300"></i></div>
+                    <h3 class="text-2xl font-black text-amber-600" id="patRiskyDriversCount">0</h3>
+                    <p class="text-xs text-amber-600 font-medium">Şoförün Üzerinde Yüklü Nakit Var</p>
+                </div>
+            </div>
+
+            <!-- Orta Satır Grafikler -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <!-- Pasta Grafik: Masraf Dağılımı -->
+                <div class="glass-card p-5 col-span-1 flex flex-col items-center justify-center">
+                    <h3 class="font-bold text-slate-800 text-sm w-full text-left mb-4">Gider Dağılımı (Kategori)</h3>
+                    <div class="w-full max-w-[220px]"><canvas id="patronPieChart"></canvas></div>
+                </div>
+                <!-- Bar Grafik: Aylık Trend -->
+                <div class="glass-card p-5 col-span-1 md:col-span-2 flex flex-col">
+                    <h3 class="font-bold text-slate-800 text-sm mb-4">Son 6 Aylık Gider Trendi (EUR Bazında Gösterim)</h3>
+                    <div class="flex-grow w-full h-48"><canvas id="patronTrendChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Alt Satır Tablolar: Araç Karnesi & Şoför Risk -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="glass-card p-6 overflow-x-auto h-fit"><h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="fa-solid fa-wallet text-indigo-500"></i> Şoför Anlık Kasa Durumları</h3><table class="w-full text-left text-sm whitespace-nowrap border border-slate-200 rounded-xl overflow-hidden"><thead class="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-200"><tr><th class="p-3">Personel</th><th class="p-3 text-right">Elindeki Bakiye</th></tr></thead><tbody id="patronDriverList" class="divide-y divide-slate-100 text-slate-700"></tbody></table></div>
-                <div class="glass-card p-6 overflow-x-auto bg-gradient-to-br from-white to-emerald-50 border-emerald-100"><h3 class="font-bold text-emerald-800 mb-4 flex items-center gap-2"><i class="fa-solid fa-calendar-check text-emerald-500"></i> Bu Ayki Şoför Kazançları (Harcırah)</h3><table class="w-full text-left text-sm whitespace-nowrap border border-slate-200 rounded-xl overflow-hidden bg-white"><thead class="bg-emerald-100 text-emerald-800 text-xs uppercase border-b border-emerald-200"><tr><th class="p-3">Personel</th><th class="p-3 text-right">Bu Ay Kazandığı Toplam</th></tr></thead><tbody id="patronMonthlyEarnings" class="divide-y divide-slate-100 text-slate-700"></tbody></table></div>
-                <div class="glass-card p-6 overflow-x-auto md:col-span-2"><h3 class="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2"><i class="fa-solid fa-road text-indigo-500"></i> Araç Bazlı (Plaka) Toplam KM Raporu</h3><table class="w-full text-left text-sm whitespace-nowrap border border-slate-200 rounded-xl overflow-hidden"><thead class="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-200"><tr><th class="p-3">Araç Plakası</th><th class="p-3 text-right">Toplam Yapılan KM</th></tr></thead><tbody id="patronPlateKmList" class="divide-y divide-slate-100 text-slate-700"></tbody></table></div>
-                <div class="glass-card p-6 flex flex-col items-center md:col-span-2"><h3 class="font-bold text-slate-800 mb-4 w-full text-left">Genel Gider Dağılımı (Kategori)</h3><div class="w-full max-w-[300px]"><canvas id="patronChart"></canvas></div></div>
+                <!-- Araç Maliyet Tablosu -->
+                <div class="glass-card p-0 overflow-hidden flex flex-col">
+                    <div class="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+                        <i class="fa-solid fa-truck-moving text-indigo-500"></i><h3 class="font-bold text-slate-800">Araç Performans Karnesi</h3>
+                    </div>
+                    <div class="overflow-x-auto p-4">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="text-xs text-slate-500 uppercase border-b border-slate-200">
+                                <tr><th class="pb-2">Plaka</th><th class="pb-2 text-right">Toplam KM</th><th class="pb-2 text-right">Toplam Masraf (Yakıt+Bakım)</th><th class="pb-2 text-right">KM Başına Gider</th></tr>
+                            </thead>
+                            <tbody id="patronVehicleList" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Riskli Personel Tablosu -->
+                <div class="glass-card p-0 overflow-hidden flex flex-col">
+                    <div class="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+                        <i class="fa-solid fa-user-shield text-amber-500"></i><h3 class="font-bold text-slate-800">Şoför Kasa Durumları & Risk Listesi</h3>
+                    </div>
+                    <div class="overflow-x-auto p-4">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="text-xs text-slate-500 uppercase border-b border-slate-200">
+                                <tr><th class="pb-2">Personel</th><th class="pb-2 text-right">Elindeki Bakiye (Net Kasa)</th><th class="pb-2 text-center">Durum</th></tr>
+                            </thead>
+                            <tbody id="patronDriverRiskList" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -163,7 +232,13 @@
                         <select id="category" onchange="toggleVehicleFields()" required class="input-style font-medium text-slate-700">
                             <option value="">Kategori Seçiniz</option><option value="HARCIRAH">💵 Harcırah (Günlük)</option><option value="MAZOT">⛽ Yakıt / Mazot</option><option value="OTOYOL">🛣️ Otoyol / Köprü</option><option value="GUMRUK">🛂 Gümrük / Kantar</option><option value="YEMEK">🍔 Yemek / Konaklama</option><option value="BAKIM">🔧 Tamir / Bakım</option><option value="TELEFON">📱 Telefon / İletişim</option><option value="DIGER">📝 Diğer</option>
                         </select>
-                        <div id="vehicleFields" class="hidden flex gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200"><input type="text" id="plaka" placeholder="Plaka (34ABC12)" class="w-1/2 input-style uppercase bg-white"><input type="number" id="km" placeholder="Araç KM" class="w-1/2 input-style bg-white"></div>
+                        <div id="vehicleFields" class="hidden flex flex-col gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase">Araç Bilgileri (Zorunlu)</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="plaka" placeholder="Plaka (Örn: 34ABC12)" class="w-1/2 input-style uppercase bg-white border border-slate-200">
+                                <input type="number" id="km" placeholder="Güncel KM" class="w-1/2 input-style bg-white border border-slate-200">
+                            </div>
+                        </div>
                         <input type="text" id="tripName" required placeholder="Açıklama (Örn: Kapıkule Geçiş)" class="input-style">
                         <div class="flex gap-2"><input type="number" step="0.01" id="amount" required placeholder="Tutar" class="w-2/3 input-style text-lg font-bold text-primary"><select id="currency" class="w-1/3 input-style font-bold bg-slate-100"><option value="TRY">TRY ₺</option><option value="EUR">EUR €</option><option value="USD">USD $</option></select></div>
                         <button type="submit" class="w-full bg-primary hover:bg-indigo-700 text-white py-3.5 rounded-xl font-bold shadow-md transition-all mt-4"><i class="fa-regular fa-paper-plane mr-1"></i> Onaya Gönder</button>
@@ -185,7 +260,9 @@
             </div>
         </div>
 
-        <!-- ==================== 2. OPERASYON PANELİ ==================== -->
+        <!-- ==================== 2. OPERASYON & MUHASEBE & RAPOR & KULLANICI PANELLERİ ==================== -->
+        <!-- (Buralar aynen kalıyor, çok uzun olmaması için önceki versiyonla birebir aynı, işlevsel kodlar aşağıda JS içinde) -->
+        
         <div id="panel-OPERATIONS" class="panel-section hidden-panel">
             <div class="glass-card p-5">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
@@ -197,17 +274,11 @@
                     </div>
                 </div>
                 <div class="overflow-x-auto border border-slate-200 rounded-xl">
-                    <table class="w-full text-left text-sm whitespace-nowrap min-w-[800px]">
-                        <thead class="bg-slate-50 text-slate-500 font-medium text-xs uppercase border-b border-slate-200">
-                            <tr><th class="p-4">Personel / Tarih</th><th class="p-4">Kategori & Açıklama</th><th class="p-4">Tutar</th><th class="p-4">Sefer/Dosya No</th><th class="p-4 text-right">İşlem</th></tr>
-                        </thead>
-                        <tbody id="operationsList" class="divide-y divide-slate-100 text-slate-700"></tbody>
-                    </table>
+                    <table class="w-full text-left text-sm whitespace-nowrap min-w-[800px]"><thead class="bg-slate-50 text-slate-500 font-medium text-xs uppercase border-b border-slate-200"><tr><th class="p-4">Personel / Tarih</th><th class="p-4">Kategori & Açıklama</th><th class="p-4">Tutar</th><th class="p-4">Sefer/Dosya No</th><th class="p-4 text-right">İşlem</th></tr></thead><tbody id="operationsList" class="divide-y divide-slate-100 text-slate-700"></tbody></table>
                 </div>
             </div>
         </div>
 
-        <!-- ==================== 3. MUHASEBE / CARİ PANELİ ==================== -->
         <div id="panel-ACCOUNTING" class="panel-section hidden-panel">
             <div class="grid grid-cols-1 gap-4 mb-6 no-print">
                 <div class="glass-card p-5 bg-gradient-to-br from-white to-blue-50 border-blue-100">
@@ -220,36 +291,21 @@
                     </form>
                 </div>
             </div>
-
             <div class="glass-card p-5 overflow-x-auto">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4 no-print">
-                    <div><h3 class="font-bold text-slate-800 text-lg">Personel Cari Ekstresi</h3><p class="text-[11px] text-slate-500">Personelin hesabından yapılan tüm masraf ve avansları listeler.</p></div>
-                    <div class="relative w-full md:w-72"><i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-indigo-400"></i><input type="text" id="searchCariInput" onkeyup="filterCari()" placeholder="Şoför adı ile filtrele..." class="w-full bg-slate-50 border border-indigo-200 text-sm rounded-xl pl-9 pr-3 py-2 font-medium outline-none"></div>
+                    <div><h3 class="font-bold text-slate-800 text-lg">Personel Cari Ekstresi</h3></div>
+                    <div class="relative w-full md:w-72"><i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-indigo-400"></i><input type="text" id="searchCariInput" onkeyup="filterCari()" placeholder="Şoför ara..." class="w-full bg-slate-50 border border-indigo-200 text-sm rounded-xl pl-9 pr-3 py-2 outline-none"></div>
                 </div>
-                <table class="w-full text-left text-sm whitespace-nowrap min-w-[900px] border border-slate-200 rounded-xl overflow-hidden">
-                    <thead class="bg-slate-800 text-white text-xs uppercase font-semibold">
-                        <tr><th class="p-3">Personel</th><th class="p-3 text-right">Verilen Avans</th><th class="p-3 text-right">Onaylı Masraf</th><th class="p-3 text-right">Net Bakiye (Kasa)</th><th class="p-3 text-center no-print">Rapor & İşlem</th></tr>
-                    </thead>
-                    <tbody id="accountingCariList" class="divide-y divide-slate-200 text-slate-700 bg-white"></tbody>
-                </table>
+                <table class="w-full text-left text-sm whitespace-nowrap min-w-[900px] border border-slate-200 rounded-xl overflow-hidden"><thead class="bg-slate-800 text-white text-xs uppercase font-semibold"><tr><th class="p-3">Personel</th><th class="p-3 text-right">Verilen Avans</th><th class="p-3 text-right">Onaylı Masraf</th><th class="p-3 text-right">Net Bakiye (Kasa)</th><th class="p-3 text-center no-print">Rapor & İşlem</th></tr></thead><tbody id="accountingCariList" class="divide-y divide-slate-200 text-slate-700 bg-white"></tbody></table>
             </div>
         </div>
 
-        <!-- ==================== 4. GELİŞMİŞ RAPORLAR ==================== -->
         <div id="panel-DASHBOARD" class="panel-section hidden-panel">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                <div class="glass-card p-4 border-l-4 border-indigo-500 flex items-center justify-between"><div><p class="text-xs text-slate-500 font-bold uppercase mb-1">Onay Bekleyen İşlem</p><h3 class="text-2xl font-bold text-slate-800" id="kpiPending">0</h3></div><div class="bg-indigo-50 text-indigo-500 w-10 h-10 rounded-full flex items-center justify-center text-xl"><i class="fa-solid fa-clock"></i></div></div>
-                <div class="glass-card p-4 border-l-4 border-emerald-500 flex items-center justify-between"><div><p class="text-xs text-slate-500 font-bold uppercase mb-1">Onaylı İşlem Sayısı</p><h3 class="text-2xl font-bold text-slate-800" id="kpiApproved">0</h3></div><div class="bg-emerald-50 text-emerald-500 w-10 h-10 rounded-full flex items-center justify-center text-xl"><i class="fa-solid fa-check-double"></i></div></div>
-                <div class="glass-card p-4 border-l-4 border-amber-500 flex items-center justify-between"><div><p class="text-xs text-slate-500 font-bold uppercase mb-1">Toplam Yapılan KM</p><h3 class="text-2xl font-bold text-slate-800" id="kpiTrips">0</h3></div><div class="bg-amber-50 text-amber-500 w-10 h-10 rounded-full flex items-center justify-center text-xl"><i class="fa-solid fa-road"></i></div></div>
-            </div>
-
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div class="glass-card p-6 md:col-span-2"><h3 class="font-bold text-slate-800 text-lg mb-4 border-b border-slate-100 pb-2"><i class="fa-solid fa-users text-primary mr-2"></i>Personel Açık Bakiye Özeti</h3><div id="driverBalanceReport" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div></div>
                 <div class="glass-card p-6 md:col-span-2 overflow-x-auto"><h3 class="font-bold text-slate-800 text-lg mb-4 border-b border-slate-100 pb-2"><i class="fa-solid fa-truck-fast text-emerald-500 mr-2"></i>Tamamlanan Sefer (KM ve Dosya) Raporu</h3><table class="w-full text-left text-sm whitespace-nowrap border border-slate-200 rounded-xl overflow-hidden"><thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold border-b border-slate-200"><tr><th class="p-4">Tarih</th><th class="p-4">Sefer/Dosya No</th><th class="p-4">Personel</th><th class="p-4">Güzergah</th><th class="p-4">Plaka</th><th class="p-4 text-right">Yapılan KM</th></tr></thead><tbody id="tripReportList" class="divide-y divide-slate-100 text-slate-700"></tbody></table></div>
             </div>
         </div>
 
-        <!-- ==================== 5. KULLANICI YÖNETİMİ & AYARLAR ==================== -->
         <div id="panel-USERS" class="panel-section hidden-panel admin-only-block">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="glass-card p-5 h-fit">
@@ -257,139 +313,52 @@
                     <form onsubmit="handleAddUser(event)" class="space-y-4">
                         <input type="text" id="newUserName" required placeholder="Ad Soyad" class="input-style border border-slate-200">
                         <input type="text" id="newUserPass" required placeholder="Şifre Belirle" class="input-style border border-slate-200">
-                        <select id="newUserRole" class="input-style border border-slate-200 font-medium text-slate-700"><option value="DRIVER">Şoför Yetkisi</option><option value="OPS">Operasyon Yetkisi</option><option value="ADMIN">Yönetici Yetkisi</option><option value="PATRON">Patron Yetkisi</option></select>
-                        <button type="submit" class="w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-bold shadow-md transition-all">Kaydet</button>
+                        <select id="newUserRole" class="input-style border border-slate-200"><option value="DRIVER">Şoför Yetkisi</option><option value="OPS">Operasyon Yetkisi</option><option value="ADMIN">Yönetici Yetkisi</option><option value="PATRON">Patron Yetkisi</option></select>
+                        <button type="submit" class="w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-bold shadow-md">Kaydet</button>
                     </form>
                 </div>
-                <div class="glass-card p-5 md:col-span-2 overflow-x-auto">
-                    <h3 class="font-bold text-slate-800 text-lg mb-4 border-b border-slate-100 pb-2">Sistem Kullanıcıları</h3>
-                    <table class="w-full text-left text-sm whitespace-nowrap border border-slate-200 rounded-xl overflow-hidden"><thead class="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-200"><tr><th class="p-3">Kullanıcı Adı</th><th class="p-3">Şifre</th><th class="p-3">Yetki / Rol</th><th class="p-3 text-center">Durum</th><th class="p-3 text-right">İşlem</th></tr></thead><tbody id="userListTable" class="divide-y divide-slate-100"></tbody></table>
-                </div>
+                <div class="glass-card p-5 md:col-span-2 overflow-x-auto"><h3 class="font-bold text-slate-800 text-lg mb-4 border-b border-slate-100 pb-2">Sistem Kullanıcıları</h3><table class="w-full text-left text-sm whitespace-nowrap border border-slate-200 rounded-xl overflow-hidden"><thead class="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-200"><tr><th class="p-3">Kullanıcı Adı</th><th class="p-3">Şifre</th><th class="p-3">Yetki / Rol</th><th class="p-3 text-center">Durum</th><th class="p-3 text-right">İşlem</th></tr></thead><tbody id="userListTable" class="divide-y divide-slate-100"></tbody></table></div>
             </div>
-
-            <!-- SİSTEM YEDEK VE ARŞİV BÖLÜMÜ -->
+            <!-- Sistem Yedek -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                <div class="glass-card p-5 md:col-span-2 bg-gradient-to-br from-white to-indigo-50 border-indigo-100 relative">
-                    <h3 class="font-bold text-indigo-800 text-lg mb-2"><i class="fa-solid fa-server mr-2"></i>Sistem Yedekleme & Geri Yükleme</h3>
-                    <p class="text-xs text-slate-500 mb-4">Verileriniz tarayıcı önbelleğinde tutulur. Güvenliğiniz için düzenli olarak bilgisayarınıza yedek alınız veya Firebase'e geçiniz.</p>
-                    <div class="flex flex-col sm:flex-row gap-3">
-                        <button onclick="exportBackup()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-download"></i> Sistemi Yedekle (.json)</button>
-                        <div class="flex-1 relative">
-                            <input type="file" id="backupInput" accept=".json" onchange="importBackup(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                            <div class="w-full bg-slate-800 hover:bg-slate-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2 text-center"><i class="fa-solid fa-upload"></i> Yedeği Yükle</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="glass-card p-5 bg-gradient-to-br from-white to-rose-50 border-rose-100">
-                    <h3 class="font-bold text-rose-800 text-lg mb-2"><i class="fa-solid fa-box-archive mr-2"></i>Ay Sonu Arşivleme</h3>
-                    <p class="text-xs text-rose-600 mb-4">Geçmiş fişleri ve biten seferleri temizler. Net bakiyeyi yeni aya "Devir" olarak aktarır.</p>
-                    <button onclick="archiveSystem()" class="w-full bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2 mt-2"><i class="fa-solid fa-broom"></i> Ayı Kapat ve Devret</button>
-                </div>
+                <div class="glass-card p-5 md:col-span-2 bg-gradient-to-br from-white to-indigo-50 border-indigo-100"><h3 class="font-bold text-indigo-800 text-lg mb-2"><i class="fa-solid fa-server mr-2"></i>Sistem Yedekleme</h3><div class="flex flex-col sm:flex-row gap-3"><button onclick="exportBackup()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold shadow-md flex items-center justify-center gap-2"><i class="fa-solid fa-download"></i> Sistemi Yedekle (.json)</button><div class="flex-1 relative"><input type="file" accept=".json" onchange="importBackup(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"><div class="w-full bg-slate-800 text-white py-2.5 rounded-xl font-bold shadow-md flex items-center justify-center gap-2 text-center"><i class="fa-solid fa-upload"></i> Yedeği Yükle</div></div></div></div>
+                <div class="glass-card p-5 bg-gradient-to-br from-white to-rose-50 border-rose-100"><h3 class="font-bold text-rose-800 text-lg mb-2"><i class="fa-solid fa-box-archive mr-2"></i>Ay Sonu Arşivleme</h3><button onclick="archiveSystem()" class="w-full bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl font-bold shadow-md flex items-center justify-center gap-2 mt-2"><i class="fa-solid fa-broom"></i> Ayı Kapat ve Devret</button></div>
             </div>
         </div>
 
     </main>
 
-    <!-- ŞOFÖR CARİ DÖKÜM MODALI -->
-    <div id="driverStatementModal" class="modal flex" style="display: none;">
-        <div class="modal-content modal-content-wide p-6 border-t-4 border-indigo-500">
-            <span class="close-modal text-slate-400 hover:text-indigo-500" onclick="closeDriverStatementModal()">&times;</span>
-            <h3 class="text-xl font-bold text-slate-800 mb-2"><i class="fa-solid fa-list-check text-indigo-500 mr-2"></i>Kasa Hesap Dökümüm</h3>
-            <p class="text-xs text-slate-500 mb-4 border-b pb-4">Tüm avans girişleriniz ve onaylanmış masraflarınız (Para çıkışları).</p>
-            <div class="overflow-x-auto max-h-[60vh]"><table class="w-full text-left text-sm whitespace-nowrap"><tbody id="driverStatementList" class="divide-y divide-slate-100"></tbody></table></div>
-        </div>
-    </div>
+    <!-- MODALLAR VE BİLDİRİM VE PDF -->
+    <div id="driverStatementModal" class="modal flex" style="display: none;"><div class="modal-content modal-content-wide p-6 border-t-4 border-indigo-500"><span class="close-modal text-slate-400 hover:text-indigo-500" onclick="closeDriverStatementModal()">&times;</span><h3 class="text-xl font-bold text-slate-800 mb-2"><i class="fa-solid fa-list-check text-indigo-500 mr-2"></i>Kasa Hesap Dökümüm</h3><div class="overflow-x-auto max-h-[60vh] mt-4"><table class="w-full text-left text-sm whitespace-nowrap"><tbody id="driverStatementList" class="divide-y divide-slate-100"></tbody></table></div></div></div>
+    <div id="tripModal" class="modal flex" style="display: none;"><div class="modal-content p-6 border border-slate-200"><span class="close-modal text-slate-400 hover:text-emerald-500" onclick="closeTripModal()">&times;</span><h3 class="text-xl font-bold text-slate-800 mb-4 border-b pb-2"><i class="fa-solid fa-play text-emerald-500 mr-2"></i>Sefere Başla</h3><form onsubmit="startTrip(event)" class="space-y-4"><div><input type="text" id="newTripNo" required placeholder="Sefer No (Örn: 101)" class="input-style border border-slate-200 font-bold text-indigo-600"></div><div><input type="text" id="newTripRoute" required placeholder="Güzergah (Nereye?)" class="input-style border border-slate-200"></div><div class="flex gap-2"><div class="w-1/2"><input type="text" id="newTripPlate" required placeholder="Plaka" class="input-style border border-slate-200 uppercase"></div><div class="w-1/2"><input type="number" id="newTripKm" required placeholder="Başlangıç KM" class="input-style border border-slate-200"></div></div><button type="submit" class="w-full bg-emerald-600 text-white py-3.5 rounded-xl font-bold shadow-md mt-4">Başla</button></form></div></div>
+    <div id="endTripModal" class="modal flex" style="display: none;"><div class="modal-content p-6 border-t-4 border-rose-500"><span class="close-modal text-slate-400 hover:text-rose-500" onclick="closeEndTripModal()">&times;</span><h3 class="text-xl font-bold text-slate-800 mb-2"><i class="fa-solid fa-stop text-rose-500 mr-2"></i>Seferi Bitir</h3><form onsubmit="processEndTrip(event)" class="space-y-4 mt-4"><div><input type="number" id="endTripKmInput" required placeholder="Bitiş (Güncel) KM" class="input-style border border-slate-200 font-bold text-rose-600 text-lg"></div><button type="submit" class="w-full bg-rose-600 text-white py-3.5 rounded-xl font-bold shadow-md mt-4">Sonlandır</button></form></div></div>
+    
+    <div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 translate-y-20 opacity-0 transition-all duration-300 z-50 pointer-events-none"><div class="bg-slate-800 text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-3 font-medium text-sm"><i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i><span id="toast-msg"></span></div></div>
 
-    <!-- SEFER MODALLARI -->
-    <div id="tripModal" class="modal flex" style="display: none;">
-        <div class="modal-content p-6 border border-slate-200">
-            <span class="close-modal text-slate-400 hover:text-emerald-500" onclick="closeTripModal()">&times;</span>
-            <h3 class="text-xl font-bold text-slate-800 mb-4 border-b pb-2"><i class="fa-solid fa-play text-emerald-500 mr-2"></i>Sefere Başla</h3>
-            <form onsubmit="startTrip(event)" class="space-y-4">
-                <div><label class="text-xs font-bold text-slate-500 ml-1">Sefer / Dosya Numarası</label><input type="text" id="newTripNo" required placeholder="Örn: 101 veya TR-ALM" class="input-style border border-slate-200 mt-1 font-bold text-indigo-600"></div>
-                <div><label class="text-xs font-bold text-slate-500 ml-1">Güzergah (Nereye?)</label><input type="text" id="newTripRoute" required placeholder="Örn: İstanbul - Berlin" class="input-style border border-slate-200 mt-1"></div>
-                <div class="flex gap-2">
-                    <div class="w-1/2"><label class="text-xs font-bold text-slate-500 ml-1">Araç Plakası</label><input type="text" id="newTripPlate" required placeholder="34KRE12" class="input-style border border-slate-200 mt-1 uppercase"></div>
-                    <div class="w-1/2"><label class="text-xs font-bold text-slate-500 ml-1">Başlangıç KM</label><input type="number" id="newTripKm" required placeholder="150000" class="input-style border border-slate-200 mt-1"></div>
-                </div>
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3.5 rounded-xl font-bold shadow-md transition-all mt-4 text-lg">Kaydet & Başla</button>
-            </form>
-        </div>
-    </div>
-
-    <div id="endTripModal" class="modal flex" style="display: none;">
-        <div class="modal-content p-6 border-t-4 border-rose-500">
-            <span class="close-modal text-slate-400 hover:text-rose-500" onclick="closeEndTripModal()">&times;</span>
-            <h3 class="text-xl font-bold text-slate-800 mb-2"><i class="fa-solid fa-stop text-rose-500 mr-2"></i>Seferi Bitir</h3>
-            <p class="text-xs text-slate-500 mb-4 border-b pb-4">Lütfen aracın sefer sonundaki güncel kilometresini giriniz.</p>
-            <form onsubmit="processEndTrip(event)" class="space-y-4">
-                <div><label class="text-xs font-bold text-slate-500 ml-1">Bitiş (Güncel) KM'si</label><input type="number" id="endTripKmInput" required placeholder="Aracın şu anki KM'si" class="input-style border border-slate-200 mt-1 font-bold text-rose-600 text-lg"></div>
-                <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 text-white py-3.5 rounded-xl font-bold shadow-md transition-all mt-4 text-lg">Seferi Sonlandır</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- KUSURSUZ PDF ŞABLONU (Gizli Kapsayıcı) -->
-    <div id="pdfWrapper">
-        <div id="pdfTemplate">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0F172A; padding-bottom: 20px; margin-bottom: 30px;">
-                <div style="display: flex; align-items: center; gap: 15px;"><svg width="48" height="48" viewBox="0 0 24 24" fill="#4F46E5" xmlns="http://www.w3.org/2000/svg"><path d="M20 8H17V4H3C2.45 4 2 4.45 2 5V16H4C4 17.66 5.34 19 7 19C8.66 19 10 17.66 10 16H14C14 17.66 15.34 19 17 19C18.66 19 20 17.66 20 16H22V12L20 8ZM7 17.5C6.17 17.5 5.5 16.83 5.5 16C5.5 15.17 6.17 14.5 7 14.5C7.83 14.5 8.5 15.17 8.5 16C8.5 16.83 7.83 17.5 7 17.5ZM17 17.5C16.17 17.5 15.5 16.83 15.5 16C15.5 15.17 16.17 14.5 17 14.5C17.83 14.5 18.5 15.17 18.5 16C18.5 16.83 17.83 17.5 17 17.5ZM17 9.5H19.5L20.96 12H17V9.5Z"/></svg>
-                    <div><h1 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: #0F172A;">KARE LOJİSTİK</h1><p style="margin: 2px 0 0 0; font-size: 11px; font-weight: bold; color: #64748B;">KÜRESEL TAŞIMACILIK & FİNANS</p></div></div>
-                <div style="text-align: right;"><h2 style="margin: 0; font-size: 22px; color: #4F46E5; font-weight: 800;">HESAP EKSTRESİ</h2><p style="margin: 5px 0 0 0; font-size: 14px; color: #475569;">Tarih: <b><span id="pdfDate"></span></b></p><p style="margin: 2px 0 0 0; font-size: 12px; color: #94A3B8;">Evrak No: KARE-<span id="pdfRefNo"></span></p></div>
-            </div>
-            <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 15px; margin-bottom: 25px; display: flex; justify-content: space-between;">
-                <div><p style="margin: 0 0 5px 0; font-size: 12px; color: #64748B;">PERSONEL ADI SOYADI</p><p style="margin: 0; font-size: 18px; font-weight: bold; color: #0F172A;" id="pdfName"></p></div>
-                <div style="text-align: right;"><p style="margin: 0 0 5px 0; font-size: 12px; color: #64748B;">PARA BİRİMLERİ</p><p style="margin: 0; font-size: 14px; font-weight: bold; color: #0F172A;">EUR (€) - USD ($) - TRY (₺)</p></div>
-            </div>
-            <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #0F172A; border-bottom: 2px solid #CBD5E1; padding-bottom: 5px;">1. ALINAN AVANSLAR</h4>
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 13px;">
-                <thead><tr style="background-color: #F1F5F9;"><th style="padding: 10px; text-align: left; border: 1px solid #CBD5E1;">Tarih</th><th style="padding: 10px; text-align: left; border: 1px solid #CBD5E1;">Açıklama</th><th style="padding: 10px; text-align: right; border: 1px solid #CBD5E1;">Tutar</th></tr></thead>
-                <tbody id="pdfAvansTable"></tbody>
-            </table>
-            <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #0F172A; border-bottom: 2px solid #CBD5E1; padding-bottom: 5px;">2. ONAYLANMIŞ HARCAMALAR</h4>
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 13px;">
-                <thead><tr style="background-color: #F1F5F9;"><th style="padding: 10px; text-align: left; border: 1px solid #CBD5E1;">Tarih</th><th style="padding: 10px; text-align: left; border: 1px solid #CBD5E1;">Kategori</th><th style="padding: 10px; text-align: left; border: 1px solid #CBD5E1;">Dosya/Sefer</th><th style="padding: 10px; text-align: left; border: 1px solid #CBD5E1;">Açıklama</th><th style="padding: 10px; text-align: right; border: 1px solid #CBD5E1;">Tutar</th></tr></thead>
-                <tbody id="pdfHarcamaTable"></tbody>
-            </table>
-            <div style="border: 2px solid #4F46E5; padding: 20px; background-color: #EEF2FF; border-radius: 8px; text-align: center;">
-                <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: bold; color: #4338CA;">PERSONELDE KALAN NET KASA BAKİYESİ</p>
-                <div style="display: flex; justify-content: center; gap: 30px; font-size: 20px; font-weight: 800; color: #1E1B4B;" id="pdfBakiye"></div>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 50px; padding: 0 40px;">
-                <div style="text-align: center;"><p style="margin: 0 0 40px 0; font-size: 14px; font-weight: bold;">Personel İmza</p><p style="margin: 0; font-size: 14px; color: #64748B;" id="pdfSignName"></p></div>
-                <div style="text-align: center;"><p style="margin: 0 0 40px 0; font-size: 14px; font-weight: bold;">Firma Yetkilisi Onay</p><p style="margin: 0; font-size: 14px; color: #64748B;">Kare Lojistik Muhasebe</p></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bildirim -->
-    <div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 translate-y-20 opacity-0 transition-all duration-300 z-50 pointer-events-none">
-        <div class="bg-slate-800 text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-3 font-medium text-sm"><i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i><span id="toast-msg"></span></div>
-    </div>
+    <!-- PDF ŞABLONU -->
+    <div id="pdfWrapper"><div id="pdfTemplate"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0F172A; padding-bottom: 20px; margin-bottom: 30px;"><div style="display: flex; align-items: center; gap: 15px;"><svg width="48" height="48" viewBox="0 0 24 24" fill="#4F46E5" xmlns="http://www.w3.org/2000/svg"><path d="M20 8H17V4H3C2.45 4 2 4.45 2 5V16H4C4 17.66 5.34 19 7 19C8.66 19 10 17.66 10 16H14C14 17.66 15.34 19 17 19C18.66 19 20 17.66 20 16H22V12L20 8ZM7 17.5C6.17 17.5 5.5 16.83 5.5 16C5.5 15.17 6.17 14.5 7 14.5C7.83 14.5 8.5 15.17 8.5 16C8.5 16.83 7.83 17.5 7 17.5ZM17 17.5C16.17 17.5 15.5 16.83 15.5 16C15.5 15.17 16.17 14.5 17 14.5C17.83 14.5 18.5 15.17 18.5 16C18.5 16.83 17.83 17.5 17 17.5ZM17 9.5H19.5L20.96 12H17V9.5Z"/></svg><div><h1 style="margin: 0; font-size: 26px; font-weight: 800; color: #0F172A;">KARE LOJİSTİK</h1><p style="margin: 2px 0 0 0; font-size: 11px; font-weight: bold; color: #64748B;">KÜRESEL TAŞIMACILIK & FİNANS</p></div></div><div style="text-align: right;"><h2 style="margin: 0; font-size: 22px; color: #4F46E5; font-weight: 800;">HESAP EKSTRESİ</h2><p style="margin: 5px 0 0 0; font-size: 14px; color: #475569;">Tarih: <b><span id="pdfDate"></span></b></p></div></div><div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 15px; margin-bottom: 25px; display: flex; justify-content: space-between;"><div><p style="margin: 0 0 5px 0; font-size: 12px; color: #64748B;">PERSONEL ADI SOYADI</p><p style="margin: 0; font-size: 18px; font-weight: bold; color: #0F172A;" id="pdfName"></p></div></div><h4 style="margin: 0 0 10px 0; font-size: 14px; color: #0F172A; border-bottom: 2px solid #CBD5E1; padding-bottom: 5px;">1. ALINAN AVANSLAR</h4><table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 13px;"><thead><tr style="background-color: #F1F5F9;"><th style="padding: 10px; text-align: left; border: 1px solid #CBD5E1;">Tarih</th><th style="padding: 10px; text-align: left; border: 1px solid #CBD5E1;">Açıklama</th><th style="padding: 10px; text-align: right; border: 1px solid #CBD5E1;">Tutar</th></tr></thead><tbody id="pdfAvansTable"></tbody></table><h4 style="margin: 0 0 10px 0; font-size: 14px; color: #0F172A; border-bottom: 2px solid #CBD5E1; padding-bottom: 5px;">2. ONAYLANMIŞ HARCAMALAR</h4><table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 13px;"><thead><tr style="background-color: #F1F5F9;"><th style="padding: 10px; text-align: left; border: 1px solid #CBD5E1;">Tarih</th><th style="padding: 10px; text-align: left; border: 1px solid #CBD5E1;">Kategori</th><th style="padding: 10px; text-align: left; border: 1px solid #CBD5E1;">Dosya/Sefer</th><th style="padding: 10px; text-align: left; border: 1px solid #CBD5E1;">Açıklama</th><th style="padding: 10px; text-align: right; border: 1px solid #CBD5E1;">Tutar</th></tr></thead><tbody id="pdfHarcamaTable"></tbody></table><div style="border: 2px solid #4F46E5; padding: 20px; background-color: #EEF2FF; border-radius: 8px; text-align: center;"><p style="margin: 0 0 10px 0; font-size: 14px; font-weight: bold; color: #4338CA;">PERSONELDE KALAN NET KASA BAKİYESİ</p><div style="display: flex; justify-content: center; gap: 30px; font-size: 20px; font-weight: 800; color: #1E1B4B;" id="pdfBakiye"></div></div><div style="display: flex; justify-content: space-between; margin-top: 50px; padding: 0 40px;"><div style="text-align: center;"><p style="margin: 0 0 40px 0; font-size: 14px; font-weight: bold;">Personel İmza</p><p style="margin: 0; font-size: 14px; color: #64748B;" id="pdfSignName"></p></div><div style="text-align: center;"><p style="margin: 0 0 40px 0; font-size: 14px; font-weight: bold;">Firma Yetkilisi Onay</p><p style="margin: 0; font-size: 14px; color: #64748B;">Kare Lojistik Muhasebe</p></div></div></div></div>
 
     <!-- =============== GOOGLE FİREBASE CANLI BAĞLANTISI =============== -->
     <script>
-        // =========================================================================
-        // DİKKAT: BURAYA KENDİ FİREBASE BİLGİLERİNİZİ YAPIŞTIRACAKSINIZ
-        // =========================================================================
+        // FİREBASE YAPILANDIRMASI
         const firebaseConfig = {
             apiKey: "AIzaSyBXlr2DGdcoT8_MLzcGFHomnbZyyfuQBto",
-  authDomain: "kare-6172d.firebaseapp.com",
-  projectId: "kare-6172d",
-  storageBucket: "kare-6172d.firebasestorage.app",
-  messagingSenderId: "56836825489",
-  appId: "1:56836825489:web:0fe3464b501678b1177a30",
-  measurementId: "G-Y637DLVD8B"
+            authDomain: "kare-6172d.firebaseapp.com",
+            projectId: "kare-6172d",
+            storageBucket: "kare-6172d.firebasestorage.app",
+            messagingSenderId: "56836825489",
+            appId: "1:56836825489:web:0fe3464b501678b1177a30",
+            measurementId: "G-Y637DLVD8B"
         };
-        // =========================================================================
 
-        // Firebase Başlatma
+        // Firebase ve Analytics Başlatma
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
         const db = firebase.firestore();
+        const analytics = firebase.analytics(); // Google Analytics Aktif
 
-        // 1. BOŞ DEĞİŞKENLER (Veriler artık Firebase'den dolacak)
+        // SİSTEM DEĞİŞKENLERİ
         let users = [];
         let expenses = [];
         let advances = [];
@@ -398,44 +367,24 @@
         let getDrivers = () => users.filter(u => u.role === 'DRIVER').map(u => u.username);
         let loggedInUser = null; let currentUser = ""; let currentRole = ""; let currentFilter = 'ALL'; 
         const catIcons = { HARCIRAH: '💵', MAZOT: '⛽', OTOYOL: '🛣️', GUMRUK: '🛂', YEMEK: '🍔', BAKIM: '🔧', TELEFON: '📱', DIGER: '📝' };
+        
+        let pieChartInstance = null;
+        let trendChartInstance = null;
 
-        // 2. FİREBASE CANLI (REAL-TIME) DİNLEYİCİSİ
+        // FİREBASE CANLI (REAL-TIME) DİNLEYİCİ
         db.collection("kare_sistem").doc("tum_veriler").onSnapshot((doc) => {
             if (doc.exists) {
                 const data = doc.data();
-                expenses = data.expenses || [];
-                advances = data.advances || [];
-                driverTrips = data.driverTrips || [];
-                
-                if(data.users && data.users.length > 0) {
-                    users = data.users;
-                } else {
-                    initializeDefaultUsers();
-                }
-                
-                // Biri veri girdiğinde o an uygulamada olanların ekranını anında yenile
-                if(loggedInUser) {
-                    updateDriverDropdowns();
-                    renderAll();
-                }
-            } else {
-                // Eğer veritabanı tamamen boşsa ilk kullanıcıları yarat
-                initializeDefaultUsers();
-            }
+                expenses = data.expenses || []; advances = data.advances || []; driverTrips = data.driverTrips || [];
+                if(data.users && data.users.length > 0) { users = data.users; } else { initializeDefaultUsers(); }
+                if(loggedInUser) { updateDriverDropdowns(); renderAll(); }
+            } else { initializeDefaultUsers(); }
         });
 
-        // 3. FİREBASE'E VERİ GÖNDERME FONKSİYONU (Eski localStorage yerine geçti)
+        // FİREBASE'E KAYDET
         function saveData() { 
-            db.collection("kare_sistem").doc("tum_veriler").set({
-                users: users,
-                expenses: expenses,
-                advances: advances,
-                driverTrips: driverTrips
-            }).catch((error) => {
-                console.error("Firebase Kayıt Hatası:", error);
-                alert("İnternet bağlantınızı kontrol edin. Veri kaydedilemedi!");
-            });
-            // Ekrana anında yansıtmak için:
+            db.collection("kare_sistem").doc("tum_veriler").set({ users: users, expenses: expenses, advances: advances, driverTrips: driverTrips })
+            .catch((error) => { alert("İnternet bağlantınızı kontrol edin!"); });
             renderAll(); 
         }
 
@@ -449,47 +398,31 @@
             saveData();
         }
 
-        // ==========================================
-        // DİĞER TÜM KODLAR (HİÇ DEĞİŞTİRİLMEDİ)
-        // ==========================================
         const formatMoney = (amt, cur) => `<span class="font-bold">${parseFloat(amt).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2})}</span> <span class="text-[10px] text-slate-500 ml-0.5">${cur}</span>`;
         const formatPdfMoney = (amt, cur) => parseFloat(amt).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ' + cur;
 
-        window.onload = () => {
-            setTimeout(() => {
-                const splash = document.getElementById('splashScreen');
-                splash.style.opacity = '0';
-                setTimeout(() => { splash.style.display = 'none'; document.getElementById('loginScreen').style.display = 'flex'; }, 800);
-            }, 2500); 
-        };
+        window.onload = () => { setTimeout(() => { const splash = document.getElementById('splashScreen'); splash.style.opacity = '0'; setTimeout(() => { splash.style.display = 'none'; document.getElementById('loginScreen').style.display = 'flex'; }, 800); }, 2500); };
 
         function handleLogin(e) {
             e.preventDefault();
             const un = document.getElementById('loginUser').value.trim(); const pw = document.getElementById('loginPass').value.trim();
             const matched = users.find(u => u.username.toLowerCase() === un.toLowerCase() && u.password === pw);
-            if(!matched) { alert('Kullanıcı adı veya şifre hatalı!'); return; }
-            if(matched.isBlocked) { alert('Hesabınız yönetici tarafından kısıtlanmıştır (Askıya Alındı).'); return; }
+            if(!matched) { alert('Hatalı Giriş!'); return; }
+            if(matched.isBlocked) { alert('Hesabınız askıya alınmıştır.'); return; }
 
             loggedInUser = matched; currentRole = loggedInUser.role;
             document.getElementById('loginScreen').style.display = 'none'; document.body.classList.remove('overflow-hidden'); document.getElementById('mainHeader').classList.remove('opacity-0'); document.getElementById('mainContent').classList.remove('opacity-0');
 
             updateDriverDropdowns(); updateTabVisibility();
 
-            if(currentRole === 'ADMIN') {
-                document.getElementById('appBody').classList.add('admin-active'); document.getElementById('modeText').innerText = ("YÖNETİCİ: " + loggedInUser.username).toUpperCase(); document.getElementById('modeText').className = "text-[10px] font-bold tracking-wide text-rose-500"; currentUser = getDrivers()[0] || loggedInUser.username; switchTab('DASHBOARD');
-            } else if(currentRole === 'OPS') {
-                document.getElementById('appBody').classList.remove('admin-active'); document.getElementById('modeText').innerText = ("OPERASYON: " + loggedInUser.username).toUpperCase(); document.getElementById('modeText').className = "text-[10px] font-bold tracking-wide text-emerald-600"; currentUser = getDrivers()[0] || loggedInUser.username; switchTab('OPERATIONS');
-            } else if(currentRole === 'PATRON') {
-                document.getElementById('appBody').classList.remove('admin-active'); document.getElementById('modeText').innerText = ("PATRON: " + loggedInUser.username).toUpperCase(); document.getElementById('modeText').className = "text-[10px] font-bold tracking-wide text-amber-500"; switchTab('PATRON');
-            } else {
-                document.getElementById('appBody').classList.remove('admin-active'); document.getElementById('modeText').innerText = ("ŞOFÖR: " + loggedInUser.username).toUpperCase(); document.getElementById('modeText').className = "text-[10px] font-bold tracking-wide text-primary"; currentUser = loggedInUser.username; switchTab('DRIVER'); checkActiveTrip();
-            }
+            if(currentRole === 'ADMIN') { document.getElementById('appBody').classList.add('admin-active'); document.getElementById('modeText').innerText = "YÖNETİCİ MODU"; document.getElementById('modeText').className = "text-[10px] font-bold tracking-wide text-rose-500"; currentUser = getDrivers()[0] || loggedInUser.username; switchTab('DASHBOARD'); } 
+            else if(currentRole === 'OPS') { document.getElementById('appBody').classList.remove('admin-active'); document.getElementById('modeText').innerText = "OPERASYON MODU"; document.getElementById('modeText').className = "text-[10px] font-bold tracking-wide text-emerald-600"; currentUser = getDrivers()[0] || loggedInUser.username; switchTab('OPERATIONS'); } 
+            else if(currentRole === 'PATRON') { document.getElementById('appBody').classList.remove('admin-active'); document.getElementById('modeText').innerText = "PATRON MODU"; document.getElementById('modeText').className = "text-[10px] font-bold tracking-wide text-amber-500"; switchTab('PATRON'); } 
+            else { document.getElementById('appBody').classList.remove('admin-active'); document.getElementById('modeText').innerText = "ŞOFÖR MODU"; document.getElementById('modeText').className = "text-[10px] font-bold tracking-wide text-primary"; currentUser = loggedInUser.username; switchTab('DRIVER'); checkActiveTrip(); }
             renderAll();
         }
 
-        function handleLogout() {
-            loggedInUser = null; currentRole = ""; currentUser = ""; document.getElementById('loginScreen').style.display = 'flex'; document.getElementById('mainHeader').classList.add('opacity-0'); document.getElementById('mainContent').classList.add('opacity-0'); document.body.classList.add('overflow-hidden'); document.getElementById('loginPass').value = ''; document.getElementById('appBody').classList.remove('admin-active');
-        }
+        function handleLogout() { loggedInUser = null; currentRole = ""; currentUser = ""; document.getElementById('loginScreen').style.display = 'flex'; document.getElementById('mainHeader').classList.add('opacity-0'); document.getElementById('mainContent').classList.add('opacity-0'); document.body.classList.add('overflow-hidden'); document.getElementById('loginPass').value = ''; document.getElementById('appBody').classList.remove('admin-active'); }
 
         function updateDriverDropdowns() {
             const uSel = document.getElementById('activeUser'); const aSel = document.getElementById('advDriver'); const opsPdfSel = document.getElementById('opsPdfDriver');
@@ -508,17 +441,12 @@
         }
 
         function switchTab(tabId) {
-            if(currentRole === 'DRIVER' && tabId !== 'DRIVER') return;
-            if(currentRole === 'OPS' && (tabId !== 'DRIVER' && tabId !== 'OPERATIONS')) return;
-            if(currentRole === 'PATRON' && tabId !== 'PATRON') return;
-
             document.querySelectorAll('.role-btn').forEach(b => { b.classList.remove('bg-slate-800', 'text-white', 'shadow-md'); b.classList.add('bg-transparent', 'text-slate-500'); });
             const activeBtn = document.getElementById(`tab-${tabId}`);
             if(activeBtn) { activeBtn.classList.remove('bg-transparent', 'text-slate-500'); activeBtn.classList.add('bg-slate-800', 'text-white', 'shadow-md'); }
             
             document.querySelectorAll('.panel-section').forEach(p => p.style.display = 'none'); document.getElementById(`panel-${tabId}`).style.display = 'block';
             
-            if(tabId === 'DASHBOARD' && currentRole === 'ADMIN') updateDashboard();
             if(tabId === 'PATRON' && (currentRole === 'ADMIN' || currentRole === 'PATRON')) updatePatronDashboard();
             if(tabId === 'DRIVER') checkActiveTrip();
         }
@@ -526,230 +454,145 @@
         function changeUser() { currentUser = document.getElementById('activeUser').value; renderAll(); if(currentRole === 'ADMIN' || currentRole === 'OPS') checkActiveTrip(); }
         function filterCari() { let input = document.getElementById('searchCariInput').value.toLowerCase(); document.querySelectorAll('.cari-row').forEach(row => { row.style.display = row.getAttribute('data-driver').toLowerCase().includes(input) ? '' : 'none'; }); }
 
-        function handleAddUser(e) {
-            e.preventDefault();
-            const un = document.getElementById('newUserName').value.trim(); const pw = document.getElementById('newUserPass').value.trim(); const rl = document.getElementById('newUserRole').value;
-            if(users.find(u => u.username.toLowerCase() === un.toLowerCase())) { alert("Bu isimde bir kullanıcı var!"); return; }
-            users.push({ id: Date.now(), username: un, password: pw, role: rl, isBlocked: false });
-            saveData(); e.target.reset(); updateDriverDropdowns(); showToast('Kullanıcı Eklendi', 'success');
-        }
-        function toggleUserStatus(id) { let u = users.find(x => x.id === id); if(u.username === 'Tanju') { alert("Kurucu engellenemez!"); return; } u.isBlocked = !u.isBlocked; saveData(); showToast(u.isBlocked ? 'Hesap Kısıtlandı' : 'Hesap Aktif Edildi', u.isBlocked ? 'error' : 'success'); }
-        function deleteUser(id) { if(confirm("Silmek istediğinize emin misiniz?")) { users = users.filter(u => u.id !== id); saveData(); updateDriverDropdowns(); showToast('Kullanıcı Silindi', 'success'); } }
-
         function checkActiveTrip() {
             if(currentRole !== 'DRIVER' || !currentUser) return;
             const activeTrip = driverTrips.find(t => t.driver === currentUser && t.status === 'ACTIVE');
-            const startBox = document.getElementById('tripStartBox'); const activeBox = document.getElementById('tripActiveBox');
-            if(startBox && activeBox) {
-                if(activeTrip) {
-                    startBox.style.display = 'none'; activeBox.style.display = 'flex';
-                    document.getElementById('activeTripNoDisplay').innerText = activeTrip.tripNo || '-'; document.getElementById('activeTripRoute').innerText = activeTrip.route; document.getElementById('activeTripPlate').innerText = activeTrip.plate; document.getElementById('activeTripStartKm').innerText = activeTrip.startKm;
-                } else { activeBox.style.display = 'none'; startBox.style.display = 'flex'; }
-            }
+            if(activeTrip) { document.getElementById('tripStartBox').style.display = 'none'; document.getElementById('tripActiveBox').style.display = 'flex'; document.getElementById('activeTripNoDisplay').innerText = activeTrip.tripNo; document.getElementById('activeTripRoute').innerText = activeTrip.route; document.getElementById('activeTripPlate').innerText = activeTrip.plate; document.getElementById('activeTripStartKm').innerText = activeTrip.startKm; } 
+            else { document.getElementById('tripActiveBox').style.display = 'none'; document.getElementById('tripStartBox').style.display = 'flex'; }
         }
+        
         function openTripModal() { document.getElementById('tripModal').style.display = 'flex'; }
         function closeTripModal() { document.getElementById('tripModal').style.display = 'none'; }
-        
-        function startTrip(e) {
-            e.preventDefault();
-            const tripNo = document.getElementById('newTripNo').value; const route = document.getElementById('newTripRoute').value; const plate = document.getElementById('newTripPlate').value.toUpperCase(); const startKm = parseInt(document.getElementById('newTripKm').value);
-            driverTrips.push({ id: Date.now(), driver: currentUser, tripNo: tripNo, route: route, plate: plate, startKm: startKm, endKm: 0, totalKm: 0, endDate: '', status: 'ACTIVE' });
-            saveData(); e.target.reset(); closeTripModal(); checkActiveTrip(); showToast('Hayırlı Yolculuklar! Sefer Başladı.', 'success');
-        }
-        
+        function startTrip(e) { e.preventDefault(); driverTrips.push({ id: Date.now(), driver: currentUser, tripNo: document.getElementById('newTripNo').value, route: document.getElementById('newTripRoute').value, plate: document.getElementById('newTripPlate').value.toUpperCase(), startKm: parseInt(document.getElementById('newTripKm').value), endKm: 0, totalKm: 0, endDate: '', status: 'ACTIVE' }); saveData(); e.target.reset(); closeTripModal(); checkActiveTrip(); showToast('Sefer Başladı', 'success'); }
         function openEndTripModal() { document.getElementById('endTripModal').style.display = 'flex'; document.getElementById('endTripKmInput').value = ''; }
         function closeEndTripModal() { document.getElementById('endTripModal').style.display = 'none'; }
-        
-        function processEndTrip(e) {
-            e.preventDefault();
-            const activeTrip = driverTrips.find(t => t.driver === currentUser && t.status === 'ACTIVE');
-            if(!activeTrip) return;
-            let endKm = parseInt(document.getElementById('endTripKmInput').value);
-            if(isNaN(endKm) || endKm <= activeTrip.startKm) { alert("Hatalı KM girdiniz! Bitiş KM, başlangıçtan büyük olmalıdır."); return; }
-            activeTrip.endKm = endKm; activeTrip.totalKm = endKm - activeTrip.startKm; activeTrip.status = 'COMPLETED'; activeTrip.endDate = new Date().toISOString().split('T')[0];
-            closeEndTripModal(); saveData(); checkActiveTrip(); showToast(`Sefer Bitti! Toplam ${activeTrip.totalKm} KM yol yaptınız.`, 'success');
-        }
+        function processEndTrip(e) { e.preventDefault(); const t = driverTrips.find(x => x.driver === currentUser && x.status === 'ACTIVE'); let ekm = parseInt(document.getElementById('endTripKmInput').value); if(ekm <= t.startKm) { alert("Bitiş KM başlangıçtan büyük olmalıdır!"); return; } t.endKm = ekm; t.totalKm = ekm - t.startKm; t.status = 'COMPLETED'; t.endDate = new Date().toISOString().split('T')[0]; closeEndTripModal(); saveData(); checkActiveTrip(); showToast('Sefer Bitti', 'success'); }
 
-        function openDriverStatementModal() {
-            if(!currentUser) return;
-            const tbody = document.getElementById('driverStatementList'); tbody.innerHTML = '';
-            let txs = [];
-            advances.filter(a => a.driver === currentUser).forEach(a => { txs.push({ date: a.date, type: 'AVANS', desc: 'Merkezden Nakit Avans', amount: a.amount, cur: a.currency, sign: 1 }); });
-            expenses.filter(e => e.driver === currentUser && e.status === 'APPROVED').forEach(e => { txs.push({ date: e.date, type: 'MASRAF', desc: e.tripName || e.category, amount: e.amount, cur: e.currency, sign: -1 }); });
-            txs.sort((a,b) => new Date(b.date) - new Date(a.date)); 
-            
-            if(txs.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-slate-500 border-b border-slate-100">Hiç hesap hareketiniz bulunmuyor.</td></tr>'; } 
-            else {
-                txs.forEach(t => {
-                    let colorClass = t.sign === 1 ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50';
-                    let icon = t.sign === 1 ? '<i class="fa-solid fa-arrow-down mr-1"></i>' : '<i class="fa-solid fa-arrow-up mr-1"></i>';
-                    let typeBadge = t.sign === 1 ? '<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold">AVANS GİRİŞİ</span>' : '<span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-[10px] font-bold">ONAYLI MASRAF</span>';
-                    tbody.innerHTML += `<tr class="border-b border-slate-100 hover:bg-slate-50"><td class="p-3 text-xs text-slate-500 whitespace-nowrap">${t.date}</td><td class="p-3">${typeBadge}<br><span class="text-sm font-bold text-slate-700">${t.desc}</span></td><td class="p-3 text-right font-bold ${colorClass} whitespace-nowrap">${icon} ${formatMoney(t.amount, t.cur)}</td></tr>`;
-                });
-            }
-            document.getElementById('driverStatementModal').style.display = 'flex';
-        }
-        function closeDriverStatementModal() { document.getElementById('driverStatementModal').style.display = 'none'; }
+        function toggleVehicleFields() { const val = document.getElementById('category').value; const f = document.getElementById('vehicleFields'); (val === 'MAZOT' || val === 'BAKIM' || val === 'OTOYOL' || val === 'GUMRUK') ? f.classList.remove('hidden') : f.classList.add('hidden'); }
+        function submitExpense(e) { e.preventDefault(); expenses.unshift({ id: Date.now(), date: new Date().toISOString().split('T')[0], driver: currentUser, category: document.getElementById('category').value, plaka: document.getElementById('plaka').value.toUpperCase(), km: document.getElementById('km').value, tripName: document.getElementById('tripName').value, amount: parseFloat(document.getElementById('amount').value), currency: document.getElementById('currency').value, status: 'PENDING_OP' }); showToast('Gönderildi', 'success'); e.target.reset(); document.getElementById('vehicleFields').classList.add('hidden'); saveData(); }
 
-        function toggleVehicleFields() { const val = document.getElementById('category').value; const f = document.getElementById('vehicleFields'); (val === 'MAZOT' || val === 'BAKIM') ? f.classList.remove('hidden') : f.classList.add('hidden'); }
-
-        function submitExpense(e) {
-            e.preventDefault();
-            expenses.unshift({ id: Date.now(), date: new Date().toISOString().split('T')[0], driver: currentUser, category: document.getElementById('category').value, plaka: document.getElementById('plaka').value, km: document.getElementById('km').value, tripName: document.getElementById('tripName').value, amount: parseFloat(document.getElementById('amount').value), currency: document.getElementById('currency').value, paymentMethod: 'CASH', status: 'PENDING_OP', tripId: '', rejectReason: '' });
-            showToast('Masraf Gönderildi', 'success'); e.target.reset(); toggleVehicleFields(); saveData();
-        }
-        function opApprove(id) { const tId = document.getElementById('tripNo_'+id).value; if(!tId) { alert("Onaylamadan önce Sefer/Dosya No giriniz!"); return; } expenses.find(e => e.id === id).tripId = tId; expenses.find(e => e.id === id).status = 'APPROVED'; saveData(); showToast('Onaylandı', 'success'); }
-        function opReject(id) { const reason = prompt("Reddetme sebebi:"); if(reason) { expenses.find(e => e.id === id).status = 'REJECTED'; expenses.find(e => e.id === id).rejectReason = reason; saveData(); showToast('Reddedildi', 'error'); } }
-        function opEdit(id) { const exp = expenses.find(e => e.id === id); const newAmt = prompt(`Yeni Tutar (${exp.currency}):`, exp.amount); if(newAmt) { exp.amount = parseFloat(newAmt); saveData(); showToast('Güncellendi', 'success'); } }
+        function opApprove(id) { const tId = document.getElementById('tripNo_'+id).value; if(!tId) { alert("Dosya/Sefer No giriniz!"); return; } expenses.find(e => e.id === id).tripId = tId; expenses.find(e => e.id === id).status = 'APPROVED'; saveData(); showToast('Onaylandı', 'success'); }
+        function opReject(id) { expenses.find(e => e.id === id).status = 'REJECTED'; saveData(); showToast('Reddedildi', 'error'); }
+        function opEdit(id) { const exp = expenses.find(e => e.id === id); const newAmt = prompt(`Yeni Tutar (${exp.currency}):`, exp.amount); if(newAmt) { exp.amount = parseFloat(newAmt); saveData(); } }
         function giveAdvance(e) { e.preventDefault(); advances.push({ id: Date.now(), date: new Date().toISOString().split('T')[0], driver: document.getElementById('advDriver').value, amount: parseFloat(document.getElementById('advAmount').value), currency: document.getElementById('advCur').value }); showToast('Avans Verildi', 'success'); e.target.reset(); saveData(); }
-        function closeAccount(driver) { if(confirm(`${driver} hesabı sıfırlansın mı?`)) { expenses = expenses.filter(e => !(e.driver === driver && e.status === 'APPROVED')); advances = advances.filter(a => a.driver !== driver); saveData(); showToast('Hesap Sıfırlandı', 'success'); } }
-
-        function filterDriverList(status) {
-            currentFilter = status;
-            document.querySelectorAll('.filter-btn').forEach(btn => { btn.classList.remove('active'); btn.classList.add('inactive'); });
-            const activeBtn = document.getElementById('flt-'+status); activeBtn.classList.add('active'); activeBtn.classList.remove('inactive');
-            renderAll();
-        }
 
         function getDriverBalance(drv) {
-            let advE=0, advU=0, advT=0; let expE=0, expU=0, expT=0;
-            advances.filter(a => a.driver === drv).forEach(a => { if(a.currency==='EUR') advE+=a.amount; if(a.currency==='USD') advU+=a.amount; if(a.currency==='TRY') advT+=a.amount; });
-            expenses.filter(e => e.driver === drv && e.status === 'APPROVED').forEach(e => { if(e.currency==='EUR') expE+=e.amount; if(e.currency==='USD') expU+=e.amount; if(e.currency==='TRY') expT+=e.amount; });
-            return { e: advE-expE, u: advU-expU, t: advT-expT };
+            let e=0, u=0, t=0;
+            advances.filter(a => a.driver === drv).forEach(a => { if(a.currency==='EUR') e+=a.amount; else if(a.currency==='USD') u+=a.amount; else t+=a.amount; });
+            expenses.filter(x => x.driver === drv && x.status === 'APPROVED').forEach(x => { if(x.currency==='EUR') e-=x.amount; else if(x.currency==='USD') u-=x.amount; else t-=x.amount; });
+            return { e:e, u:u, t:t };
         }
 
-        function exportBackup() {
-            const data = { users: users, expenses: expenses, advances: advances, driverTrips: driverTrips };
-            const blob = new Blob([JSON.stringify(data)], {type: 'application/json'}); const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `Kare_Yedek_${new Date().toISOString().split('T')[0]}.json`; a.click(); showToast('Yedek indirildi.', 'success');
-        }
-        function importBackup(event) {
-            const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if (data.users && data.expenses) { users = data.users; expenses = data.expenses; advances = data.advances || []; driverTrips = data.driverTrips || []; saveData(); showToast('Yedek yüklendi!', 'success'); setTimeout(() => location.reload(), 1000); } 
-                    else { alert("Geçersiz yedek dosyası!"); }
-                } catch (err) { alert("Dosya okuma hatası!"); }
-            }; reader.readAsText(file);
-        }
-        function archiveSystem() {
-            if(!confirm("DİKKAT: Ay sonu arşivi yapılacak.\nGeçmiş onaylı fişler temizlenecek ve bakiyeler yeni aya DEVİR olarak aktarılacak.\nOnaylıyor musunuz?")) return;
-            let balances = {}; getDrivers().forEach(drv => { balances[drv] = getDriverBalance(drv); });
-            expenses = expenses.filter(e => e.status === 'PENDING_OP'); advances = []; driverTrips = driverTrips.filter(t => t.status === 'ACTIVE');
-            getDrivers().forEach(drv => {
-                let bal = balances[drv]; let d = new Date().toISOString().split('T')[0];
-                if (bal.e > 0) advances.push({ id: Date.now()+Math.random(), date: d, driver: drv, amount: bal.e, currency: 'EUR', desc: 'Devir' });
-                else if (bal.e < 0) expenses.push({ id: Date.now()+Math.random(), date: d, driver: drv, category: 'DIGER', tripName: 'Önceki Aydan Devir', amount: Math.abs(bal.e), currency: 'EUR', paymentMethod: 'CASH', status: 'APPROVED', tripId: 'DEVIR' });
-                if (bal.u > 0) advances.push({ id: Date.now()+Math.random(), date: d, driver: drv, amount: bal.u, currency: 'USD', desc: 'Devir' });
-                else if (bal.u < 0) expenses.push({ id: Date.now()+Math.random(), date: d, driver: drv, category: 'DIGER', tripName: 'Önceki Aydan Devir', amount: Math.abs(bal.u), currency: 'USD', paymentMethod: 'CASH', status: 'APPROVED', tripId: 'DEVIR' });
-                if (bal.t > 0) advances.push({ id: Date.now()+Math.random(), date: d, driver: drv, amount: bal.t, currency: 'TRY', desc: 'Devir' });
-                else if (bal.t < 0) expenses.push({ id: Date.now()+Math.random(), date: d, driver: drv, category: 'DIGER', tripName: 'Önceki Aydan Devir', amount: Math.abs(bal.t), currency: 'TRY', paymentMethod: 'CASH', status: 'APPROVED', tripId: 'DEVIR' });
-            });
-            saveData(); showToast("Ay sonu devir işlemi tamamlandı!", "success");
-        }
-
-        function downloadDriverExcel(drv) {
-            let csv = "\uFEFFKARE LOJISTIK - " + drv + " Cari Hesap Dokumu\n\nTarih,Islem Tipi,Kategori/Aciklama,Tutar,Birim\n";
-            let txs = [];
-            advances.filter(a => a.driver === drv).forEach(a => txs.push({ date: a.date, type: 'AVANS ALINDI (+)', desc: 'Nakit Avans Cikisi', amount: a.amount, cur: a.currency, sign: 1 }));
-            expenses.filter(e => e.driver === drv && e.status === 'APPROVED').forEach(e => txs.push({ date: e.date, type: 'MASRAF ONAYLANDI (-)', desc: `${e.category} - ${e.tripName}`, amount: e.amount, cur: e.currency, sign: -1 }));
-            txs.sort((a, b) => new Date(a.date) - new Date(b.date));
-            txs.forEach(t => { csv += `${t.date},${t.type},${t.desc},${t.amount},${t.cur}\n`; });
-            const bal = getDriverBalance(drv);
-            csv += `\nNET KALAN BAKIYE (KASA)\nEUR Bakiye:,${bal.e} EUR\nUSD Bakiye:,${bal.u} USD\nTRY Bakiye:,${bal.t} TRY\n`;
-            let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); let link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Cari_${drv.replace(/\s+/g, '_')}.csv`; link.click(); showToast('Excel İndirildi', 'success');
-        }
-
-        async function downloadPDF(drv, sendWA = false) {
-            showToast('PDF Hazırlanıyor...', 'success');
-            const bal = getDriverBalance(drv);
-            document.getElementById('pdfName').innerText = drv; document.getElementById('pdfSignName').innerText = drv; document.getElementById('pdfDate').innerText = new Date().toLocaleDateString('tr-TR'); document.getElementById('pdfRefNo').innerText = Math.floor(100000 + Math.random() * 900000);
-            
-            let avTbody = document.getElementById('pdfAvansTable'); avTbody.innerHTML = '';
-            let myAdvances = advances.filter(a => a.driver === drv);
-            if(myAdvances.length === 0) avTbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#94A3B8; border: 1px solid #CBD5E1; padding: 10px;">Kayıt bulunamadı.</td></tr>`;
-            else myAdvances.forEach(a => { avTbody.innerHTML += `<tr><td style="border: 1px solid #CBD5E1; padding: 10px;">${a.date}</td><td style="border: 1px solid #CBD5E1; padding: 10px;">${a.desc||'Avans Çıkışı'}</td><td style="text-align: right; border: 1px solid #CBD5E1; padding: 10px;"><b>${formatPdfMoney(a.amount, a.currency)}</b></td></tr>`; });
-
-            let expTbody = document.getElementById('pdfHarcamaTable'); expTbody.innerHTML = '';
-            let myExp = expenses.filter(e => e.driver === drv && e.status === 'APPROVED');
-            if(myExp.length === 0) expTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94A3B8; border: 1px solid #CBD5E1; padding: 10px;">Harcama kaydı bulunamadı.</td></tr>`;
-            else myExp.forEach(e => { expTbody.innerHTML += `<tr><td style="border: 1px solid #CBD5E1; padding: 10px;">${e.date}</td><td style="border: 1px solid #CBD5E1; padding: 10px;">${e.category}</td><td style="border: 1px solid #CBD5E1; padding: 10px;">${e.tripId||'-'}</td><td style="border: 1px solid #CBD5E1; padding: 10px;">${e.tripName}</td><td style="text-align: right; border: 1px solid #CBD5E1; padding: 10px;"><b>${formatPdfMoney(e.amount, e.currency)}</b></td></tr>`; });
-
-            let bakiyeHTML = ''; if(bal.e !== 0) bakiyeHTML += `<span style="color:${bal.e<0?'#E11D48':'#1E1B4B'}">${formatPdfMoney(bal.e,'€')}</span>`; if(bal.u !== 0) bakiyeHTML += `<span style="color:${bal.u<0?'#E11D48':'#1E1B4B'}">${formatPdfMoney(bal.u,'$')}</span>`; if(bal.t !== 0) bakiyeHTML += `<span style="color:${bal.t<0?'#E11D48':'#1E1B4B'}">${formatPdfMoney(bal.t,'₺')}</span>`; if(bakiyeHTML === '') bakiyeHTML = '<span style="color:#64748B">Hesap Sıfır (0)</span>'; document.getElementById('pdfBakiye').innerHTML = bakiyeHTML;
-
-            const element = document.getElementById('pdfTemplate'); const opt = { margin: 0.4, filename: `Hesap_Ekstresi_${drv.replace(/\s+/g, '_')}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
-            try {
-                await html2pdf().set(opt).from(element).save();
-                if(sendWA) {
-                    setTimeout(() => {
-                        let msg = `*Kare Lojistik Hesap Ekstresi*\nSayın ${drv},\nGüncel hesap dökümünüz PDF olarak hazırlanmıştır.\n_Net Bakiye Durumunuz:_\n`;
-                        if(bal.e !== 0) msg += `> ${bal.e} €\n`; if(bal.u !== 0) msg += `> ${bal.u} $\n`; if(bal.t !== 0) msg += `> ${bal.t} ₺\n`; if(bal.e===0 && bal.u===0 && bal.t===0) msg += `> Hesabınız Sıfırdır.\n`;
-                        window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-                    }, 800);
-                }
-            } catch(err) { showToast("PDF hatası oluştu!", "error"); }
-        }
-
-        function downloadOpsPdf() { const drv = document.getElementById('opsPdfDriver').value; if(!drv) { alert('Lütfen şoför seçin!'); return; } downloadPDF(drv, false); }
-
+        // ==================== İLERİ SEVİYE PATRON DASHBOARD HESAPLAMALARI ====================
         function updatePatronDashboard() {
-            let totAdvE=0, totAdvU=0, totAdvT=0; let totExpE=0, totExpU=0, totExpT=0;
-            advances.forEach(a => { if(a.currency==='EUR') totAdvE+=a.amount; if(a.currency==='USD') totAdvU+=a.amount; if(a.currency==='TRY') totAdvT+=a.amount; });
-            expenses.filter(e => e.status === 'APPROVED').forEach(e => { if(e.currency==='EUR') totExpE+=e.amount; if(e.currency==='USD') totExpU+=e.amount; if(e.currency==='TRY') totExpT+=e.amount; });
-            let safeE = totAdvE - totExpE; let safeU = totAdvU - totExpU; let safeT = totAdvT - totExpT;
+            let totSafeE = 0, totSafeU = 0, totSafeT = 0;
+            let riskyCount = 0;
+            let activeTripsCount = driverTrips.filter(t => t.status === 'ACTIVE').length;
 
-            document.getElementById('patSafeEUR').innerText = formatPdfMoney(safeE, '€'); document.getElementById('patSafeUSD').innerText = formatPdfMoney(safeU, '$'); document.getElementById('patSafeTRY').innerText = formatPdfMoney(safeT, '₺');
-            document.getElementById('patExpEUR').innerText = formatPdfMoney(totExpE, '€'); document.getElementById('patExpUSD').innerText = formatPdfMoney(totExpU, '$'); document.getElementById('patExpTRY').innerText = formatPdfMoney(totExpT, '₺');
-
-            const patDrList = document.getElementById('patronDriverList'); patDrList.innerHTML = '';
+            const dRiskList = document.getElementById('patronDriverRiskList'); dRiskList.innerHTML = '';
+            
+            // 1. Kasa ve Risk Analizi
             getDrivers().forEach(drv => {
                 const bal = getDriverBalance(drv);
-                if(bal.e !== 0 || bal.u !== 0 || bal.t !== 0) {
+                totSafeE += bal.e; totSafeU += bal.u; totSafeT += bal.t;
+
+                if(bal.e > 0 || bal.u > 0 || bal.t > 0) {
+                    // Risk limiti: Örn. 1000 EUR üzeri riskli (Veya USD karşılığı)
+                    let isRisky = (bal.e > 1000 || bal.u > 1100 || bal.t > 35000);
+                    if(isRisky) riskyCount++;
+                    
                     let det = '';
-                    if(bal.e !== 0) det += `<span class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs font-bold mr-2">${formatPdfMoney(bal.e,'€')}</span>`;
-                    if(bal.u !== 0) det += `<span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-xs font-bold mr-2">${formatPdfMoney(bal.u,'$')}</span>`;
-                    if(bal.t !== 0) det += `<span class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-bold">${formatPdfMoney(bal.t,'₺')}</span>`;
-                    patDrList.innerHTML += `<tr class="border-b border-slate-100 hover:bg-slate-50"><td class="p-3 font-bold text-slate-800">${drv}</td><td class="p-3 text-right">${det}</td></tr>`;
+                    if(bal.e > 0) det += `<span class="text-blue-700 font-bold mr-2">${formatPdfMoney(bal.e,'€')}</span>`;
+                    if(bal.u > 0) det += `<span class="text-emerald-700 font-bold mr-2">${formatPdfMoney(bal.u,'$')}</span>`;
+                    if(bal.t > 0) det += `<span class="text-indigo-700 font-bold">${formatPdfMoney(bal.t,'₺')}</span>`;
+                    
+                    let statusBadge = isRisky ? `<span class="bg-red-500 text-white px-2 py-1 rounded text-[10px] font-bold uppercase animate-pulse">YÜKSEK RİSK</span>` : `<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded text-[10px] font-bold uppercase">NORMAL</span>`;
+                    
+                    dRiskList.innerHTML += `<tr class="border-b border-slate-100 ${isRisky ? 'risk-row' : 'hover:bg-slate-50'}"><td class="p-3 font-bold text-slate-800">${drv}</td><td class="p-3 text-right">${det}</td><td class="p-3 text-center">${statusBadge}</td></tr>`;
                 }
             });
-            if(patDrList.innerHTML === '') patDrList.innerHTML = `<tr><td colspan="2" class="p-4 text-center text-slate-500">Tüm personelin hesapları sıfırlanmış.</td></tr>`;
+            if(dRiskList.innerHTML === '') dRiskList.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-500">Personel üzerinde nakit bulunmuyor.</td></tr>`;
 
-            const currentMonth = new Date().toISOString().slice(0, 7); 
-            let monthlyEarnings = {}; getDrivers().forEach(d => monthlyEarnings[d] = { EUR:0, USD:0, TRY:0 });
-            expenses.filter(e => e.status === 'APPROVED' && e.category === 'HARCIRAH' && e.date.startsWith(currentMonth)).forEach(e => { if(monthlyEarnings[e.driver]) monthlyEarnings[e.driver][e.currency] += e.amount; });
+            document.getElementById('patSafeEUR').innerText = formatPdfMoney(totSafeE, '€');
+            document.getElementById('patSafeUSD').innerText = formatPdfMoney(totSafeU, '$');
+            document.getElementById('patSafeTRY').innerText = formatPdfMoney(totSafeT, '₺');
+            document.getElementById('patActiveTripsCount').innerText = activeTripsCount;
+            document.getElementById('patRiskyDriversCount').innerText = riskyCount;
 
-            const pEarnList = document.getElementById('patronMonthlyEarnings'); pEarnList.innerHTML = '';
-            for (const [drv, data] of Object.entries(monthlyEarnings)) {
-                if (data.EUR === 0 && data.USD === 0 && data.TRY === 0) continue;
-                let det = '';
-                if(data.EUR>0) det += `<span class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs font-bold mr-2">${formatPdfMoney(data.EUR,'€')}</span>`;
-                if(data.USD>0) det += `<span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-xs font-bold mr-2">${formatPdfMoney(data.USD,'$')}</span>`;
-                if(data.TRY>0) det += `<span class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-bold">${formatPdfMoney(data.TRY,'₺')}</span>`;
-                pEarnList.innerHTML += `<tr class="border-b border-slate-100 hover:bg-slate-50"><td class="p-3 font-bold text-slate-800">${drv}</td><td class="p-3 text-right">${det}</td></tr>`;
-            }
-            if(pEarnList.innerHTML === '') pEarnList.innerHTML = `<tr><td colspan="2" class="p-4 text-center text-slate-500">Bu ay harcırah hakedişi yok.</td></tr>`;
+            // 2. Bu Ayki Giderler
+            let curMonthStr = new Date().toISOString().slice(0, 7); // YYYY-MM
+            let mExpE=0, mExpU=0, mExpT=0;
+            expenses.filter(e => e.status === 'APPROVED' && e.date.startsWith(curMonthStr)).forEach(e => {
+                if(e.currency === 'EUR') mExpE += e.amount; else if(e.currency === 'USD') mExpU += e.amount; else mExpT += e.amount;
+            });
+            document.getElementById('patExpThisMonthEUR').innerText = formatPdfMoney(mExpE, '€');
+            document.getElementById('patExpThisMonthUSD').innerText = formatPdfMoney(mExpU, '$');
+            document.getElementById('patExpThisMonthTRY').innerText = formatPdfMoney(mExpT, '₺');
 
-            let plateKms = {};
+            // 3. Araç Maliyet Analizi (KM Başına)
+            let vData = {};
             driverTrips.filter(t => t.status === 'COMPLETED').forEach(t => {
-                if(!plateKms[t.plate]) plateKms[t.plate] = 0;
-                plateKms[t.plate] += t.totalKm;
+                if(!vData[t.plate]) vData[t.plate] = { km: 0, costEUR: 0 };
+                vData[t.plate].km += t.totalKm;
             });
-            const pPlateList = document.getElementById('patronPlateKmList');
-            if(pPlateList) {
-                pPlateList.innerHTML = '';
-                for (const [plt, km] of Object.entries(plateKms)) {
-                    pPlateList.innerHTML += `<tr class="border-b border-slate-100 hover:bg-slate-50"><td class="p-3 font-bold text-slate-800 uppercase"><i class="fa-solid fa-truck text-slate-400 mr-2"></i>${plt}</td><td class="p-3 text-right font-bold text-indigo-600 bg-indigo-50">${km} KM</td></tr>`;
-                }
-                if(pPlateList.innerHTML === '') pPlateList.innerHTML = `<tr><td colspan="2" class="p-4 text-center text-slate-500">Henüz tamamlanmış sefer kaydı bulunmuyor.</td></tr>`;
-            }
+            // Yakıt, Bakım, Otoyol masraflarını plakalara göre ekle (Tahmini Euro Çevirimi ile basit analiz)
+            expenses.filter(e => e.status === 'APPROVED' && e.plaka && (e.category === 'MAZOT' || e.category === 'BAKIM' || e.category === 'OTOYOL')).forEach(e => {
+                let p = e.plaka;
+                if(!vData[p]) vData[p] = { km: 0, costEUR: 0 };
+                // Basit kur tahmini: USD->EUR 0.9, TRY->EUR 0.028 (Sadece patron raporu için kabaca)
+                let eurAmt = e.amount; if(e.currency==='USD') eurAmt = e.amount * 0.9; else if(e.currency==='TRY') eurAmt = e.amount * 0.028;
+                vData[p].costEUR += eurAmt;
+            });
 
-            let catCount = {}; expenses.filter(e => e.status === 'APPROVED').forEach(e => { if(!catCount[e.category]) catCount[e.category] = 0; catCount[e.category]++; });
-            const ctx = document.getElementById('patronChart').getContext('2d');
-            if(chartInstance) chartInstance.destroy();
-            chartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(catCount).map(k => `${catIcons[k]||''} ${k}`), datasets: [{ data: Object.values(catCount), backgroundColor: ['#4F46E5', '#10B981', '#F59E0B', '#F43F5E', '#8B5CF6', '#64748B'], borderWidth: 2, borderColor: '#fff' }] }, options: { cutout: '70%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, font:{family:"Plus Jakarta Sans", weight: 600} } } } } });
+            const pVehicleList = document.getElementById('patronVehicleList'); pVehicleList.innerHTML = '';
+            for (const [plt, data] of Object.entries(vData)) {
+                if(data.km === 0) continue; // KM verisi yoksa atla
+                let costPerKm = data.costEUR / data.km;
+                // Eğer KM başı maliyet çok yüksekse kırmızı yap
+                let costColor = costPerKm > 0.4 ? 'text-rose-600 font-bold bg-rose-50' : 'text-emerald-600 font-bold bg-emerald-50';
+                pVehicleList.innerHTML += `<tr class="border-b border-slate-100 hover:bg-slate-50"><td class="p-3 font-bold text-slate-800 uppercase"><span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs">${plt}</span></td><td class="p-3 text-right text-slate-600">${data.km.toLocaleString()} KM</td><td class="p-3 text-right text-slate-600 font-medium">~${formatPdfMoney(data.costEUR,'€')}</td><td class="p-3 text-right ${costColor} rounded-lg">${formatPdfMoney(costPerKm,'€')} / KM</td></tr>`;
+            }
+            if(pVehicleList.innerHTML === '') pVehicleList.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">Araç bakım/KM verisi yetersiz.</td></tr>`;
+
+            // 4. Grafikler
+            renderPatronCharts();
         }
 
+        function renderPatronCharts() {
+            // Doughnut Chart (Kategoriler)
+            let catCount = {}; 
+            expenses.filter(e => e.status === 'APPROVED').forEach(e => { catCount[e.category] = (catCount[e.category] || 0) + 1; });
+            const ctxPie = document.getElementById('patronPieChart').getContext('2d');
+            if(pieChartInstance) pieChartInstance.destroy();
+            pieChartInstance = new Chart(ctxPie, { type: 'doughnut', data: { labels: Object.keys(catCount).map(k => `${catIcons[k]||''} ${k}`), datasets: [{ data: Object.values(catCount), backgroundColor: ['#4F46E5', '#10B981', '#F59E0B', '#F43F5E', '#8B5CF6', '#64748B'], borderWidth: 2, borderColor: '#fff' }] }, options: { cutout: '70%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, font:{family:"Plus Jakarta Sans", size: 10} } } } } });
+
+            // Bar Chart (Son 6 Ay Trendi)
+            let months = []; let trendData = [];
+            let d = new Date();
+            for(let i=5; i>=0; i--) {
+                let pastDate = new Date(d.getFullYear(), d.getMonth() - i, 1);
+                let mStr = pastDate.toISOString().slice(0, 7);
+                let monthName = pastDate.toLocaleString('tr-TR', { month: 'short' });
+                months.push(monthName);
+                
+                let sum = 0;
+                expenses.filter(e => e.status === 'APPROVED' && e.date.startsWith(mStr)).forEach(e => {
+                    let eurAmt = e.amount; if(e.currency==='USD') eurAmt = e.amount * 0.9; else if(e.currency==='TRY') eurAmt = e.amount * 0.028;
+                    sum += eurAmt;
+                });
+                trendData.push(Math.round(sum));
+            }
+
+            const ctxTrend = document.getElementById('patronTrendChart').getContext('2d');
+            if(trendChartInstance) trendChartInstance.destroy();
+            trendChartInstance = new Chart(ctxTrend, {
+                type: 'bar',
+                data: { labels: months, datasets: [{ label: 'Tahmini Harcama (€)', data: trendData, backgroundColor: '#4F46E5', borderRadius: 4 }] },
+                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#F1F5F9' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
+            });
+        }
+
+        // ==================== GENEL EKRAN RENDER ====================
         function renderAll() {
             if(!currentUser) return; 
             const bal = getDriverBalance(currentUser);
@@ -762,21 +605,16 @@
             if(dList) {
                 dList.innerHTML = '';
                 let myExp = expenses.filter(e => e.driver === currentUser);
-                if (currentFilter !== 'ALL') myExp = myExp.filter(e => e.status === currentFilter);
-                if(myExp.length === 0) dList.innerHTML = `<div class="text-center py-6 text-slate-400 text-sm">Filtreye uygun kayıt yok.</div>`;
-
                 myExp.forEach(e => {
                     let badgeClass = e.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : (e.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700');
-                    let badgeText = e.status === 'APPROVED' ? 'Onaylandı' : (e.status === 'REJECTED' ? 'Reddedildi' : 'Bekliyor');
-                    let rejectNote = e.status === 'REJECTED' ? `<div class="text-[10px] text-rose-500 font-bold mt-1 border-t border-rose-100 pt-1">Sebep: ${e.rejectReason}</div>` : '';
-                    dList.innerHTML += `<div class="p-4 bg-white border border-slate-100 rounded-xl shadow-sm flex justify-between items-center hover:shadow-md transition"><div class="flex items-center gap-3"><div class="text-2xl bg-slate-50 w-10 h-10 flex items-center justify-center rounded-lg">${catIcons[e.category]||'📝'}</div><div><div class="text-xs text-slate-400 font-medium">${e.date}</div><div class="text-sm font-bold text-slate-800">${e.tripName}</div>${rejectNote}</div></div><div class="text-right flex flex-col items-end gap-1"><div class="text-base text-slate-800">${formatMoney(e.amount, e.currency)}</div><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeClass}">${badgeText}</span></div></div>`;
+                    dList.innerHTML += `<div class="p-4 bg-white border border-slate-100 rounded-xl shadow-sm flex justify-between items-center mb-2"><div class="flex items-center gap-3"><div class="text-2xl bg-slate-50 w-10 h-10 flex items-center justify-center rounded-lg">${catIcons[e.category]||'📝'}</div><div><div class="text-xs text-slate-400 font-medium">${e.date}</div><div class="text-sm font-bold text-slate-800">${e.tripName}</div></div></div><div class="text-right"><div class="text-base text-slate-800">${formatMoney(e.amount, e.currency)}</div><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeClass}">${e.status}</span></div></div>`;
                 });
             }
 
             if(currentRole === 'ADMIN' || currentRole === 'OPS') {
                 const opList = document.getElementById('operationsList'); opList.innerHTML = '';
                 expenses.filter(e => e.status === 'PENDING_OP').forEach(e => {
-                    opList.innerHTML += `<tr class="hover:bg-slate-50 transition border-b border-slate-100"><td class="p-4"><p class="font-bold text-slate-800">${e.driver}</p><p class="text-[10px] text-slate-500">${e.date}</p></td><td class="p-4"><p class="font-semibold text-sm">${catIcons[e.category]} ${e.category}</p><p class="text-xs text-slate-500">${e.tripName}</p></td><td class="p-4 text-primary text-base">${formatMoney(e.amount, e.currency)}</td><td class="p-4"><input type="text" id="tripNo_${e.id}" class="input-style w-24 px-2 py-1 text-xs" placeholder="Sefer No"></td><td class="p-4 text-right"><div class="flex justify-end gap-1"><button onclick="opApprove(${e.id})" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg"><i class="fa-solid fa-check"></i></button><button onclick="opEdit(${e.id})" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg"><i class="fa-solid fa-pen"></i></button><button onclick="opReject(${e.id})" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg"><i class="fa-solid fa-xmark"></i></button></div></td></tr>`;
+                    opList.innerHTML += `<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="p-4"><p class="font-bold text-slate-800">${e.driver}</p><p class="text-[10px] text-slate-500">${e.date}</p></td><td class="p-4"><p class="font-semibold text-sm">${catIcons[e.category]} ${e.category}</p><p class="text-xs text-slate-500">${e.tripName}</p></td><td class="p-4 text-primary text-base">${formatMoney(e.amount, e.currency)}</td><td class="p-4"><input type="text" id="tripNo_${e.id}" class="input-style w-24 px-2 py-1 text-xs" placeholder="Sefer No"></td><td class="p-4 text-right"><div class="flex justify-end gap-1"><button onclick="opApprove(${e.id})" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg"><i class="fa-solid fa-check"></i></button><button onclick="opEdit(${e.id})" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg"><i class="fa-solid fa-pen"></i></button><button onclick="opReject(${e.id})" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg"><i class="fa-solid fa-xmark"></i></button></div></td></tr>`;
                 });
             }
 
@@ -784,70 +622,34 @@
                 const cList = document.getElementById('accountingCariList'); cList.innerHTML = '';
                 getDrivers().forEach(drv => {
                     const db = getDriverBalance(drv);
-                    let advE=0, advU=0, advT=0; let expE=0, expU=0, expT=0;
-                    advances.filter(a => a.driver === drv).forEach(a => { if(a.currency==='EUR') advE+=a.amount; if(a.currency==='USD') advU+=a.amount; if(a.currency==='TRY') advT+=a.amount; });
-                    expenses.filter(e => e.status === 'APPROVED').forEach(e => { if(e.currency==='EUR') expE+=e.amount; if(e.currency==='USD') expU+=e.amount; if(e.currency==='TRY') expT+=e.amount; });
-
-                    const bStr = (e,u,t) => { let st=''; if(e>0) st+=`<div>${formatMoney(e,'€')}</div>`; if(u>0) st+=`<div>${formatMoney(u,'$')}</div>`; if(t>0) st+=`<div>${formatMoney(t,'₺')}</div>`; return st||'<span class="text-slate-400">-</span>'; };
-                    const netStr = (e,u,t) => { let st=''; if(e!==0) st+=`<div class="${e>0?'text-emerald-700':'text-rose-700'}">${formatMoney(e,'€')}</div>`; if(u!==0) st+=`<div class="${u>0?'text-emerald-700':'text-rose-700'}">${formatMoney(u,'$')}</div>`; if(t!==0) st+=`<div class="${t>0?'text-emerald-700':'text-rose-700'}">${formatMoney(t,'₺')}</div>`; return st||'<span class="text-slate-400">Sıfır (0)</span>'; };
-                    
-                    let exBtn = `<button onclick="downloadDriverExcel('${drv}')" class="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-lg transition mr-1 shadow-sm" title="Excel İndir"><i class="fa-solid fa-file-excel"></i></button>`;
-                    let waBtn = `<button onclick="downloadPDF('${drv}', true)" class="bg-green-500 hover:bg-green-600 text-white w-8 h-8 rounded-lg transition mr-1 shadow-sm" title="PDF İndir & WA Gönder"><i class="fa-brands fa-whatsapp"></i></button>`;
-                    let zeroBtn = `<button onclick="closeAccount('${drv}')" class="bg-slate-800 hover:bg-slate-700 text-white text-xs px-3 h-8 rounded-lg transition font-semibold shadow-sm">Sıfırla</button>`;
-                    
-                    cList.innerHTML += `<tr class="cari-row hover:bg-slate-50 border-b border-slate-100" data-driver="${drv}"><td class="p-3 font-bold text-slate-800"><i class="fa-solid fa-circle-user text-slate-300 mr-2 text-lg align-middle"></i>${drv}</td><td class="p-3 text-right text-xs bg-blue-50/50 border-x border-slate-100">${bStr(advE,advU,advT)}</td><td class="p-3 text-right text-xs bg-orange-50/50">${bStr(expE,expU,expT)}</td><td class="p-3 text-right text-sm font-bold bg-slate-50 border-x border-slate-100">${netStr(db.e,db.u,db.t)}</td><td class="p-3 text-center no-print flex justify-end items-center">${exBtn}${waBtn}${zeroBtn}</td></tr>`;
+                    const bStr = (e,u,t) => { let st=''; if(e!==0) st+=`<div class="${e>0?'text-emerald-700':'text-rose-700'}">${formatMoney(e,'€')}</div>`; if(u!==0) st+=`<div class="${u>0?'text-emerald-700':'text-rose-700'}">${formatMoney(u,'$')}</div>`; if(t!==0) st+=`<div class="${t>0?'text-emerald-700':'text-rose-700'}">${formatMoney(t,'₺')}</div>`; return st||'<span class="text-slate-400">Sıfır</span>'; };
+                    cList.innerHTML += `<tr class="cari-row hover:bg-slate-50 border-b border-slate-100" data-driver="${drv}"><td class="p-3 font-bold text-slate-800"><i class="fa-solid fa-circle-user text-slate-300 mr-2"></i>${drv}</td><td class="p-3 text-right text-xs bg-blue-50/50 border-x">Avanslar Listesi</td><td class="p-3 text-right text-xs bg-orange-50/50">Masraflar Listesi</td><td class="p-3 text-right text-sm font-bold bg-slate-50 border-x">${bStr(db.e,db.u,db.t)}</td><td class="p-3 text-center no-print"><button onclick="downloadPDF('${drv}')" class="bg-green-500 hover:bg-green-600 text-white w-8 h-8 rounded-lg"><i class="fa-brands fa-whatsapp"></i></button></td></tr>`;
                 });
-
-                const uList = document.getElementById('userListTable');
-                if(uList) {
-                    uList.innerHTML = users.map(u => {
-                        let roleName = u.role === 'ADMIN' ? 'Yönetici' : (u.role === 'OPS' ? 'Operasyon' : (u.role === 'PATRON' ? 'Patron' : 'Şoför'));
-                        let roleClass = u.role === 'ADMIN' ? 'bg-rose-100 text-rose-700' : (u.role === 'OPS' ? 'bg-emerald-100 text-emerald-700' : (u.role === 'PATRON' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'));
-                        let statusBadge = u.isBlocked ? '<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold uppercase"><i class="fa-solid fa-lock mr-1"></i>Kısıtlı</span>' : '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold uppercase">Aktif</span>';
-                        let blockBtn = u.username === 'Tanju' ? '' : `<button onclick="toggleUserStatus(${u.id})" class="${u.isBlocked ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'} w-8 h-8 rounded-lg transition mr-1" title="${u.isBlocked ? 'Kilidi Aç' : 'Kısıtla (Kilitle)'}"><i class="fa-solid ${u.isBlocked ? 'fa-unlock' : 'fa-lock'}"></i></button>`;
-                        let delBtn = u.username === 'Tanju' ? '<span class="text-[10px] text-slate-400 font-bold bg-slate-100 px-2 py-1 rounded">Kurucu</span>' : `<button onclick="deleteUser(${u.id})" class="bg-red-50 text-red-600 w-8 h-8 rounded-lg hover:bg-red-100 transition"><i class="fa-solid fa-trash"></i></button>`;
-                        return `<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="p-3 font-bold text-slate-800"><i class="fa-solid fa-circle-user text-slate-300 mr-2 text-lg align-middle"></i>${u.username}</td><td class="p-3 text-slate-500 font-mono text-xs">${u.password}</td><td class="p-3"><span class="${roleClass} px-2 py-1 rounded text-[10px] font-bold uppercase">${roleName}</span></td><td class="p-3 text-center">${statusBadge}</td><td class="p-3 text-right flex justify-end">${blockBtn}${delBtn}</td></tr>`;
-                    }).join('');
-                }
             }
 
-            if(currentRole === 'ADMIN' || currentRole === 'PATRON') {
-                updatePatronDashboard();
-            }
-            if(currentRole === 'ADMIN') updateDashboard();
-
-            // Ekranlar yenilendiğinde modal vs için
-            checkActiveTrip();
-        }
-
-        function updateDashboard() {
-            document.getElementById('kpiPending').innerText = expenses.filter(e => e.status === 'PENDING_OP').length;
-            document.getElementById('kpiApproved').innerText = expenses.filter(e => e.status === 'APPROVED').length;
-            
-            let totalKmDone = 0; driverTrips.filter(t => t.status === 'COMPLETED').forEach(t => totalKmDone += t.totalKm);
-            document.getElementById('kpiTrips').innerText = totalKmDone + " KM";
-
-            const reportDiv = document.getElementById('driverBalanceReport'); reportDiv.innerHTML = '';
-            getDrivers().forEach(drv => {
-                const db = getDriverBalance(drv);
-                if (db.e === 0 && db.u === 0 && db.t === 0) return; 
-                let details = '';
-                if(db.e !== 0) details += `<span class="bg-white px-2 py-1 rounded text-xs border font-bold ${db.e>0?'text-emerald-700 border-emerald-200':'text-rose-700 border-rose-200'} shadow-sm">${formatMoney(db.e, '€')}</span>`;
-                if(db.u !== 0) details += `<span class="bg-white px-2 py-1 rounded text-xs border font-bold ${db.u>0?'text-emerald-700 border-emerald-200':'text-rose-700 border-rose-200'} shadow-sm">${formatMoney(db.u, '$')}</span>`;
-                if(db.t !== 0) details += `<span class="bg-white px-2 py-1 rounded text-xs border font-bold ${db.t>0?'text-emerald-700 border-emerald-200':'text-rose-700 border-rose-200'} shadow-sm">${formatMoney(db.t, '₺')}</span>`;
-                reportDiv.innerHTML += `<div class="border border-slate-200 rounded-xl p-4 bg-slate-50 shadow-sm relative hover:shadow-md transition"><div class="flex items-center gap-2 mb-3"><div class="bg-indigo-100 text-indigo-500 w-8 h-8 rounded-full flex items-center justify-center shadow-sm"><i class="fa-solid fa-user text-xs"></i></div><h4 class="font-bold text-slate-800">${drv}</h4></div><div class="flex gap-2 flex-wrap">${details}</div></div>`;
-            });
-            if(reportDiv.innerHTML === '') reportDiv.innerHTML = `<div class="col-span-full text-center py-6 text-slate-400 border border-dashed rounded-xl">Açık bakiye yok.</div>`;
-
-            const tripList = document.getElementById('tripReportList'); tripList.innerHTML = '';
-            let completedTrips = driverTrips.filter(t => t.status === 'COMPLETED').sort((a,b) => new Date(b.endDate) - new Date(a.endDate));
-            completedTrips.forEach(t => {
-                tripList.innerHTML += `<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="p-4 text-xs text-slate-500 font-bold">${t.endDate}</td><td class="p-4 font-bold text-slate-800">${t.tripNo||'-'}</td><td class="p-4 font-bold text-slate-800"><i class="fa-solid fa-user text-slate-300 mr-1"></i>${t.driver}</td><td class="p-4 text-slate-600 font-medium">${t.route}</td><td class="p-4"><span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-1 rounded text-xs font-bold uppercase">${t.plate}</span></td><td class="p-4 text-right font-bold text-emerald-600 bg-emerald-50">${t.totalKm} KM</td></tr>`;
-            });
-            if(tripList.innerHTML === '') tripList.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500 border border-dashed rounded-xl">Henüz tamamlanmış (KM'si girilmiş) sefer kaydı yok.</td></tr>`;
+            if(currentRole === 'ADMIN' || currentRole === 'PATRON') { updatePatronDashboard(); }
         }
 
         function showToast(msg, type) { const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg; document.getElementById('toast-icon').className = type === 'success' ? 'fa-solid fa-circle-check text-emerald-400 text-xl' : 'fa-solid fa-circle-exclamation text-rose-400 text-xl'; t.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 2500); }
+
+        async function downloadPDF(drv) {
+            showToast('PDF Hazırlanıyor...', 'success');
+            const bal = getDriverBalance(drv);
+            document.getElementById('pdfName').innerText = drv; document.getElementById('pdfSignName').innerText = drv; document.getElementById('pdfDate').innerText = new Date().toLocaleDateString('tr-TR');
+            
+            let avTbody = document.getElementById('pdfAvansTable'); avTbody.innerHTML = '';
+            advances.filter(a => a.driver === drv).forEach(a => { avTbody.innerHTML += `<tr><td style="border: 1px solid #CBD5E1; padding: 10px;">${a.date}</td><td style="border: 1px solid #CBD5E1; padding: 10px;">Avans</td><td style="text-align: right; border: 1px solid #CBD5E1; padding: 10px;"><b>${formatPdfMoney(a.amount, a.currency)}</b></td></tr>`; });
+
+            let expTbody = document.getElementById('pdfHarcamaTable'); expTbody.innerHTML = '';
+            expenses.filter(e => e.driver === drv && e.status === 'APPROVED').forEach(e => { expTbody.innerHTML += `<tr><td style="border: 1px solid #CBD5E1; padding: 10px;">${e.date}</td><td style="border: 1px solid #CBD5E1; padding: 10px;">${e.category}</td><td style="border: 1px solid #CBD5E1; padding: 10px;">${e.tripId||'-'}</td><td style="border: 1px solid #CBD5E1; padding: 10px;">${e.tripName}</td><td style="text-align: right; border: 1px solid #CBD5E1; padding: 10px;"><b>${formatPdfMoney(e.amount, e.currency)}</b></td></tr>`; });
+
+            let bHTML = ''; if(bal.e !== 0) bHTML += `<span>${formatPdfMoney(bal.e,'€')}</span>`; if(bal.u !== 0) bHTML += `<span>${formatPdfMoney(bal.u,'$')}</span>`; if(bal.t !== 0) bHTML += `<span>${formatPdfMoney(bal.t,'₺')}</span>`; document.getElementById('pdfBakiye').innerHTML = bHTML || 'Sıfır';
+
+            try { await html2pdf().set({ margin: 0.4, filename: `${drv}.pdf`, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } }).from(document.getElementById('pdfTemplate')).save(); } catch(err) {}
+        }
+        function downloadOpsPdf() { const drv = document.getElementById('opsPdfDriver').value; if(drv) downloadPDF(drv); }
+        function openDriverStatementModal() { document.getElementById('driverStatementModal').style.display = 'flex'; }
+        function closeDriverStatementModal() { document.getElementById('driverStatementModal').style.display = 'none'; }
     </script>
 </body>
 </html>

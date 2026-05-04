@@ -410,18 +410,42 @@
         <!-- ==================== SEFER RAPORLARI ==================== -->
         <div id="panel-DASHBOARD" class="panel-section hidden-panel">
             <div class="glass-card p-6">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 border-b border-slate-100 pb-4 gap-3">
-                    <h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-truck-fast text-emerald-500 mr-2"></i>Tamamlanan Sefer (KM) Raporu</h3>
-                    <div class="relative w-full md:w-64"><i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-emerald-400"></i><input type="text" id="searchTripInput" onkeyup="filterTrips()" placeholder="Sefer no, şoför, güzergah..." class="w-full bg-slate-50 border border-emerald-200 text-sm rounded-xl pl-9 pr-3 py-2 font-medium outline-none"></div>
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 border-b border-slate-100 pb-4 gap-3">
+                    <h3 class="font-bold text-slate-800 text-lg whitespace-nowrap"><i class="fa-solid fa-truck-fast text-emerald-500 mr-2"></i>Tamamlanan Sefer Raporları</h3>
+                    
+                    <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                        <div class="relative flex-grow lg:flex-grow-0 lg:w-64">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-emerald-400"></i>
+                            <input type="text" id="searchTripInput" onkeyup="filterTrips()" placeholder="Sefer no, şoför, güzergah..." class="w-full bg-slate-50 border border-emerald-200 text-sm rounded-xl pl-9 pr-3 py-2 font-medium outline-none">
+                        </div>
+                        <button onclick="exportTripsCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1 w-full sm:w-auto justify-center">
+                            <i class="fa-solid fa-file-csv"></i> Excel İndir
+                        </button>
+                        <button onclick="exportTripsPDF()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1 w-full sm:w-auto justify-center">
+                            <i class="fa-solid fa-file-pdf"></i> PDF İndir
+                        </button>
+                    </div>
                 </div>
+                
                 <div class="overflow-x-auto border border-slate-200 rounded-xl">
-                    <table class="w-full text-left text-sm whitespace-nowrap min-w-[900px] overflow-hidden">
-                        <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold border-b border-slate-200">
-                            <tr><th class="p-4">Tarih</th><th class="p-4">Sefer/Dosya No</th><th class="p-4">Personel</th><th class="p-4">Güzergah</th><th class="p-4">Çekici & Dorse</th><th class="p-4 text-right">Toplam KM</th><th class="p-4 text-center">İşlem</th></tr>
+                    <table class="w-full text-left text-sm whitespace-nowrap min-w-[1000px] overflow-hidden">
+                        <thead class="bg-slate-50 text-slate-600 text-[11px] uppercase font-bold border-b border-slate-200">
+                            <tr>
+                                <th class="p-4">Tarih / Süre</th>
+                                <th class="p-4">Sefer / Dosya No</th>
+                                <th class="p-4">Personel</th>
+                                <th class="p-4">Güzergah</th>
+                                <th class="p-4">Çekici & Dorse</th>
+                                <th class="p-4 text-right">KM Detayı (Fark)</th>
+                                <th class="p-4 text-center">İşlem</th>
+                            </tr>
                         </thead>
                         <tbody id="tripReportList" class="divide-y divide-slate-100 text-slate-700"></tbody>
                     </table>
                 </div>
+                
+                <!-- Sayfalama (Pagination) Alanı -->
+                <div id="tripPagination" class="flex flex-col sm:flex-row justify-between items-center mt-4 pt-4 border-t border-slate-100 gap-3"></div>
             </div>
         </div>
 
@@ -889,6 +913,11 @@
         let pieChartInstance = null; let trendChartInstance = null; let analyticsChartInstance = null;
         let listeners = []; 
 
+        // Sayfalama ve Dışa Aktarma İçin Global Değişkenler
+        let tripCurrentPage = 1;
+        const tripItemsPerPage = 10;
+        let filteredTripsForExport = [];
+
         // XSS KORUMA FİLTRESİ
         const esc = (str) => { if (str === null || str === undefined) return ''; return String(str).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]); };
         const formatMoney = (amt, cur) => `<span class="font-bold">${parseFloat(amt).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2})}</span> <span class="text-[10px] text-slate-500 ml-0.5">${cur}</span>`;
@@ -1036,7 +1065,7 @@
             document.querySelectorAll('.panel-section').forEach(p => p.style.display = 'none'); document.getElementById(`panel-${tabId}`).style.display = 'block'; 
             if(tabId === 'PATRON' && (currentRole === 'ADMIN' || currentRole === 'PATRON')) updatePatronDashboard(); 
             if(tabId === 'DRIVER') checkActiveTrip();
-            if(tabId === 'DASHBOARD') renderDashboard();
+            if(tabId === 'DASHBOARD') { tripCurrentPage = 1; renderDashboard(); }
             if(tabId === 'FLEET') renderFleetPanel();
             if(tabId === 'ANALYTICS') renderAnalyticsTab();
             if(tabId === 'AUDITLOG') { auditPage = 50; renderAuditLog(); }
@@ -1490,17 +1519,166 @@
         function renderDashboard() {
             const list = document.getElementById('tripReportList'); if(!list) return; list.innerHTML = '';
             const searchVal = (document.getElementById('searchTripInput') ? document.getElementById('searchTripInput').value.toLowerCase() : '');
+            
+            // Tamamlanmış seferleri al ve tarihe göre sırala
             let completed = driverTrips.filter(t => t.status === 'COMPLETED').sort((a,b) => b.endDate.localeCompare(a.endDate));
-            if(searchVal) completed = completed.filter(t => (t.tripNo||'').toLowerCase().includes(searchVal) || (t.driver||'').toLowerCase().includes(searchVal) || (t.route||'').toLowerCase().includes(searchVal) || (t.plate||'').toLowerCase().includes(searchVal));
-            completed.forEach(t => {
+            
+            // Arama Filtresi
+            if(searchVal) {
+                completed = completed.filter(t => (t.tripNo||'').toLowerCase().includes(searchVal) || (t.driver||'').toLowerCase().includes(searchVal) || (t.route||'').toLowerCase().includes(searchVal) || (t.plate||'').toLowerCase().includes(searchVal));
+            }
+            
+            filteredTripsForExport = completed; // PDF ve Excel için filtrelenmiş datayı sakla
+
+            // Sayfalama (Pagination) Matematiği
+            const totalPages = Math.ceil(completed.length / tripItemsPerPage);
+            if (tripCurrentPage > totalPages && totalPages > 0) tripCurrentPage = totalPages;
+            if (tripCurrentPage < 1) tripCurrentPage = 1;
+            
+            const startIndex = (tripCurrentPage - 1) * tripItemsPerPage;
+            const endIndex = startIndex + tripItemsPerPage;
+            const paginatedItems = completed.slice(startIndex, endIndex);
+
+            // Tabloyu Doldur
+            paginatedItems.forEach(t => {
+                // Zaman ve Gün Farkı Hesaplama
+                let startObj = t.timestamp ? (t.timestamp.toDate ? t.timestamp.toDate() : new Date(t.timestamp)) : new Date();
+                let startStr = startObj.toLocaleDateString('tr-TR');
+                let endObj = new Date(t.endDate);
+                let diffDays = Math.ceil(Math.abs(endObj - startObj) / (1000 * 60 * 60 * 24));
+                if(isNaN(diffDays)) diffDays = 0;
+
                 let actionBtns = `<button onclick="openEditPastTripModal('${t.id}')" class="text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 w-8 h-8 rounded-lg transition shadow-sm"><i class="fa-solid fa-pen text-xs"></i></button><button onclick="deleteTrip('${t.id}')" class="text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 w-8 h-8 rounded-lg transition shadow-sm ml-1"><i class="fa-solid fa-trash text-xs"></i></button>`; 
-                list.innerHTML += `<tr class="border-b border-slate-100 hover:bg-slate-50 transition"><td class="p-4 text-xs font-bold text-slate-500">${t.endDate}</td><td class="p-4 font-bold text-slate-800">${esc(t.tripNo)}</td><td class="p-4 font-bold text-slate-800"><i class="fa-solid fa-user text-slate-300 mr-2"></i>${esc(t.driver)}</td><td class="p-4 text-slate-600 font-medium">${esc(t.route)}</td><td class="p-4"><span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-1 rounded text-xs font-bold uppercase">${esc(t.plate)}</span> <span class="text-slate-400 text-xs mx-1">/</span> <span class="text-[10px] font-bold text-slate-500 uppercase">${esc(t.trailer)||'YOK'}</span></td><td class="p-4 text-right font-bold text-emerald-600 bg-emerald-50">${t.totalKm.toLocaleString()} KM</td><td class="p-4 text-center flex justify-center gap-1">${actionBtns}</td></tr>`;
+                
+                list.innerHTML += `<tr class="border-b border-slate-100 hover:bg-slate-50 transition">
+                    <td class="p-4">
+                        <div class="text-[10px] text-slate-400 font-bold">Baş: <span class="text-slate-600">${startStr}</span></div>
+                        <div class="text-[10px] text-slate-400 font-bold">Bit: <span class="text-slate-800">${t.endDate}</span></div>
+                        <div class="text-[10px] text-indigo-500 font-black mt-0.5"><i class="fa-regular fa-clock mr-1"></i>${diffDays} Gün Sürdü</div>
+                    </td>
+                    <td class="p-4 font-black text-slate-800">${esc(t.tripNo)}</td>
+                    <td class="p-4 font-bold text-slate-800"><i class="fa-solid fa-user text-slate-300 mr-2"></i>${esc(t.driver)}</td>
+                    <td class="p-4 text-slate-600 font-medium">${esc(t.route)}</td>
+                    <td class="p-4">
+                        <span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-1 rounded text-xs font-bold uppercase">${esc(t.plate)}</span> 
+                        <span class="text-slate-400 text-xs mx-1">/</span> 
+                        <span class="text-[10px] font-bold text-slate-500 uppercase">${esc(t.trailer)||'YOK'}</span>
+                    </td>
+                    <td class="p-4 text-right bg-emerald-50/40 rounded-lg">
+                        <div class="text-[10px] text-slate-500 font-medium tracking-wider">${t.startKm.toLocaleString()} <i class="fa-solid fa-arrow-right mx-1"></i> ${t.endKm.toLocaleString()}</div>
+                        <div class="font-black text-emerald-600 text-sm mt-0.5">+${t.totalKm.toLocaleString()} KM Fark</div>
+                    </td>
+                    <td class="p-4 text-center flex justify-center gap-1">${actionBtns}</td>
+                </tr>`;
             });
+            
             if(completed.length === 0) list.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500 border border-dashed rounded-xl">Biten sefer bulunamadı.</td></tr>`;
+
+            // Sayfalama (Pagination) Butonlarını Oluşturma
+            const paginationContainer = document.getElementById('tripPagination');
+            if(paginationContainer) {
+                let pageButtons = '';
+                for(let i = 1; i <= totalPages; i++) {
+                    if(i === 1 || i === totalPages || (i >= tripCurrentPage - 1 && i <= tripCurrentPage + 1)) {
+                        pageButtons += `<button onclick="tripCurrentPage=${i}; renderDashboard()" class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition ${i === tripCurrentPage ? 'bg-emerald-500 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${i}</button>`;
+                    } else if (i === tripCurrentPage - 2 || i === tripCurrentPage + 2) {
+                        pageButtons += `<span class="text-slate-400 px-1">...</span>`;
+                    }
+                }
+                
+                paginationContainer.innerHTML = `
+                    <div class="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg">Toplam: <span class="text-slate-800">${completed.length}</span> Kayıt</div>
+                    <div class="flex items-center gap-1">
+                        <button onclick="if(tripCurrentPage>1){tripCurrentPage--; renderDashboard()}" class="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition" ${tripCurrentPage === 1 ? 'disabled style="opacity:0.5"' : ''}><i class="fa-solid fa-chevron-left"></i></button>
+                        ${pageButtons}
+                        <button onclick="if(tripCurrentPage<${totalPages}){tripCurrentPage++; renderDashboard()}" class="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition" ${tripCurrentPage === totalPages || totalPages === 0 ? 'disabled style="opacity:0.5"' : ''}><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                `;
+            }
         }
 
+        function filterTrips() { tripCurrentPage = 1; renderDashboard(); }
         function deleteTrip(tripId) { if(confirm("Sefer silinsin mi?")) { cTrips.doc(tripId).delete(); showToast('Silindi', 'success'); } }
-        function filterTrips() { renderDashboard(); }
+
+        function exportTripsCSV() {
+            if(filteredTripsForExport.length === 0) { showToast('Dışa aktarılacak veri yok!', 'error'); return; }
+            let rows = [["Baslangic Tarihi", "Bitis Tarihi", "Sure (Gun)", "Sefer No", "Personel", "Guzergah", "Cekici", "Dorse", "Ilk KM", "Son KM", "Fark (Toplam KM)"].join(";")];
+            
+            filteredTripsForExport.forEach(t => {
+                let startObj = t.timestamp ? (t.timestamp.toDate ? t.timestamp.toDate() : new Date(t.timestamp)) : new Date();
+                let startStr = startObj.toLocaleDateString('tr-TR');
+                let diffDays = Math.ceil(Math.abs(new Date(t.endDate) - startObj) / (1000 * 60 * 60 * 24)) || 0;
+                
+                rows.push([
+                    startStr, t.endDate, diffDays, `"${t.tripNo}"`, `"${t.driver}"`, `"${t.route}"`, 
+                    t.plate, t.trailer||'-', t.startKm, t.endKm, t.totalKm
+                ].join(";"));
+            });
+            
+            let csv = "\uFEFF" + rows.join("\n");
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
+            link.download = `Sefer_Raporu_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            showToast('Excel İndirildi', 'success');
+        }
+
+        async function exportTripsPDF() {
+            if(filteredTripsForExport.length === 0) { showToast('Dışa aktarılacak veri yok!', 'error'); return; }
+            showToast('PDF Hazırlanıyor...', 'success');
+            
+            let div = document.createElement('div');
+            div.style.padding = '20px';
+            div.style.fontFamily = 'Helvetica Neue, Helvetica, Arial, sans-serif';
+            div.innerHTML = `
+                <div style="text-align:center; border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 20px;">
+                    <h2 style="color:#0f172a; margin:0 0 5px 0;">TAMAMLANMIŞ SEFER RAPORLARI</h2>
+                    <p style="color:#64748b; font-size:12px; margin:0; font-weight:bold;">Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')}</p>
+                </div>
+                <table style="width:100%; border-collapse: collapse; font-size: 11px;">
+                    <thead>
+                        <tr style="background-color: #f8fafc; color: #334155;">
+                            <th style="padding:10px; border:1px solid #cbd5e1; text-align:left;">Süreç (Başlangıç - Bitiş)</th>
+                            <th style="padding:10px; border:1px solid #cbd5e1; text-align:left;">Sefer No</th>
+                            <th style="padding:10px; border:1px solid #cbd5e1; text-align:left;">Şoför</th>
+                            <th style="padding:10px; border:1px solid #cbd5e1; text-align:left;">Güzergah</th>
+                            <th style="padding:10px; border:1px solid #cbd5e1; text-align:left;">Araç (Çekici / Dorse)</th>
+                            <th style="padding:10px; border:1px solid #cbd5e1; text-align:right;">KM Analizi (Fark)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filteredTripsForExport.map(t => {
+                            let startObj = t.timestamp ? (t.timestamp.toDate ? t.timestamp.toDate() : new Date(t.timestamp)) : new Date();
+                            let startStr = startObj.toLocaleDateString('tr-TR');
+                            let diffDays = Math.ceil(Math.abs(new Date(t.endDate) - startObj) / (1000 * 60 * 60 * 24)) || 0;
+                            return `
+                            <tr>
+                                <td style="padding:8px; border:1px solid #cbd5e1;">${startStr} &rarr; ${t.endDate} <br><b style="color:#4f46e5;">(${diffDays} Gün Sürdü)</b></td>
+                                <td style="padding:8px; border:1px solid #cbd5e1; font-weight:bold;">${esc(t.tripNo)}</td>
+                                <td style="padding:8px; border:1px solid #cbd5e1;">${esc(t.driver)}</td>
+                                <td style="padding:8px; border:1px solid #cbd5e1;">${esc(t.route)}</td>
+                                <td style="padding:8px; border:1px solid #cbd5e1; font-weight:bold;">${esc(t.plate)} <br><span style="font-weight:normal; color:#64748b;">${esc(t.trailer)||'YOK'}</span></td>
+                                <td style="padding:8px; border:1px solid #cbd5e1; text-align:right;">${t.startKm.toLocaleString()} &rarr; ${t.endKm.toLocaleString()}<br><b style="color:#059669; font-size:12px;">+ ${t.totalKm.toLocaleString()} KM</b></td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+                <p style="text-align:right; font-size: 10px; color:#94a3b8; margin-top:15px;">Toplam <b>${filteredTripsForExport.length}</b> sefer listelenmiştir. | Kare Lojistik Otomasyonu</p>
+            `;
+            
+            try { 
+                await html2pdf().set({ 
+                    margin: 0.3, 
+                    filename: `Sefer_Raporu_${new Date().toISOString().split('T')[0]}.pdf`, 
+                    image: { type: 'jpeg', quality: 1 }, 
+                    html2canvas: { scale: 2, useCORS: true }, 
+                    jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } 
+                }).from(div).save(); 
+            } catch(err) { 
+                showToast("PDF hatası oluştu!", "error"); 
+                console.error(err);
+            }
+        }
 
         function renderAll() {
             if(!currentUser) return; 
@@ -1535,7 +1713,10 @@
                     });
                     if(recentApp.length === 0) appList.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">Kayıt yok.</td></tr>`;
                 }
-                renderDashboard();
+                
+                if (document.getElementById('panel-DASHBOARD').style.display === 'block') {
+                    renderDashboard();
+                }
             }
 
             if(currentRole === 'ADMIN' || currentRole === 'PATRON' || currentRole === 'ACCOUNTING') {

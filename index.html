@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kare Lojistik v1.4 | Harcırah Yönetim</title>
+    <title>Kare Lojistik v1.5 | Harcırah Yönetim</title>
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -725,6 +725,29 @@
         </div>
     </div>
 
+    <!-- ÖZEL YETKİ (İZİN) YÖNETİMİ MODALI -->
+    <div id="permissionsModal" class="modal flex" style="display: none;">
+        <div class="modal-content border-t-4 border-purple-500 w-11/12">
+            <span class="close-modal" onclick="closePermissionsModal()">&times;</span>
+            <h3 class="text-xl font-bold text-slate-800 mb-2 mt-2"><i class="fa-solid fa-shield-halved text-purple-500 mr-2"></i>Sayfa İzinleri (Yetki Ayarı)</h3>
+            <p class="text-xs text-slate-500 mb-4 border-b pb-4 pr-6"><b id="permUserName" class="text-slate-700 text-sm"></b> adlı personelin görebileceği sekmeleri seçin. Bu ayar kullanıcının rolünden bağımsızdır.</p>
+            <form id="permissionsForm" onsubmit="savePermissions(event); return false;" class="space-y-3">
+                <input type="hidden" id="permUserId">
+                <div class="grid grid-cols-2 gap-3 text-sm font-medium text-slate-700">
+                    <label class="flex items-center gap-2 cursor-pointer p-2 bg-slate-50 rounded-lg border border-slate-200 hover:bg-purple-50 transition"><input type="checkbox" id="cb_perm_OPERATIONS" class="w-4 h-4 accent-purple-600"> Operasyon</label>
+                    <label class="flex items-center gap-2 cursor-pointer p-2 bg-slate-50 rounded-lg border border-slate-200 hover:bg-purple-50 transition"><input type="checkbox" id="cb_perm_ACCOUNTING" class="w-4 h-4 accent-purple-600"> Muhasebe</label>
+                    <label class="flex items-center gap-2 cursor-pointer p-2 bg-slate-50 rounded-lg border border-slate-200 hover:bg-purple-50 transition"><input type="checkbox" id="cb_perm_FLEET" class="w-4 h-4 accent-purple-600"> Filo Yönetimi</label>
+                    <label class="flex items-center gap-2 cursor-pointer p-2 bg-slate-50 rounded-lg border border-slate-200 hover:bg-purple-50 transition"><input type="checkbox" id="cb_perm_DASHBOARD" class="w-4 h-4 accent-purple-600"> Sefer Raporları</label>
+                    <label class="flex items-center gap-2 cursor-pointer p-2 bg-slate-50 rounded-lg border border-slate-200 hover:bg-purple-50 transition"><input type="checkbox" id="cb_perm_PATRON" class="w-4 h-4 accent-purple-600"> Patron Özeti</label>
+                    <label class="flex items-center gap-2 cursor-pointer p-2 bg-slate-50 rounded-lg border border-slate-200 hover:bg-purple-50 transition"><input type="checkbox" id="cb_perm_ANALYTICS" class="w-4 h-4 accent-purple-600"> Raporlar (Analiz)</label>
+                    <label class="flex items-center gap-2 cursor-pointer p-2 bg-slate-50 rounded-lg border border-slate-200 hover:bg-purple-50 transition"><input type="checkbox" id="cb_perm_USERS" class="w-4 h-4 accent-purple-600"> Ayarlar (Kullanıcı)</label>
+                    <label class="flex items-center gap-2 cursor-pointer p-2 bg-slate-50 rounded-lg border border-slate-200 hover:bg-purple-50 transition"><input type="checkbox" id="cb_perm_AUDITLOG" class="w-4 h-4 accent-purple-600"> Audit Log</label>
+                </div>
+                <button type="submit" id="savePermBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold shadow-md transition-all mt-4 text-lg">Seçili İzinleri Kaydet</button>
+            </form>
+        </div>
+    </div>
+
     <!-- MODALLAR: SEFER BAŞLA, BİTİR, DÜZELT -->
     <div id="tripModal" class="modal flex" style="display: none;">
         <div class="modal-content border border-slate-200 w-11/12">
@@ -998,7 +1021,7 @@
             currentRole = user.role;
             document.getElementById('loginScreen').style.display = 'none'; document.body.classList.remove('overflow-hidden'); document.getElementById('mainHeader').classList.remove('opacity-0'); document.getElementById('mainContent').classList.remove('opacity-0');
             
-            listeners.push(cUsers.onSnapshot(snap => { users = snap.docs.map(d => ({ id: d.id, ...d.data() })); updateDriverDropdowns(); renderAll(); }));
+            listeners.push(cUsers.onSnapshot(snap => { users = snap.docs.map(d => ({ id: d.id, ...d.data() })); updateDriverDropdowns(); renderAll(); updateTabVisibility(); }));
 
             if (currentRole === 'ADMIN' || currentRole === 'PATRON' || currentRole === 'OPS' || currentRole === 'OPS_MANAGER' || currentRole === 'ACCOUNTING' || currentRole === 'FLEET') {
                 listeners.push(cExpenses.orderBy('timestamp','desc').onSnapshot(s => { expenses = s.docs.map(d=>({id:d.id, ...d.data()})); renderAll(); }));
@@ -1010,7 +1033,7 @@
                 listeners.push(cTrips.where('driver', '==', user.username).onSnapshot(s => { driverTrips = s.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>b.timestamp-a.timestamp); checkActiveTrip(); renderAll(); }));
             }
 
-            updateTabVisibility(); setupAuditLogListener();
+            setupAuditLogListener();
             addLog('Kullanıcı Giriş Yaptı', user.username, 0, '', 'auth', { category:'auth', severity:'low', detail:`${user.username} sisteme girdi`, affected: user.username });
 
             if(currentRole === 'ADMIN') { document.getElementById('modeText').innerText = "YÖNETİCİ MODU"; document.getElementById('modeText').className = "text-[10px] font-bold tracking-wide text-rose-500"; currentUser = loggedInUser.username; } 
@@ -1027,8 +1050,14 @@
             if(currentRole === 'FLEET') targetTab = 'FLEET';
             if(currentRole === 'PATRON') targetTab = 'PATRON';
 
-            if(savedTab && document.getElementById(`tab-${savedTab}`) && document.getElementById(`tab-${savedTab}`).style.display !== 'none') { targetTab = savedTab; }
-            switchTab(targetTab); checkActiveTrip();
+            if(savedTab && document.getElementById(`tab-${savedTab}`)) { targetTab = savedTab; }
+            
+            setTimeout(() => {
+                if (document.getElementById(`tab-${targetTab}`).style.display === 'none') { switchTab('DRIVER'); } 
+                else { switchTab(targetTab); }
+            }, 100);
+
+            checkActiveTrip();
         }
 
         function updateDriverDropdowns() {
@@ -1040,16 +1069,10 @@
         }
 
         function updateTabVisibility() {
-            const isAdmin = currentRole === 'ADMIN'; const isPatron = currentRole === 'PATRON'; const isOps = currentRole === 'OPS'; const isOpsManager = currentRole === 'OPS_MANAGER'; const isAccounting = currentRole === 'ACCOUNTING'; const isFleet = currentRole === 'FLEET';
-            document.getElementById('tab-DRIVER').style.display = 'flex';
-            document.getElementById('tab-OPERATIONS').style.display = (isAdmin || isPatron || isOps || isOpsManager) ? 'flex' : 'none';
-            document.getElementById('tab-ACCOUNTING').style.display = (isAdmin || isPatron || isAccounting) ? 'flex' : 'none';
-            document.getElementById('tab-FLEET').style.display = (isAdmin || isPatron || isFleet || isOpsManager) ? 'flex' : 'none';
-            document.getElementById('tab-DASHBOARD').style.display = (isAdmin || isPatron || isOps || isOpsManager || isFleet) ? 'flex' : 'none';
-            document.getElementById('tab-USERS').style.display = (isAdmin || isPatron) ? 'flex' : 'none';
-            document.getElementById('tab-PATRON').style.display = (isAdmin || isPatron) ? 'flex' : 'none';
-            document.getElementById('tab-ANALYTICS').style.display = (isAdmin || isPatron || isOps || isOpsManager || isAccounting) ? 'flex' : 'none';
-            document.getElementById('tab-AUDITLOG').style.display = (isAdmin || isPatron) ? 'flex' : 'none';
+            const defaultPerms = { ADMIN: ['DRIVER', 'OPERATIONS', 'ACCOUNTING', 'FLEET', 'DASHBOARD', 'PATRON', 'ANALYTICS', 'USERS', 'AUDITLOG'], PATRON: ['DRIVER', 'OPERATIONS', 'ACCOUNTING', 'FLEET', 'DASHBOARD', 'PATRON', 'ANALYTICS', 'USERS', 'AUDITLOG'], OPS: ['DRIVER', 'OPERATIONS', 'DASHBOARD', 'ANALYTICS'], OPS_MANAGER: ['DRIVER', 'OPERATIONS', 'FLEET', 'DASHBOARD', 'ANALYTICS'], ACCOUNTING: ['DRIVER', 'ACCOUNTING', 'ANALYTICS'], FLEET: ['DRIVER', 'FLEET', 'DASHBOARD'], DRIVER: ['DRIVER'] };
+            let myTabs = loggedInUser.allowedTabs || defaultPerms[currentRole] || ['DRIVER'];
+            if(currentRole === 'ADMIN') myTabs = defaultPerms['ADMIN'];
+            ['DRIVER', 'OPERATIONS', 'ACCOUNTING', 'FLEET', 'DASHBOARD', 'PATRON', 'ANALYTICS', 'USERS', 'AUDITLOG'].forEach(tab => { const el = document.getElementById(`tab-${tab}`); if(el) { el.style.display = myTabs.includes(tab) ? 'flex' : 'none'; } });
         }
 
         function switchTab(tabId) { 
@@ -1126,6 +1149,48 @@
             try { const securePw = nw.length >= 6 ? nw : nw + "000000".substring(0, 6 - nw.length); await auth.currentUser.updatePassword(securePw); document.getElementById('changePassForm').reset(); showToast('Şifre güncellendi!', 'success'); } catch (error) { if(error.code === 'auth/requires-recent-login') { alert("Güvenlik nedeniyle çıkış yapıp tekrar giriş yaptıktan sonra şifrenizi değiştirebilirsiniz."); handleLogout(); } else { showToast('Hata: ' + error.message, 'error'); } } btn.innerHTML = '<i class="fa-solid fa-lock mr-1"></i> Şifreyi Güncelle'; btn.disabled = false;
         }
 
+        // ================= ÖZEL YETKİ / İZİN FONKSİYONLARI =================
+        function openPermissionsModal(userId) {
+            if(currentRole !== 'ADMIN') { alert('Sadece Kurucu (Admin) sayfa izinlerini değiştirebilir!'); return; }
+            const u = users.find(x => x.id === userId); if(!u) return;
+            if(u.username === 'Tanju') { alert('Kurucu yetkileri kısıtlanamaz!'); return; }
+
+            document.getElementById('permUserId').value = u.id;
+            document.getElementById('permUserName').innerText = u.username;
+
+            const defaultPerms = { ADMIN: ['DRIVER', 'OPERATIONS', 'ACCOUNTING', 'FLEET', 'DASHBOARD', 'PATRON', 'ANALYTICS', 'USERS', 'AUDITLOG'], PATRON: ['DRIVER', 'OPERATIONS', 'ACCOUNTING', 'FLEET', 'DASHBOARD', 'PATRON', 'ANALYTICS', 'USERS', 'AUDITLOG'], OPS: ['DRIVER', 'OPERATIONS', 'DASHBOARD', 'ANALYTICS'], OPS_MANAGER: ['DRIVER', 'OPERATIONS', 'FLEET', 'DASHBOARD', 'ANALYTICS'], ACCOUNTING: ['DRIVER', 'ACCOUNTING', 'ANALYTICS'], FLEET: ['DRIVER', 'FLEET', 'DASHBOARD'], DRIVER: ['DRIVER'] };
+            const activeTabs = u.allowedTabs || defaultPerms[u.role] || ['DRIVER'];
+
+            ['OPERATIONS', 'ACCOUNTING', 'FLEET', 'DASHBOARD', 'PATRON', 'ANALYTICS', 'USERS', 'AUDITLOG'].forEach(tab => {
+                document.getElementById(`cb_perm_${tab}`).checked = activeTabs.includes(tab);
+            });
+
+            document.getElementById('permissionsModal').style.display = 'flex';
+        }
+
+        function closePermissionsModal() { document.getElementById('permissionsModal').style.display = 'none'; }
+
+        async function savePermissions(e) {
+            e.preventDefault();
+            const userId = document.getElementById('permUserId').value;
+            const btn = document.getElementById('savePermBtn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Kaydediliyor...'; btn.disabled = true;
+
+            const selectedTabs = ['DRIVER']; // Şoför paneli herkes için zorunlu sabittir.
+            ['OPERATIONS', 'ACCOUNTING', 'FLEET', 'DASHBOARD', 'PATRON', 'ANALYTICS', 'USERS', 'AUDITLOG'].forEach(tab => {
+                if(document.getElementById(`cb_perm_${tab}`).checked) { selectedTabs.push(tab); }
+            });
+
+            try {
+                await cUsers.doc(userId).update({ allowedTabs: selectedTabs });
+                const u = users.find(x => x.id === userId);
+                addLog('Özel Yetki Tanımlandı', u?.username||'', 0, '', 'user', { category:'user', severity:'high', detail:`${u?.username} için özel sayfa izinleri kaydedildi.`, affected: u?.username });
+                showToast('Kullanıcı izinleri güncellendi', 'success');
+                closePermissionsModal();
+            } catch(err) { alert("Hata: " + err.message); } 
+            finally { btn.innerHTML = 'Seçili İzinleri Kaydet'; btn.disabled = false; }
+        }
+
         function checkActiveTrip() { 
             if(!currentUser) return; const activeTrip = driverTrips.find(t => t.driver === currentUser && t.status === 'ACTIVE'); 
             if(activeTrip) { document.getElementById('tripStartBox').style.display = 'none'; document.getElementById('tripActiveBox').style.display = 'flex'; document.getElementById('activeTripNoDisplay').innerText = esc(activeTrip.tripNo); document.getElementById('activeTripRoute').innerText = esc(activeTrip.route); document.getElementById('activeTripPlate').innerText = esc(activeTrip.plate); document.getElementById('activeTripTrailer').innerText = esc(activeTrip.trailer) || '-'; document.getElementById('activeTripStartKm').innerText = activeTrip.startKm; 
@@ -1161,7 +1226,13 @@
         function closeEditPastTripModal() { document.getElementById('editPastTripModal').style.display = 'none'; }
         function savePastTripEdit(e) { if(e) e.preventDefault(); const id = document.getElementById('editPastTripId').value; let nStartKm = parseInt(document.getElementById('editPastStartKm').value); let nEndKm = parseInt(document.getElementById('editPastEndKm').value); if(nEndKm <= nStartKm) { alert("Hata!"); return false; } cTrips.doc(id).update({ tripNo: document.getElementById('editPastTripNo').value, route: document.getElementById('editPastTripRoute').value, plate: document.getElementById('editPastTripPlate').value.toUpperCase(), trailer: document.getElementById('editPastTripTrailer').value.toUpperCase(), startKm: nStartKm, endKm: nEndKm, totalKm: nEndKm - nStartKm }); closeEditPastTripModal(); showToast('Güncellendi', 'success'); return false; }
 
-        function toggleVehicleFields() { const val = document.getElementById('category').value; const f = document.getElementById('vehicleFields'); (val === 'MAZOT' || val === 'BAKIM' || val === 'OTOYOL' || val === 'GUMRUK') ? f.classList.remove('hidden') : f.classList.add('hidden'); }
+        // BAZI KATEGORİLERDE ARAÇ BİLGİSİ GİZLENİR / OTOPARK İÇİN PLAKA İSTENMEZ
+        function toggleVehicleFields() { 
+            const val = document.getElementById('category').value; 
+            const f = document.getElementById('vehicleFields'); 
+            (val === 'MAZOT' || val === 'BAKIM' || val === 'OTOYOL' || val === 'GUMRUK') ? f.classList.remove('hidden') : f.classList.add('hidden'); 
+        }
+
         function submitExpense(e) { if(e) e.preventDefault(); const cat = document.getElementById('category').value; const amt = parseFloat(document.getElementById('amount').value); const cur = document.getElementById('currency').value; cExpenses.add({ date: new Date().toISOString().split('T')[0], driver: currentUser, category: cat, tripName: document.getElementById('tripName').value, amount: amt, currency: cur, plaka: document.getElementById('plaka')?document.getElementById('plaka').value.toUpperCase():'', km: document.getElementById('km')?document.getElementById('km').value:'', status: 'PENDING_OP', timestamp: firebase.firestore.FieldValue.serverTimestamp() }); addLog('Masraf Eklendi', currentUser, amt, cur, 'expense', { category:'expense', severity:'low', detail:`${cat} masrafı eklendi`, affected: currentUser }); showToast('Gönderildi', 'success'); document.getElementById('expenseForm').reset(); document.getElementById('vehicleFields').classList.add('hidden'); return false; }
         
         const AUDIT_SEVERITY = { LOW: 'low', MEDIUM: 'medium', HIGH: 'high', CRITICAL: 'critical' };
@@ -1353,10 +1424,12 @@
                         let roleClass = u.role === 'ADMIN' ? 'bg-rose-100 text-rose-700' : (u.role === 'OPS' ? 'bg-emerald-100 text-emerald-700' : (u.role === 'OPS_MANAGER' ? 'bg-teal-100 text-teal-700' : (u.role === 'ACCOUNTING' ? 'bg-blue-100 text-blue-700' : (u.role === 'FLEET' ? 'bg-cyan-100 text-cyan-700' : (u.role === 'PATRON' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700')))));
                         let statusBadge = u.isBlocked ? '<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold uppercase"><i class="fa-solid fa-lock mr-1"></i>Kısıtlı</span>' : '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold uppercase">Aktif</span>';
                         let pTxt = u.role === 'DRIVER' ? `<span class="bg-slate-100 border border-slate-200 px-2 py-1 rounded text-[10px] font-bold text-slate-600">${esc(u.defaultPlate)||'Yok'} / ${esc(u.defaultTrailer)||'Yok'}</span>` : '<span class="text-slate-300">-</span>'; 
+                        
+                        let permBtn = `<button onclick="openPermissionsModal('${u.id}')" class="bg-purple-50 text-purple-600 w-8 h-8 rounded-lg hover:bg-purple-100 transition mr-1" title="Sayfa İzinlerini Ayarla"><i class="fa-solid fa-shield-halved"></i></button>`;
                         let editBtn = `<button onclick="loadUserForEdit('${u.id}')" class="bg-blue-50 text-blue-600 w-8 h-8 rounded-lg hover:bg-blue-100 transition mr-1" title="Getir/Düzenle"><i class="fa-solid fa-pen"></i></button>`;
                         let blockBtn = u.username === 'Tanju' ? '' : `<button onclick="toggleUserStatus('${u.id}')" class="${u.isBlocked ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'} w-8 h-8 rounded-lg transition mr-1"><i class="fa-solid ${u.isBlocked ? 'fa-unlock' : 'fa-lock'}"></i></button>`;
                         let delBtn = u.username === 'Tanju' ? '<span class="text-[10px] text-slate-400 font-bold bg-slate-100 px-2 py-1 rounded">Kurucu</span>' : `<button onclick="deleteUser('${u.id}')" class="bg-red-50 text-red-600 w-8 h-8 rounded-lg hover:bg-red-100 transition"><i class="fa-solid fa-trash"></i></button>`;
-                        return `<tr class="hover:bg-slate-50 border-b border-slate-100 transition"><td class="p-3 font-bold text-slate-800"><i class="fa-solid fa-circle-user text-slate-300 mr-2 text-lg align-middle"></i>${esc(u.username)}</td><td class="p-3 text-xs">${pTxt}</td><td class="p-3"><span class="${roleClass} px-2 py-1 rounded text-[10px] font-bold uppercase">${roleName}</span></td><td class="p-3 text-center">${statusBadge}</td><td class="p-3 text-right flex justify-end">${editBtn}${blockBtn}${delBtn}</td></tr>`;
+                        return `<tr class="hover:bg-slate-50 border-b border-slate-100 transition"><td class="p-3 font-bold text-slate-800"><i class="fa-solid fa-circle-user text-slate-300 mr-2 text-lg align-middle"></i>${esc(u.username)}</td><td class="p-3 text-xs">${pTxt}</td><td class="p-3"><span class="${roleClass} px-2 py-1 rounded text-[10px] font-bold uppercase">${roleName}</span></td><td class="p-3 text-center">${statusBadge}</td><td class="p-3 text-right flex justify-end">${permBtn}${editBtn}${blockBtn}${delBtn}</td></tr>`;
                     }).join('');
                 }
                 updatePatronDashboard();
@@ -1548,55 +1621,6 @@
                 });
                 if(logs.length === 0) tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">Kayıt bulunamadı.</td></tr>`;
             });
-        }
-
-        // ============ FİLO PANELİ ============
-        function renderFleetPanel() {
-            let vMap = {};
-            driverTrips.filter(t => t.plate && t.plate.trim()).forEach(t => {
-                let p = t.plate.toUpperCase();
-                if(!vMap[p]) vMap[p] = { trips: 0, km: 0, costEUR: 0 };
-                if(t.status === 'COMPLETED') { vMap[p].trips++; vMap[p].km += t.totalKm; }
-            });
-            expenses.filter(e => e.status === 'APPROVED' && e.plaka && (e.category === 'MAZOT' || e.category === 'BAKIM' || e.category === 'OTOYOL')).forEach(e => {
-                let p = e.plaka.toUpperCase();
-                if(!vMap[p]) vMap[p] = { trips: 0, km: 0, costEUR: 0 };
-                let eur = e.currency === 'EUR' ? e.amount : (e.currency === 'USD' ? e.amount * 0.9 : e.amount * 0.028);
-                vMap[p].costEUR += eur;
-            });
-
-            const activeTrips = driverTrips.filter(t => t.status === 'ACTIVE');
-            const curMonth = new Date().toISOString().slice(0, 7);
-            const monthKm = driverTrips.filter(t => t.status === 'COMPLETED' && t.endDate && t.endDate.startsWith(curMonth)).reduce((s, t) => s + t.totalKm, 0);
-            const maintCost = expenses.filter(e => e.status === 'APPROVED' && e.category === 'BAKIM').reduce((s, e) => {
-                let eur = e.currency === 'EUR' ? e.amount : (e.currency === 'USD' ? e.amount * 0.9 : e.amount * 0.028); return s + eur;
-            }, 0);
-
-            document.getElementById('fleetTotalVehicles').innerText = Object.keys(vMap).length;
-            document.getElementById('fleetActiveVehicles').innerText = activeTrips.length;
-            document.getElementById('fleetMonthKm').innerText = monthKm.toLocaleString();
-            document.getElementById('fleetMaintenanceCost').innerText = maintCost.toLocaleString('tr-TR', {minimumFractionDigits: 2}) + ' €';
-
-            const tbody = document.getElementById('fleetVehicleTable'); tbody.innerHTML = '';
-            for(const [plt, d] of Object.entries(vMap).sort((a, b) => b[1].km - a[1].km)) {
-                let cpm = d.km > 0 ? (d.costEUR / d.km) : 0;
-                let statusDot = activeTrips.some(t => t.plate.toUpperCase() === plt) ? '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-[10px] font-bold animate-pulse">🟢 YOLDA</span>' : '<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded-full text-[10px] font-bold">⚪ DEPODA</span>';
-                let cpmColor = cpm > 0.4 ? 'text-rose-600 font-bold' : (cpm > 0.2 ? 'text-amber-600 font-bold' : 'text-emerald-600 font-bold');
-                tbody.innerHTML += `<tr class="border-b border-slate-100 hover:bg-slate-50 transition"><td class="p-3 font-bold"><span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs">${esc(plt)}</span></td><td class="p-3 text-right text-slate-600 font-medium">${d.trips}</td><td class="p-3 text-right text-slate-600 font-medium">${d.km.toLocaleString()} KM</td><td class="p-3 text-right font-bold text-orange-600">${d.costEUR > 0 ? d.costEUR.toLocaleString('tr-TR', {minimumFractionDigits:2}) + ' €' : '-'}</td><td class="p-3 text-right ${cpmColor}">${d.km > 0 ? cpm.toLocaleString('tr-TR', {minimumFractionDigits:3}) + ' €/km' : '-'}</td><td class="p-3 text-center">${statusDot}</td></tr>`;
-            }
-            if(tbody.innerHTML === '') tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">Araç verisi bulunamadı.</td></tr>`;
-
-            const grid = document.getElementById('fleetActiveTripsGrid'); grid.innerHTML = '';
-            if(activeTrips.length === 0) { grid.innerHTML = '<div class="col-span-3 text-center text-slate-400 py-6 text-sm">Şu an yolda araç bulunmuyor.</div>'; } 
-            else { activeTrips.forEach(t => { grid.innerHTML += `<div class="glass-card p-4 border-l-4 border-emerald-500 bg-emerald-50"><div class="flex justify-between items-start mb-2"><span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs font-bold uppercase">${esc(t.plate)}</span><span class="bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded-full text-[10px] font-bold animate-pulse">YOLDA</span></div><p class="font-bold text-slate-800 text-sm">${esc(t.driver)}</p><p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-route mr-1"></i>${esc(t.route)}</p><p class="text-[10px] text-slate-400 mt-1">Sefer: <b>${esc(t.tripNo)}</b> | Başl: ${t.startKm.toLocaleString()} KM</p></div>`; }); }
-        }
-
-        function exportFleetCSV() {
-            let rows = [["Plaka", "Toplam Sefer", "Toplam KM", "Bakim_Masraf_EUR", "Maliyet_KM"].join(";")]; let vMap = {};
-            driverTrips.filter(t => t.plate && t.status === 'COMPLETED').forEach(t => { let p = t.plate.toUpperCase(); if(!vMap[p]) vMap[p] = { trips: 0, km: 0, cost: 0 }; vMap[p].trips++; vMap[p].km += t.totalKm; });
-            expenses.filter(e => e.status === 'APPROVED' && e.plaka && (e.category === 'MAZOT' || e.category === 'BAKIM' || e.category === 'OTOYOL')).forEach(e => { let p = e.plaka.toUpperCase(); if(!vMap[p]) vMap[p] = { trips: 0, km: 0, cost: 0 }; let eur = e.currency === 'EUR' ? e.amount : (e.currency === 'USD' ? e.amount * 0.9 : e.amount * 0.028); vMap[p].cost += eur; });
-            for(const [plt, d] of Object.entries(vMap)) { let cpm = d.km > 0 ? (d.cost / d.km).toFixed(4) : 0; rows.push([plt, d.trips, d.km, d.cost.toFixed(2), cpm].join(";")); }
-            let csv = "\uFEFF" + rows.join("\n"); const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Filo_Raporu_${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link); showToast('Filo Raporu İndirildi', 'success');
         }
 
         function enterApp() { const intro = document.getElementById('truckIntro'); intro.classList.add('hide-intro'); setTimeout(() => { intro.style.display = 'none'; }, 600); }

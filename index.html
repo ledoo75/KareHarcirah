@@ -476,11 +476,17 @@
             <!-- Kullanıcı Ekleme Formu -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                 <div class="glass-card p-5 h-fit">
-                    <h3 class="font-bold text-slate-800 text-lg mb-4"><i class="fa-solid fa-user-plus text-primary mr-2"></i>Yeni Kullanıcı Ekle</h3>
+                    <h3 class="font-bold text-slate-800 text-lg mb-4" id="userFormTitle"><i class="fa-solid fa-user-plus text-primary mr-2"></i>Yeni Kullanıcı Ekle</h3>
                     <form id="addUserForm" onsubmit="handleAddUser(event); return false;" class="space-y-4">
                         <input type="hidden" id="editUserId">
                         <input type="text" id="newUserName" required placeholder="Ad Soyad (Örn: Ahmet Yılmaz)" class="input-style border border-slate-200">
-                        <input type="text" id="newUserPass" placeholder="Şifre Belirle (Düzenlerken boş bırakılabilir)" class="input-style border border-slate-200">
+                        
+                        <!-- ŞİFRE ALANI (Düzenlemede Gizlenecek) -->
+                        <div id="passwordFieldContainer">
+                            <input type="text" id="newUserPass" placeholder="Şifre Belirle" class="input-style border border-slate-200">
+                            <p class="text-[10px] text-slate-500 mt-1"><i class="fa-solid fa-circle-info mr-1"></i>Güvenlik gereği yöneticiler başkasının şifresini değiştiremez.</p>
+                        </div>
+
                         <select id="newUserRole" class="input-style border border-slate-200 font-medium text-slate-700">
                             <option value="DRIVER">🚛 Şoför Yetkisi</option>
                             <option value="OPS">📋 Operasyon Yetkisi</option>
@@ -936,17 +942,43 @@
                 setTimeout(() => { splash.style.display = 'none'; }, 800); 
             }, 2500); 
 
-            auth.onAuthStateChanged(user => {
+            auth.onAuthStateChanged(async user => {
                 if(user) {
-                    cUsers.doc(user.uid).get().then(doc => {
+                    try {
+                        let doc = await cUsers.doc(user.uid).get();
+                        
+                        // YARIŞ DURUMU (Race Condition) ÇÖZÜMÜ: İlk defa hesap oluştuğunda Firestore'a yazılması milisaniyeler sürebilir.
+                        // Eğer doküman yoksa 1.5 saniye bekleyip veritabanını tekrar kontrol ediyoruz.
+                        if(!doc.exists) {
+                            await new Promise(r => setTimeout(r, 1500));
+                            doc = await cUsers.doc(user.uid).get();
+                        }
+
                         if(doc.exists) {
                             loggedInUser = { uid: user.uid, ...doc.data() };
+                            
+                            // KORUMA: Kurucu (Tanju) asla kilitli kalamaz. Yanlışlıkla kilitlendiyse otomatik aç.
+                            if(loggedInUser.username === 'Tanju' && loggedInUser.isBlocked) {
+                                await cUsers.doc(user.uid).update({ isBlocked: false });
+                                loggedInUser.isBlocked = false;
+                            }
+
                             if(loggedInUser.isBlocked) { alert("Hesabınız kilitli!"); auth.signOut(); return; }
                             setupApp(loggedInUser);
                         } else {
-                            auth.signOut();
+                            // Hala doc yoksa ve bu kişi kurucuysa, Firestore yetki dokümanını zorla yeniden yaratıp sisteme alıyoruz.
+                            if (user.email === 'tanju@kare.com') {
+                                await cUsers.doc(user.uid).set({ username: 'Tanju', role: 'ADMIN', isBlocked: false });
+                                loggedInUser = { uid: user.uid, username: 'Tanju', role: 'ADMIN', isBlocked: false };
+                                setupApp(loggedInUser);
+                            } else {
+                                alert("Kullanıcı kaydı veritabanında bulunamadı! Lütfen yöneticinizle iletişime geçin.");
+                                auth.signOut();
+                            }
                         }
-                    });
+                    } catch (err) {
+                        console.error("Auth Listener Hatası:", err);
+                    }
                 } else {
                     document.getElementById('loginScreen').style.display = 'flex';
                 }
@@ -973,8 +1005,10 @@
                 else localStorage.removeItem('kare_saved_user');
 
                 try {
+                    // Normal Giriş Yapmayı Dene
                     await auth.signInWithEmailAndPassword(email, securePw);
                 } catch (authError) {
+                    // Giriş başarısız olduysa ve kullanıcı 'Tanju' ise hesap yaratmayı/uyarmayı dene
                     if (un.toLowerCase() === 'tanju' && pw === '1063') {
                         try {
                             const res = await auth.createUserWithEmailAndPassword(email, securePw);
@@ -982,8 +1016,10 @@
                         } catch (createErr) {
                             if (createErr.code === 'auth/operation-not-allowed') {
                                 alert("FIREBASE AYAR HATASI: Lütfen Firebase Console'da 'Authentication -> Sign-in method -> Email/Password' seçeneğini ENABLE (Açık) yapın!");
+                            } else if (createErr.code === 'auth/email-already-in-use') {
+                                alert("DİKKAT: Kurucu hesabı zaten oluşturulmuş ancak girdiğiniz şifre yanlış!\n\nEğer şifrenizi ayarlar panelinden değiştirdiyseniz, lütfen 1063 yerine yeni şifrenizle giriş yapın.");
                             } else {
-                                alert("Kayıt Hatası: " + createErr.message);
+                                alert("Kurucu Kayıt Hatası: " + createErr.message);
                             }
                         }
                     } else {
@@ -1088,7 +1124,8 @@
             if(e) e.preventDefault();
             const editId = document.getElementById('editUserId').value;
             const un = document.getElementById('newUserName').value.trim(); 
-            const pw = document.getElementById('newUserPass').value.trim(); 
+            // Şifre alanı gizliyse (düzenleme modundaysa) dikkate alınmaz.
+            const pw = document.getElementById('passwordFieldContainer').style.display !== 'none' ? document.getElementById('newUserPass').value.trim() : ""; 
             const rl = document.getElementById('newUserRole').value;
             const dp = document.getElementById('defPlate').value.toUpperCase(); 
             const dt = document.getElementById('defTrailer').value.toUpperCase();
@@ -1100,7 +1137,7 @@
             btn.disabled = true;
 
             if (editId) {
-                // DÜZELT (UPDATE)
+                // DÜZELT (UPDATE) - Şifre değiştirme yok
                 try {
                     if(users.find(u => u.username.toLowerCase() === un.toLowerCase() && u.id !== editId)) { 
                         alert("Bu isimde başka bir kullanıcı var!"); 
@@ -1108,11 +1145,7 @@
                     }
                     await cUsers.doc(editId).update({ username: un, role: rl, defaultPlate: dp, defaultTrailer: dt });
                     addLog('Kullanıcı Güncellendi', un, 0, '', 'user', { category:'user', severity:'medium', detail:`${un} kullanıcısı güncellendi — Yeni rol: ${rl}`, affected: un });
-                    if(pw !== "") {
-                        alert("Kullanıcı güncellendi.\n\nNot: Şifre değiştirme işlemi güvenlik gereği sadece kişinin kendi hesabından veya hesabı silip yeniden açarak yapılabilir.");
-                    } else {
-                        showToast('Kullanıcı Güncellendi', 'success');
-                    }
+                    showToast('Kullanıcı Güncellendi', 'success');
                     cancelEditUser();
                 } catch(err) { alert("Hata: " + err.message); btn.innerHTML = '<i class="fa-solid fa-pen mr-1"></i> Güncelle'; btn.disabled = false; }
             } else {
@@ -1142,22 +1175,58 @@
             document.getElementById('defPlate').value = u.defaultPlate || '';
             document.getElementById('defTrailer').value = u.defaultTrailer || '';
             
+            // UI Değişiklikleri: Şifre alanını gizle, buton metnini değiştir
+            document.getElementById('passwordFieldContainer').style.display = 'none';
+            document.getElementById('userFormTitle').innerHTML = '<i class="fa-solid fa-user-pen text-blue-500 mr-2"></i>Kullanıcıyı Düzenle';
             document.getElementById('addUserBtn').innerHTML = '<i class="fa-solid fa-pen mr-1"></i> Güncelle';
+            document.getElementById('addUserBtn').classList.replace('bg-slate-800', 'bg-blue-600');
+            document.getElementById('addUserBtn').classList.replace('hover:bg-slate-700', 'hover:bg-blue-500');
             document.getElementById('cancelEditBtn').classList.remove('hidden');
             
-            // Kullanıcı kolaylığı için input alanına odaklanma
             document.getElementById('newUserName').focus();
         }
 
         function cancelEditUser() {
             document.getElementById('editUserId').value = '';
             document.getElementById('addUserForm').reset();
+            
+            // UI Değişiklikleri Geri Al: Şifre alanını göster, buton metnini sıfırla
+            document.getElementById('passwordFieldContainer').style.display = 'block';
+            document.getElementById('userFormTitle').innerHTML = '<i class="fa-solid fa-user-plus text-primary mr-2"></i>Yeni Kullanıcı Ekle';
             document.getElementById('addUserBtn').innerHTML = 'Kaydet';
+            document.getElementById('addUserBtn').classList.replace('bg-blue-600', 'bg-slate-800');
+            document.getElementById('addUserBtn').classList.replace('hover:bg-blue-500', 'hover:bg-slate-700');
             document.getElementById('cancelEditBtn').classList.add('hidden');
         }
 
-        function toggleUserStatus(id) { let u = users.find(x => x.id === id); if(!u) return; if(u.username === 'Tanju') { alert("Kurucu engellenemez!"); return; } cUsers.doc(id).update({ isBlocked: !u.isBlocked }); addLog(u.isBlocked ? 'Hesap Aktifleştirildi' : 'Hesap Engellendi', u.username, 0, '', 'user', { category:'user', severity:'critical', detail:`${u.username} hesabı ${u.isBlocked?'aktifleştirildi':'engellendi'}`, affected: u.username }); showToast(u.isBlocked ? 'Hesap Aktif' : 'Hesap Kısıtlandı', u.isBlocked ? 'success' : 'error'); }
-        function deleteUser(id) { let u = users.find(x => x.id === id); if(u.username === 'Tanju') { alert("Kurucu silinemez!"); return; } if(confirm(`${u.username} adlı kullanıcı silinsin mi?`)) { cUsers.doc(id).delete(); addLog('Kullanıcı Silindi', u.username, 0, '', 'user', { category:'user', severity:'critical', detail:`${u.username} kullanıcısı sistemden silindi`, affected: u.username }); showToast('Kullanıcı Silindi', 'success'); } }
+        function toggleUserStatus(id) { 
+            let u = users.find(x => x.id === id); 
+            if(!u) return; 
+            if(u.username === 'Tanju') { alert("Kurucu engellenemez!"); return; } 
+            
+            let isBlocking = !u.isBlocked;
+            let msg = isBlocking ? "Kullanıcı hesabını dondurmak (kısıtlamak) istediğinize emin misiniz? Bu işlem her zaman geri alınabilir." : "Hesap kilidini açıp aktifleştirmek istiyor musunuz?";
+            
+            if(confirm(msg)) {
+                cUsers.doc(id).update({ isBlocked: isBlocking }); 
+                addLog(isBlocking ? 'Hesap Kısıtlandı' : 'Hesap Aktifleştirildi', u.username, 0, '', 'user', { category:'user', severity:'critical', detail:`${u.username} hesabı ${isBlocking?'kısıtlandı/askıya alındı':'aktifleştirildi'}`, affected: u.username }); 
+                showToast(isBlocking ? 'Hesap Kısıtlandı' : 'Hesap Aktif', isBlocking ? 'error' : 'success'); 
+            }
+        }
+        
+        function deleteUser(id) { 
+            let u = users.find(x => x.id === id); 
+            if(u.username === 'Tanju') { alert("Kurucu silinemez!"); return; } 
+            
+            // Kullanıcıyı silmeden önce kısıtlamayı önerme mekanizması
+            let warnMsg = "DİKKAT: Kullanıcıyı silmek, geçmiş verilerdeki şoför/personel isimlendirmelerinde bozulmalara yol açabilir.\n\nEğer bu kişi işten ayrıldıysa silmek yerine yanındaki KİLİT butonunu kullanarak hesabını kısıtlamanız tavsiye edilir.\n\nYine de KALICI OLARAK SİLMEK istiyor musunuz?";
+            
+            if(confirm(warnMsg)) { 
+                cUsers.doc(id).delete(); 
+                addLog('Kullanıcı Silindi', u.username, 0, '', 'user', { category:'user', severity:'critical', detail:`${u.username} kullanıcısı sistemden kalıcı olarak silindi`, affected: u.username }); 
+                showToast('Kullanıcı Kalıcı Silindi', 'success'); 
+            } 
+        }
 
         async function changePassword(e) {
             if(e) e.preventDefault();

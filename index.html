@@ -1233,7 +1233,7 @@
             (val === 'MAZOT' || val === 'BAKIM' || val === 'OTOYOL' || val === 'GUMRUK') ? f.classList.remove('hidden') : f.classList.add('hidden'); 
         }
 
-        function submitExpense(e) { if(e) e.preventDefault(); const cat = document.getElementById('category').value; const amt = parseFloat(document.getElementById('amount').value); const cur = document.getElementById('currency').value; cExpenses.add({ date: new Date().toISOString().split('T')[0], driver: currentUser, category: cat, tripName: document.getElementById('tripName').value, amount: amt, currency: cur, plaka: document.getElementById('plaka')?document.getElementById('plaka').value.toUpperCase():'', km: document.getElementById('km')?document.getElementById('km').value:'', status: 'PENDING_OP', timestamp: firebase.firestore.FieldValue.serverTimestamp() }); addLog('Masraf Eklendi', currentUser, amt, cur, 'expense', { category:'expense', severity:'low', detail:`${cat} masrafı eklendi`, affected: currentUser }); showToast('Gönderildi', 'success'); document.getElementById('expenseForm').reset(); document.getElementById('vehicleFields').classList.add('hidden'); return false; }
+        function submitExpense(e) { if(e) e.preventDefault(); const cat = document.getElementById('category').value; const amt = parseFloat(document.getElementById('amount').value); const cur = document.getElementById('currency').value; const activeTrip = driverTrips.find(t => t.driver === currentUser && t.status === 'ACTIVE'); cExpenses.add({ date: new Date().toISOString().split('T')[0], driver: currentUser, category: cat, tripName: document.getElementById('tripName').value, amount: amt, currency: cur, plaka: document.getElementById('plaka')?document.getElementById('plaka').value.toUpperCase():(activeTrip?activeTrip.plate:''), km: document.getElementById('km')?document.getElementById('km').value:'', tripId: activeTrip ? activeTrip.tripNo : '', status: 'PENDING_OP', timestamp: firebase.firestore.FieldValue.serverTimestamp() }); addLog('Masraf Eklendi', currentUser, amt, cur, 'expense', { category:'expense', severity:'low', detail:`${cat} masrafı eklendi${activeTrip?' (Sefer: '+activeTrip.tripNo+')':''}`, affected: currentUser }); showToast('Gönderildi', 'success'); document.getElementById('expenseForm').reset(); document.getElementById('vehicleFields').classList.add('hidden'); return false; }
         
         const AUDIT_SEVERITY = { LOW: 'low', MEDIUM: 'medium', HIGH: 'high', CRITICAL: 'critical' };
         const AUDIT_CATEGORY_META = { auth: { icon: '🔐', label: 'Giriş/Çıkış', color: 'bg-blue-100 text-blue-700' }, expense: { icon: '💳', label: 'Masraf', color: 'bg-amber-100 text-amber-700' }, advance: { icon: '💰', label: 'Avans', color: 'bg-emerald-100 text-emerald-700' }, trip: { icon: '🚛', label: 'Sefer', color: 'bg-indigo-100 text-indigo-700' }, user: { icon: '👤', label: 'Kullanıcı', color: 'bg-purple-100 text-purple-700' }, system: { icon: '⚙️', label: 'Sistem', color: 'bg-slate-100 text-slate-700' }, critical: { icon: '🚨', label: 'Kritik', color: 'bg-rose-100 text-rose-700' }, };
@@ -1261,7 +1261,7 @@
             const blob = new Blob(["\uFEFF" + rows.join("\n")], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `AuditLog_${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link); showToast('Audit Log İndirildi', 'success');
         }
 
-        function opApprove(id) { if(currentRole === 'ACCOUNTING' && currentUser !== 'Tanju') { showToast('Yetkisiz', 'error'); return; } const tId = document.getElementById('tripNo_'+id).value; if(!tId) { alert("Sefer No girmelisiniz!"); return; } cExpenses.doc(id).update({ status: 'APPROVED', tripId: tId }); showToast('Onaylandı', 'success'); }
+        function opApprove(id) { if(currentRole === 'ACCOUNTING' && currentUser !== 'Tanju') { showToast('Yetkisiz', 'error'); return; } const sel = document.getElementById('tripNo_'+id); const tId = sel ? sel.value : ''; const expense = expenses.find(e => e.id === id); const finalTripId = tId || (expense ? expense.tripId : ''); if(!finalTripId) { alert("Sefer No girmelisiniz!"); return; } cExpenses.doc(id).update({ status: 'APPROVED', tripId: finalTripId }); showToast('Onaylandı', 'success'); }
         function opReject(id) { if(currentRole === 'ACCOUNTING' && currentUser !== 'Tanju') { showToast('Yetkisiz', 'error'); return; } cExpenses.doc(id).update({ status: 'REJECTED' }); showToast('Reddedildi', 'error'); }
         function editExpense(id) { const exp = expenses.find(e => e.id === id); if(!exp) return; const newAmt = prompt(`Tutar Düzenle (${exp.currency}):`, exp.amount); if(newAmt !== null && newAmt !== "") { cExpenses.doc(id).update({ amount: parseFloat(newAmt) }); showToast('Güncellendi', 'success'); } }
         function deleteExpense(id) { if(confirm("Silinsin mi?")) { cExpenses.doc(id).delete(); showToast('Silindi', 'success'); } }
@@ -1370,16 +1370,29 @@
             const dList = document.getElementById('driverList'); 
             if(dList) {
                 dList.innerHTML = ''; let myExp = expenses.filter(e => e.driver === currentUser);
-                myExp.forEach(e => { let badgeClass = e.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : (e.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'); let statusText = e.status === 'PENDING_OP' ? 'Bekliyor' : (e.status === 'APPROVED' ? 'Onaylandı' : 'Red'); dList.innerHTML += `<div class="p-4 bg-white border border-slate-100 rounded-xl shadow-sm flex justify-between items-center mb-2 hover:shadow-md transition"><div class="flex items-center gap-3"><div class="text-2xl bg-slate-50 w-10 h-10 flex items-center justify-center rounded-lg">${catIcons[e.category]||'📝'}</div><div><div class="text-[10px] text-slate-400 font-bold">${e.date}</div><div class="text-sm font-bold text-slate-800">${esc(e.tripName)}</div></div></div><div class="text-right flex flex-col items-end gap-1"><div class="text-base text-slate-800">${formatMoney(e.amount, e.currency)}</div><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeClass}">${statusText}</span></div></div>`; });
+                myExp.forEach(e => { let badgeClass = e.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : (e.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'); let statusText = e.status === 'PENDING_OP' ? 'Bekliyor' : (e.status === 'APPROVED' ? 'Onaylandı' : 'Red'); let tripTag = e.tripId ? `<span class="text-[9px] font-bold text-indigo-400 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded mt-0.5 inline-block">${esc(e.tripId)}</span>` : ''; dList.innerHTML += `<div class="p-4 bg-white border border-slate-100 rounded-xl shadow-sm flex justify-between items-center mb-2 hover:shadow-md transition"><div class="flex items-center gap-3"><div class="text-2xl bg-slate-50 w-10 h-10 flex items-center justify-center rounded-lg">${catIcons[e.category]||'📝'}</div><div><div class="text-[10px] text-slate-400 font-bold">${e.date}</div><div class="text-sm font-bold text-slate-800">${esc(e.tripName)}</div>${tripTag}</div></div><div class="text-right flex flex-col items-end gap-1"><div class="text-base text-slate-800">${formatMoney(e.amount, e.currency)}</div><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeClass}">${statusText}</span></div></div>`; });
                 if(myExp.length === 0) dList.innerHTML = `<div class="text-center py-6 text-slate-400 text-sm">Masraf kaydı yok.</div>`;
             }
+
+            // Filo paneli açıksa otomatik yenile
+            const fleetPanel = document.getElementById('panel-FLEET');
+            if(fleetPanel && fleetPanel.style.display !== 'none') { renderFleetPanel(); }
 
             if(currentRole === 'ADMIN' || currentRole === 'OPS' || currentRole === 'PATRON' || currentRole === 'OPS_MANAGER') {
                 renderOpsActiveTrips();
                 const opList = document.getElementById('operationsList'); 
                 if(opList) { 
                     opList.innerHTML = ''; expenses.filter(e => e.status === 'PENDING_OP').forEach(e => { 
-                        let tripInput = `<input type="text" id="tripNo_${e.id}" class="input-style w-24 px-2 py-1 text-xs" placeholder="Sefer No">`; 
+                        const driverActiveTrip = driverTrips.find(t => t.driver === e.driver && t.status === 'ACTIVE');
+                        const preselectedTripId = e.tripId || (driverActiveTrip ? driverActiveTrip.tripNo : '');
+                        let activeTripsOptions = '<option value="">-- Sefer Seç --</option>';
+                        // Şoförün aktif seferini en üste koy
+                        if(driverActiveTrip) { activeTripsOptions += `<option value="${esc(driverActiveTrip.tripNo)}" ${preselectedTripId === driverActiveTrip.tripNo ? 'selected' : ''}>${esc(driverActiveTrip.tripNo)} — ${esc(driverActiveTrip.driver)} (${esc(driverActiveTrip.plate)}) ✓ Aktif</option>`; }
+                        // Diğer aktif seferleri ekle
+                        driverTrips.filter(t => t.status === 'ACTIVE' && t.id !== (driverActiveTrip?.id)).forEach(t => { activeTripsOptions += `<option value="${esc(t.tripNo)}" ${preselectedTripId === t.tripNo ? 'selected' : ''}>${esc(t.tripNo)} — ${esc(t.driver)} (${esc(t.plate)})</option>`; });
+                        // Masrafta kayıtlı tripId aktif listede yoksa yine de ekle (elle girilmiş olabilir)
+                        if(preselectedTripId && !driverTrips.find(t => t.status==='ACTIVE' && t.tripNo===preselectedTripId)) { activeTripsOptions += `<option value="${esc(preselectedTripId)}" selected>${esc(preselectedTripId)}</option>`; }
+                        let tripInput = `<select id="tripNo_${e.id}" class="input-style w-48 px-2 py-1 text-xs bg-white border border-indigo-200 rounded-lg">${activeTripsOptions}</select>`; 
                         let actionBtns = `<button onclick="opApprove('${e.id}')" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg shadow-sm hover:bg-emerald-200 transition"><i class="fa-solid fa-check"></i></button><button onclick="editExpense('${e.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg shadow-sm hover:bg-blue-200 transition"><i class="fa-solid fa-pen"></i></button><button onclick="opReject('${e.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg shadow-sm hover:bg-rose-200 transition"><i class="fa-solid fa-xmark"></i></button><button onclick="deleteExpense('${e.id}')" class="bg-red-100 text-red-700 w-8 h-8 rounded-lg shadow-sm hover:bg-red-200 transition ml-1"><i class="fa-solid fa-trash"></i></button>`; 
                         opList.innerHTML += `<tr class="hover:bg-slate-50 border-b border-slate-100 transition"><td class="p-4"><p class="font-bold text-slate-800">${esc(e.driver)}</p><p class="text-[10px] text-slate-500">${e.date}</p></td><td class="p-4"><p class="font-semibold text-sm">${catIcons[e.category]} ${e.category}</p><p class="text-xs text-slate-500">${esc(e.tripName)}</p></td><td class="p-4 text-primary text-base">${formatMoney(e.amount, e.currency)}</td><td class="p-4">${tripInput}</td><td class="p-4 text-right flex justify-end gap-1">${actionBtns}</td></tr>`; 
                     }); 
@@ -1621,6 +1634,93 @@
                 });
                 if(logs.length === 0) tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">Kayıt bulunamadı.</td></tr>`;
             });
+        }
+
+        function renderFleetPanel() {
+            // Tüm araçları sefer kayıtlarından çıkar
+            const allPlates = [...new Set(driverTrips.map(t => t.plate).filter(Boolean))];
+            const activePlates = new Set(driverTrips.filter(t => t.status === 'ACTIVE').map(t => t.plate));
+            const completedTrips = driverTrips.filter(t => t.status === 'COMPLETED');
+
+            // Özet kartları
+            const now = new Date(); const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            const monthTrips = completedTrips.filter(t => t.endDate && t.endDate >= firstOfMonth);
+            const monthKm = monthTrips.reduce((s, t) => s + (t.totalKm || 0), 0);
+            const maintenanceCost = expenses.filter(e => e.status === 'APPROVED' && (e.category === 'BAKIM')).reduce((s, e) => {
+                return s + (e.currency === 'EUR' ? e.amount : e.currency === 'USD' ? e.amount * 0.9 : e.amount * 0.028);
+            }, 0);
+
+            if (document.getElementById('fleetTotalVehicles')) document.getElementById('fleetTotalVehicles').innerText = allPlates.length;
+            if (document.getElementById('fleetActiveVehicles')) document.getElementById('fleetActiveVehicles').innerText = activePlates.size;
+            if (document.getElementById('fleetMonthKm')) document.getElementById('fleetMonthKm').innerText = monthKm.toLocaleString('tr-TR');
+            if (document.getElementById('fleetMaintenanceCost')) document.getElementById('fleetMaintenanceCost').innerText = maintenanceCost.toLocaleString('tr-TR', {minimumFractionDigits: 2}) + ' €';
+
+            // Araç bazlı performans tablosu
+            const tbody = document.getElementById('fleetVehicleTable'); if (!tbody) return; tbody.innerHTML = '';
+            if (allPlates.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">Henüz sefer kaydı yok. Sefer başlatıldığında araçlar burada görünecek.</td></tr>`; }
+            allPlates.sort().forEach(plate => {
+                const pTrips = completedTrips.filter(t => t.plate === plate);
+                const totalKm = pTrips.reduce((s, t) => s + (t.totalKm || 0), 0);
+                const tripCount = pTrips.length;
+                // Bakım + Yakıt masrafları bu plakaya ait
+                const plateExpenses = expenses.filter(e => e.status === 'APPROVED' && (e.plaka || '').toUpperCase() === plate.toUpperCase() && (e.category === 'BAKIM' || e.category === 'MAZOT'));
+                const costEUR = plateExpenses.reduce((s, e) => s + (e.currency === 'EUR' ? e.amount : e.currency === 'USD' ? e.amount * 0.9 : e.amount * 0.028), 0);
+                const cpm = totalKm > 0 ? (costEUR / totalKm) : 0;
+                const isActive = activePlates.has(plate);
+                const activeTrip = driverTrips.find(t => t.status === 'ACTIVE' && t.plate === plate);
+                const statusBadge = isActive
+                    ? `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-[10px] font-bold animate-pulse">🟢 YOLDA${activeTrip ? ' — ' + esc(activeTrip.driver) : ''}</span>`
+                    : `<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded text-[10px] font-bold">⚪ DEPODA</span>`;
+                const cpmClass = cpm > 0.4 ? 'text-rose-600 font-bold' : cpm > 0 ? 'text-emerald-700 font-bold' : 'text-slate-400';
+                tbody.innerHTML += `<tr class="hover:bg-cyan-50/50 transition border-b border-slate-100 ${isActive ? 'bg-emerald-50/30' : ''}">
+                    <td class="p-3 font-black text-slate-800 uppercase text-sm tracking-widest"><i class="fa-solid fa-truck text-cyan-400 mr-2"></i>${esc(plate)}</td>
+                    <td class="p-3 text-right font-bold text-slate-700">${tripCount}</td>
+                    <td class="p-3 text-right font-bold text-indigo-700">${totalKm.toLocaleString('tr-TR')} KM</td>
+                    <td class="p-3 text-right text-orange-600 font-semibold">${costEUR > 0 ? costEUR.toLocaleString('tr-TR', {minimumFractionDigits:2}) + ' €' : '<span class="text-slate-300">—</span>'}</td>
+                    <td class="p-3 text-right ${cpmClass}">${cpm > 0 ? cpm.toLocaleString('tr-TR', {minimumFractionDigits:3}) + ' €/KM' : '<span class="text-slate-300">—</span>'}</td>
+                    <td class="p-3 text-center">${statusBadge}</td>
+                </tr>`;
+            });
+
+            // Aktif sefer kartları
+            const grid = document.getElementById('fleetActiveTripsGrid'); if (!grid) return; grid.innerHTML = '';
+            const activeTrips = driverTrips.filter(t => t.status === 'ACTIVE');
+            if (activeTrips.length === 0) {
+                grid.innerHTML = `<div class="col-span-3 text-center text-slate-400 py-8 text-sm"><i class="fa-solid fa-satellite-dish text-3xl mb-3 block opacity-30"></i>Şu anda yolda aktif araç bulunmuyor.</div>`;
+            } else {
+                activeTrips.forEach(t => {
+                    grid.innerHTML += `<div class="bg-gradient-to-br from-slate-800 to-indigo-900 text-white rounded-2xl p-4 shadow-lg border border-indigo-700/40">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full animate-pulse">🟢 YOLDA</span>
+                            <span class="text-xs font-bold text-indigo-300 uppercase tracking-widest">${esc(t.plate)}</span>
+                        </div>
+                        <p class="font-black text-base text-white mb-1"><i class="fa-solid fa-user text-indigo-400 mr-2"></i>${esc(t.driver)}</p>
+                        <p class="text-xs text-indigo-200 mb-1"><i class="fa-solid fa-route mr-2 opacity-60"></i>${esc(t.route)}</p>
+                        <p class="text-[10px] text-indigo-300 font-bold">Sefer: ${esc(t.tripNo)} &nbsp;|&nbsp; Dorse: ${esc(t.trailer) || '—'}</p>
+                        <p class="text-[10px] text-slate-400 mt-2">Başlangıç KM: <span class="font-bold text-white">${(t.startKm||0).toLocaleString('tr-TR')}</span></p>
+                    </div>`;
+                });
+            }
+        }
+
+        function exportFleetCSV() {
+            const allPlates = [...new Set(driverTrips.map(t => t.plate).filter(Boolean))];
+            if (allPlates.length === 0) { alert("Dışa aktarılacak araç verisi yok!"); return; }
+            let rows = [["Plaka","Toplam Sefer","Toplam KM","Bakım+Yakıt Gideri (EUR)","Maliyet/KM (EUR)","Durum"].join(";")];
+            const completedTrips = driverTrips.filter(t => t.status === 'COMPLETED');
+            const activePlates = new Set(driverTrips.filter(t => t.status === 'ACTIVE').map(t => t.plate));
+            allPlates.sort().forEach(plate => {
+                const pTrips = completedTrips.filter(t => t.plate === plate);
+                const totalKm = pTrips.reduce((s,t) => s + (t.totalKm||0), 0);
+                const plateExpenses = expenses.filter(e => e.status === 'APPROVED' && (e.plaka||'').toUpperCase() === plate.toUpperCase() && (e.category==='BAKIM'||e.category==='MAZOT'));
+                const costEUR = plateExpenses.reduce((s,e) => s + (e.currency==='EUR'?e.amount:e.currency==='USD'?e.amount*0.9:e.amount*0.028), 0);
+                const cpm = totalKm > 0 ? (costEUR/totalKm) : 0;
+                rows.push([plate, pTrips.length, totalKm, costEUR.toFixed(2), cpm.toFixed(4), activePlates.has(plate)?'YOLDA':'DEPODA'].join(";"));
+            });
+            const csvContent = "\uFEFF" + rows.join("\n");
+            const blob = new Blob([csvContent], {type:'text/csv;charset=utf-8;'});
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Filo_Raporu_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(link); link.click(); document.body.removeChild(link); showToast('Filo Raporu İndirildi', 'success');
         }
 
         function enterApp() { const intro = document.getElementById('truckIntro'); intro.classList.add('hide-intro'); setTimeout(() => { intro.style.display = 'none'; }, 600); }

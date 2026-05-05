@@ -250,11 +250,11 @@
         </div>
         <div class="glass-card p-5">
             <h3 class="font-bold text-slate-800 text-lg mb-4">Onay Bekleyen Masraflar</h3>
-            <div class="overflow-x-auto border border-slate-200 rounded-xl"><table class="w-full text-left text-sm whitespace-nowrap min-w-[800px]"><thead class="bg-slate-50 text-slate-500 font-medium text-xs uppercase border-b border-slate-200"><tr><th class="p-4">Personel / Tarih</th><th class="p-4">Kategori & Açıklama</th><th class="p-4">Tutar</th><th class="p-4">Sefer/Dosya No</th><th class="p-4 text-right">İşlem</th></tr></thead><tbody id="operationsList" class="divide-y divide-slate-100 text-slate-700"></tbody></table></div>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl"><table class="w-full text-left text-sm whitespace-nowrap min-w-[900px]"><thead class="bg-slate-50 text-slate-500 font-medium text-xs uppercase border-b border-slate-200"><tr><th class="p-4">Personel / Tarih</th><th class="p-4">Kategori & Açıklama</th><th class="p-4">Tutar</th><th class="p-4">Sefer/Dosya No</th><th class="p-4">Onaylayan</th><th class="p-4 text-right">İşlem</th></tr></thead><tbody id="operationsList" class="divide-y divide-slate-100 text-slate-700"></tbody></table></div>
         </div>
         <div class="glass-card p-5 mt-6 border-l-4 border-indigo-500">
             <h3 class="font-bold text-slate-800 text-lg mb-4">Son Onaylanan Masraflar (Düzelt / Sil)</h3>
-            <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-[300px] overflow-y-auto"><table class="w-full text-left text-sm whitespace-nowrap min-w-[800px]"><thead class="bg-slate-50 text-slate-500 font-medium text-xs uppercase border-b border-slate-200 sticky top-0"><tr><th class="p-4">Personel / Tarih</th><th class="p-4">Kategori & Açıklama</th><th class="p-4">Tutar</th><th class="p-4 text-right">İşlem</th></tr></thead><tbody id="approvedOperationsList" class="divide-y divide-slate-100 text-slate-700"></tbody></table></div>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-[300px] overflow-y-auto"><table class="w-full text-left text-sm whitespace-nowrap min-w-[900px]"><thead class="bg-slate-50 text-slate-500 font-medium text-xs uppercase border-b border-slate-200 sticky top-0"><tr><th class="p-4">Personel / Tarih</th><th class="p-4">Kategori & Açıklama</th><th class="p-4">Tutar</th><th class="p-4">Onaylayan</th><th class="p-4 text-right">İşlem</th></tr></thead><tbody id="approvedOperationsList" class="divide-y divide-slate-100 text-slate-700"></tbody></table></div>
         </div>
     </div>
 
@@ -313,6 +313,17 @@
                 <h3 class="font-bold text-rose-800 text-lg mb-2"><i class="fa-solid fa-box-archive mr-2"></i>Ay Sonu Devir ve Arşivleme</h3>
                 <p class="text-xs text-rose-600 mb-4">Bu işlem, tüm personelin mevcut onaylı masraflarını ve avanslarını temizler, aradaki "Net Kasa Bakiyesini" yeni aya <br><b>DEVİR AVANSI</b> veya <b>DEVİR ALACAĞI</b> olarak aktarır.</p>
                 <button onclick="archiveSystem()" class="w-full sm:w-auto px-6 bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-broom"></i> Ayı Kapat ve Bakiyeleri Devret</button>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            <div class="glass-card p-5 border-l-4 border-cyan-500 lg:col-span-3">
+                <h3 class="font-bold text-slate-800 text-lg mb-1"><i class="fa-solid fa-hard-drive text-cyan-500 mr-2"></i>Sistem Yedekleme & Geri Yükleme</h3>
+                <p class="text-xs text-slate-500 mb-4">Tüm sistem verilerini (seferler, masraflar, avanslar, kullanıcılar) JSON olarak dışa aktarın veya daha önce alınan yedeği geri yükleyin.</p>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button onclick="backupSystem()" class="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-download"></i> Yedeği İndir (.json)</button>
+                    <label class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"><i class="fa-solid fa-upload"></i> Yedekten Geri Yükle<input type="file" id="restoreFileInput" accept=".json" class="hidden" onchange="restoreSystem(event)"></label>
+                </div>
+                <div id="backupStatus" class="mt-3 text-xs font-semibold text-slate-500"></div>
             </div>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
@@ -581,7 +592,7 @@ PARÇA 2: JavaScript Kodları
     function clearAuditFilters(){document.getElementById('auditFilterUser').value=''; document.getElementById('auditFilterCategory').value=''; document.getElementById('auditFilterStart').value=''; document.getElementById('auditFilterEnd').value=''; document.getElementById('auditFilterSearch').value=''; auditPage=50; renderAuditLog();}
     function exportAuditCSV(){const rows=[['Tarih','Saat','Yapan','Rol','Kategori','Islem','Etkilenen','Tutar','Para Birimi','Onem'].join(';')]; auditLogs.forEach(l=>{rows.push([l.isoDate||'',l.isoTime||'',`"${l.actor||''}"`,l.actorRole||'',l.category||'',`"${(l.detail||l.action||'').replace(/"/g,"'")}"`,`"${l.affected||l.driver||''}"`,l.amount||'',l.currency||'',l.severity||''].join(';'));}); const blob=new Blob(["\uFEFF"+rows.join("\n")],{type:'text/csv;charset=utf-8;'}); const link=document.createElement('a'); link.href=URL.createObjectURL(blob); link.download=`AuditLog_${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link); showToast('İndirildi','success');}
     
-    function opApprove(id){if(currentRole==='ACCOUNTING'&&currentUser!=='Tanju'){showToast('Yetkisiz','error'); return;} const e=expenses.find(x=>x.id===id); cExpenses.doc(id).update({status:'APPROVED',tripId:e?e.tripId:''}); showToast('Onaylandı','success');}
+    function opApprove(id){if(currentRole==='ACCOUNTING'&&currentUser!=='Tanju'){showToast('Yetkisiz','error'); return;} const e=expenses.find(x=>x.id===id); cExpenses.doc(id).update({status:'APPROVED',tripId:e?e.tripId:'',approvedBy:loggedInUser?loggedInUser.username:currentUser,approvedAt:new Date().toISOString()}); addLog('Masraf Onaylandı',e?e.driver:'',e?e.amount:0,e?e.currency:'','approved',{category:'expense',severity:'medium',detail:`${e?e.tripName:''} masrafı onaylandı`,affected:e?e.driver:''}); showToast('Onaylandı','success');}
     function opReject(id){if(currentRole==='ACCOUNTING'&&currentUser!=='Tanju'){showToast('Yetkisiz','error'); return;} cExpenses.doc(id).update({status:'REJECTED'}); showToast('Reddedildi','error');}
     function editExpense(id){const e=expenses.find(x=>x.id===id); if(!e)return; const nA=prompt(`Tutar (${e.currency}):`,e.amount); if(nA!==null&&nA!==""){cExpenses.doc(id).update({amount:parseFloat(nA)}); showToast('Güncellendi','success');}}
     function deleteExpense(id){if(confirm("Silinsin mi?")){cExpenses.doc(id).delete(); showToast('Silindi','success');}}
@@ -609,8 +620,8 @@ PARÇA 2: JavaScript Kodları
         const dList=document.getElementById('driverList'); if(dList){dList.innerHTML=''; let mE=expenses.filter(e=>e.driver===currentUser); mE.forEach(e=>{let bC=e.status==='APPROVED'?'bg-emerald-100 text-emerald-700':(e.status==='REJECTED'?'bg-rose-100 text-rose-700':'bg-amber-100 text-amber-700'); let sT=e.status==='PENDING_OP'?'Bekliyor':(e.status==='APPROVED'?'Onaylandı':'Red'); let tT=e.tripId?`<span class="text-[9px] font-bold text-indigo-400 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded mt-0.5 inline-block">${esc(e.tripId)}</span>`:''; dList.innerHTML+=`<div class="p-4 bg-white border border-slate-100 rounded-xl shadow-sm flex justify-between items-center mb-2 hover:shadow-md transition"><div class="flex items-center gap-3"><div class="text-2xl bg-slate-50 w-10 h-10 flex items-center justify-center rounded-lg">${catIcons[e.category]||'📝'}</div><div><div class="text-[10px] text-slate-400 font-bold">${e.date}</div><div class="text-sm font-bold text-slate-800">${esc(e.tripName)}</div>${tT}</div></div><div class="text-right flex flex-col items-end gap-1"><div class="text-base text-slate-800">${formatMoney(e.amount,e.currency)}</div><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${bC}">${sT}</span></div></div>`;}); if(mE.length===0)dList.innerHTML=`<div class="text-center py-6 text-slate-400 text-sm">Masraf yok.</div>`;}
         const fP=document.getElementById('panel-FLEET'); if(fP&&fP.style.display!=='none')renderFleetPanel();
         if(['ADMIN','OPS','PATRON','OPS_MANAGER'].includes(currentRole)){
-            renderOpsActiveTrips(); const opL=document.getElementById('operationsList'); if(opL){opL.innerHTML=''; expenses.filter(e=>e.status==='PENDING_OP').forEach(e=>{let tL=e.tripId?`<span class="bg-indigo-50 border border-indigo-200 text-indigo-700 font-black text-sm px-3 py-1 rounded-lg">${esc(e.tripId)}</span>`:`<span class="text-slate-300 text-xs">—</span>`; let aB=`<button onclick="opApprove('${e.id}')" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg shadow-sm"><i class="fa-solid fa-check"></i></button><button onclick="editExpense('${e.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-pen"></i></button><button onclick="opReject('${e.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-xmark"></i></button><button onclick="deleteExpense('${e.id}')" class="bg-red-100 text-red-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-trash"></i></button>`; opL.innerHTML+=`<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="p-4"><p class="font-bold">${esc(e.driver)}</p><p class="text-[10px] text-slate-500">${e.date}</p></td><td class="p-4"><p class="font-semibold text-sm">${catIcons[e.category]} ${e.category}</p><p class="text-xs text-slate-500">${esc(e.tripName)}</p></td><td class="p-4 text-primary text-base">${formatMoney(e.amount,e.currency)}</td><td class="p-4">${tL}</td><td class="p-4 text-right flex justify-end gap-1">${aB}</td></tr>`;});}
-            const apL=document.getElementById('approvedOperationsList'); if(apL){apL.innerHTML=''; expenses.filter(e=>e.status==='APPROVED').slice(0,40).forEach(e=>{let aB=`<button onclick="editExpense('${e.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg"><i class="fa-solid fa-pen"></i></button><button onclick="deleteExpense('${e.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg ml-1"><i class="fa-solid fa-trash"></i></button>`; apL.innerHTML+=`<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="p-4 font-bold">${esc(e.driver)}<br><span class="text-[10px] text-slate-400">${e.date}</span></td><td class="p-4 text-sm font-semibold">${catIcons[e.category]||'📝'} ${esc(e.tripName)} <span class="text-[10px] block mt-0.5">Dosya: ${esc(e.tripId)||'-'}</span></td><td class="p-4 text-emerald-600 font-bold">${formatMoney(e.amount,e.currency)}</td><td class="p-4 text-right flex justify-end gap-1">${aB}</td></tr>`;}); if(apL.innerHTML==='')apL.innerHTML=`<tr><td colspan="4" class="p-4 text-center">Kayıt yok.</td></tr>`;} renderDashboard();
+            renderOpsActiveTrips(); const opL=document.getElementById('operationsList'); if(opL){opL.innerHTML=''; expenses.filter(e=>e.status==='PENDING_OP').forEach(e=>{let tL=e.tripId?`<span class="bg-indigo-50 border border-indigo-200 text-indigo-700 font-black text-sm px-3 py-1 rounded-lg">${esc(e.tripId)}</span>`:`<span class="text-slate-300 text-xs">—</span>`; let aB=`<button onclick="opApprove('${e.id}')" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg shadow-sm"><i class="fa-solid fa-check"></i></button><button onclick="editExpense('${e.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-pen"></i></button><button onclick="opReject('${e.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-xmark"></i></button><button onclick="deleteExpense('${e.id}')" class="bg-red-100 text-red-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-trash"></i></button>`; opL.innerHTML+=`<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="p-4"><p class="font-bold">${esc(e.driver)}</p><p class="text-[10px] text-slate-500">${e.date}</p></td><td class="p-4"><p class="font-semibold text-sm">${catIcons[e.category]} ${e.category}</p><p class="text-xs text-slate-500">${esc(e.tripName)}</p></td><td class="p-4 text-primary text-base">${formatMoney(e.amount,e.currency)}</td><td class="p-4">${tL}</td><td class="p-4"><span class="text-slate-300 text-xs">—</span></td><td class="p-4 text-right flex justify-end gap-1">${aB}</td></tr>`;}); if(opL.innerHTML==='')opL.innerHTML=`<tr><td colspan="6" class="p-6 text-center text-slate-400 text-sm"><i class="fa-regular fa-circle-check text-2xl block mb-2 opacity-30"></i>Bekleyen masraf yok.</td></tr>`;}
+            const apL=document.getElementById('approvedOperationsList'); if(apL){apL.innerHTML=''; expenses.filter(e=>e.status==='APPROVED').slice(0,40).forEach(e=>{let aB=`<button onclick="editExpense('${e.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg"><i class="fa-solid fa-pen"></i></button><button onclick="deleteExpense('${e.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg ml-1"><i class="fa-solid fa-trash"></i></button>`; let approvedByBadge=e.approvedBy?`<span class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fa-solid fa-user-check mr-1"></i>${esc(e.approvedBy)}</span>`:'<span class="text-slate-300 text-xs">—</span>'; apL.innerHTML+=`<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="p-4 font-bold">${esc(e.driver)}<br><span class="text-[10px] text-slate-400">${e.date}</span></td><td class="p-4 text-sm font-semibold">${catIcons[e.category]||'📝'} ${esc(e.tripName)} <span class="text-[10px] block mt-0.5">Dosya: ${esc(e.tripId)||'-'}</span></td><td class="p-4 text-emerald-600 font-bold">${formatMoney(e.amount,e.currency)}</td><td class="p-4">${approvedByBadge}</td><td class="p-4 text-right flex justify-end gap-1">${aB}</td></tr>`;}); if(apL.innerHTML==='')apL.innerHTML=`<tr><td colspan="5" class="p-4 text-center">Kayıt yok.</td></tr>`;} renderDashboard();
         }
         if(['ADMIN','PATRON','ACCOUNTING'].includes(currentRole)){
             const cL=document.getElementById('accountingCariList'); cL.innerHTML=''; getDrivers().forEach(drv=>{let aE=0,aU=0,aT=0,eE=0,eU=0,eT=0; advances.filter(a=>a.driver===drv).forEach(a=>{if(a.currency==='EUR')aE+=a.amount;else if(a.currency==='USD')aU+=a.amount;else aT+=a.amount;}); expenses.filter(x=>x.driver===drv&&x.status==='APPROVED').forEach(x=>{if(x.currency==='EUR')eE+=x.amount;else if(x.currency==='USD')eU+=x.amount;else eT+=x.amount;}); const bS=(e,u,t)=>{let st=''; if(e>0)st+=`<div>${formatMoney(e,'€')}</div>`; if(u>0)st+=`<div>${formatMoney(u,'$')}</div>`; if(t>0)st+=`<div>${formatMoney(t,'₺')}</div>`; return st||'-';}; const nS=(e,u,t)=>{let st=''; if(e!==0)st+=`<div class="${e>0?'text-emerald-700':'text-rose-700'}">${formatMoney(e,'€')}</div>`; if(u!==0)st+=`<div class="${u>0?'text-emerald-700':'text-rose-700'}">${formatMoney(u,'$')}</div>`; if(t!==0)st+=`<div class="${t>0?'text-emerald-700':'text-rose-700'}">${formatMoney(t,'₺')}</div>`; return st||'Sıfır Bakiye';}; cL.innerHTML+=`<tr class="cari-row hover:bg-slate-50 border-b border-slate-100" data-driver="${esc(drv)}"><td class="p-3 font-bold"><i class="fa-solid fa-circle-user text-slate-300 mr-2 text-lg align-middle"></i>${esc(drv)}</td><td class="p-3 text-right text-xs bg-blue-50/50">${bS(aE,aU,aT)}</td><td class="p-3 text-right text-xs bg-orange-50/50">${bS(eE,eU,eT)}</td><td class="p-3 text-right text-sm font-bold bg-slate-50">${nS(aE-eE,aU-eU,aT-eT)}</td><td class="p-3 text-right no-print"><div class="flex justify-end gap-1"><button onclick="openDriverStatementModal('${esc(drv)}')" class="bg-indigo-100 text-indigo-700 px-2 py-1.5 rounded-lg"><i class="fa-solid fa-list"></i></button><button onclick="exportSingleDriverCSV('${esc(drv)}')" class="bg-emerald-100 text-emerald-700 px-2 py-1.5 rounded-lg"><i class="fa-solid fa-file-excel"></i></button><button onclick="downloadPDF('${esc(drv)}')" class="bg-slate-800 text-white px-2 py-1.5 rounded-lg"><i class="fa-solid fa-file-pdf"></i></button></div></td></tr>`;});
@@ -708,6 +719,58 @@ PARÇA 2: JavaScript Kodları
         document.body.removeChild(l);
     }
     
+    async function backupSystem(){
+        const statusEl=document.getElementById('backupStatus');
+        try{
+            statusEl.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-1"></i> Yedek hazırlanıyor...';
+            const [expSnap,advSnap,tripSnap,userSnap]=await Promise.all([
+                cExpenses.get(),cAdvances.get(),cTrips.get(),cUsers.get()
+            ]);
+            const backup={
+                version:'1.0',
+                createdAt:new Date().toISOString(),
+                createdBy:loggedInUser?loggedInUser.username:'',
+                expenses:expSnap.docs.map(d=>({id:d.id,...d.data(),timestamp:d.data().timestamp?.toDate?.()?.toISOString()||''})),
+                advances:advSnap.docs.map(d=>({id:d.id,...d.data(),timestamp:d.data().timestamp?.toDate?.()?.toISOString()||''})),
+                trips:tripSnap.docs.map(d=>({id:d.id,...d.data(),timestamp:d.data().timestamp?.toDate?.()?.toISOString()||''})),
+                users:userSnap.docs.map(d=>({id:d.id,...d.data()}))
+            };
+            const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+            const link=document.createElement('a');
+            link.href=URL.createObjectURL(blob);
+            link.download=`KareKara_Yedek_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            statusEl.innerHTML=`<span class="text-emerald-600"><i class="fa-solid fa-circle-check mr-1"></i>Yedek başarıyla indirildi — ${backup.expenses.length} masraf, ${backup.advances.length} avans, ${backup.trips.length} sefer.</span>`;
+        }catch(err){statusEl.innerHTML=`<span class="text-rose-600"><i class="fa-solid fa-circle-exclamation mr-1"></i>Hata: ${err.message}</span>`;}
+    }
+
+    async function restoreSystem(event){
+        const file=event.target.files[0]; if(!file)return;
+        const statusEl=document.getElementById('backupStatus');
+        if(!confirm('⚠️ DİKKAT: Bu işlem mevcut tüm masraf, avans ve sefer verilerini SİLECEK ve yedeği geri yükleyecek. Emin misiniz?')){event.target.value=''; return;}
+        try{
+            statusEl.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-1"></i> Yedek okunuyor...';
+            const text=await file.text();
+            const backup=JSON.parse(text);
+            if(!backup.version||!backup.expenses||!backup.advances||!backup.trips){
+                statusEl.innerHTML='<span class="text-rose-600">Geçersiz yedek dosyası!</span>'; return;
+            }
+            statusEl.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-1"></i> Mevcut veriler siliniyor...';
+            const [expSnap,advSnap,tripSnap]=await Promise.all([cExpenses.get(),cAdvances.get(),cTrips.get()]);
+            const batch1=db.batch(); expSnap.docs.forEach(d=>batch1.delete(d.ref)); await batch1.commit();
+            const batch2=db.batch(); advSnap.docs.forEach(d=>batch2.delete(d.ref)); await batch2.commit();
+            const batch3=db.batch(); tripSnap.docs.forEach(d=>batch3.delete(d.ref)); await batch3.commit();
+            statusEl.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-1"></i> Yedek geri yükleniyor...';
+            let done=0,total=backup.expenses.length+backup.advances.length+backup.trips.length;
+            for(const e of backup.expenses){const {id,timestamp,...data}=e; await cExpenses.doc(id).set({...data,timestamp:firebase.firestore.FieldValue.serverTimestamp()}); done++;}
+            for(const a of backup.advances){const {id,timestamp,...data}=a; await cAdvances.doc(id).set({...data,timestamp:firebase.firestore.FieldValue.serverTimestamp()}); done++;}
+            for(const t of backup.trips){const {id,timestamp,...data}=t; await cTrips.doc(id).set({...data,timestamp:firebase.firestore.FieldValue.serverTimestamp()}); done++;}
+            addLog('Sistem Yedeği Geri Yüklendi',loggedInUser?.username||'',0,'','system',{category:'system',severity:'critical',detail:`${total} kayıt geri yüklendi. Yedek tarihi: ${backup.createdAt}`,affected:'Tüm Sistem'});
+            statusEl.innerHTML=`<span class="text-emerald-600"><i class="fa-solid fa-circle-check mr-1"></i>Geri yükleme tamamlandı! ${total} kayıt yüklendi.</span>`;
+        }catch(err){statusEl.innerHTML=`<span class="text-rose-600"><i class="fa-solid fa-circle-exclamation mr-1"></i>Hata: ${err.message}</span>`;}
+        event.target.value='';
+    }
+
     function enterApp(){
         const i=document.getElementById('truckIntro'); 
         i.classList.add('hide-intro'); 

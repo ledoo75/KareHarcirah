@@ -1,12 +1,15 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
 <title>KareKara v1.5 | Harcırah Yönetim</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4AA4F6">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<meta name="msapplication-tap-highlight" content="no">
 <meta name="apple-mobile-web-app-title" content="karekara">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdn.tailwindcss.com"></script>
@@ -21,64 +24,553 @@
     tailwind.config={theme:{extend:{fontFamily:{sans:['"Plus Jakarta Sans"','sans-serif']},colors:{primary:'#4AA4F6',secondary:'#0F172A',surface:'#FFFFFF',background:'#F8FAFC'}}}}
 </script>
 <style>
-    body{background-color:#F8FAFC;color:#334155;-webkit-tap-highlight-color:transparent;max-width:100vw;overflow-x:hidden;}
-    .glass-card{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:1.25rem;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05),0 2px 4px -1px rgba(0,0,0,0.03);}
-    .input-style{width:100%;background-color:#F1F5F9;border:1px solid transparent;border-radius:0.75rem;padding:0.75rem 1rem;font-size:0.875rem;color:#0F172A;transition:all 0.2s;outline:none;}
-    .input-style:focus{background-color:#FFFFFF;border-color:#4AA4F6;box-shadow:0 0 0 3px rgba(74,164,246,0.1);}
-    .wallet-card{background:linear-gradient(135deg,#1E1B4B 0%,#4AA4F6 100%);color:white;border-radius:1.25rem;padding:1.5rem;box-shadow:0 10px 15px -3px rgba(74,164,246,0.3);}
-    ::-webkit-scrollbar{width:6px;height:6px;} ::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:3px;}
-    .hide-scrollbar::-webkit-scrollbar{display:none;} .hide-scrollbar{-ms-overflow-style:none;scrollbar-width:none;}
-    @media print{body{background:white !important;} .no-print{display:none !important;} .glass-card{box-shadow:none !important;border:1px solid #000 !important;}}
-    #splashScreen{position:fixed;top:0;left:0;width:100%;height:100%;background:#0F172A;z-index:9999;display:flex;flex-direction:column;justify-content:center;align-items:center;transition:opacity 0.8s ease-out;}
-    .splash-logo{animation:pulseGlow 2s infinite;}
-    .loader-bar{width:250px;height:4px;background:#1E293B;margin-top:30px;border-radius:2px;overflow:hidden;position:relative;}
-    .loader-fill{height:100%;background:#4AA4F6;width:0%;animation:loadProgress 2.2s forwards ease-in-out;}
-    
-    @keyframes pulseGlow{0%,100%{transform:scale(1);filter:drop-shadow(0 0 10px rgba(74, 164, 246, 0.4));} 50%{transform:scale(1.05);filter:drop-shadow(0 0 30px rgba(74, 164, 246, 0.9));}}
-    @keyframes loadProgress{0%{width:0%;} 50%{width:60%;} 100%{width:100%;}}
-    
-    #loginScreen{position:fixed;inset:0;background:#0F172A;z-index:9000;display:flex;flex-direction:column;justify-content:center;align-items:center;}
-    #pdfWrapper,#pdfTripWrapper,#pdfTripCostWrapper{position:fixed;top:200vh;left:0;width:800px;background-color:#ffffff;z-index:-100;pointer-events:none;}
-    #pdfTemplate,#pdfTripTemplate,#pdfTripCostTemplate{background:white;color:#1e293b;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;padding:40px;}
-    .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background-color:rgba(15,23,42,0.9);backdrop-filter:blur(4px);justify-content:center;align-items:center;}
-    .modal-content{background:white;display:block;width:90%;max-width:450px;border-radius:16px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);position:relative;padding:24px;max-height:90vh;overflow-y:auto;}
-    .modal-content-wide{max-width:600px;}
-    .close-modal{position:absolute;top:15px;right:20px;font-size:28px;cursor:pointer;color:#94A3B8;transition:color 0.2s;z-index:10;}
-    .close-modal:hover{color:#0F172A;}
-    .risk-row{background-color:#FEF2F2 !important;}
-    
-    /* Intro Truck Stilleri */
-    #truckIntro{position:fixed;inset:0;z-index:9999;background:#060C1A;display:flex;flex-direction:column;justify-content:center;align-items:center;overflow:hidden;}
-    .road{position:absolute;bottom:0;left:0;right:0;height:110px;background:#1a1a2e;border-top:3px solid #2d3748;z-index:5;}
-    .road-line{position:absolute;top:50%;left:-200px;width:120px;height:6px;border-radius:3px;background:#f59e0b;animation:roadLines 0.6s linear infinite;}
-    .road-line:nth-child(2){animation-delay:-0.2s;} .road-line:nth-child(3){animation-delay:-0.4s;}
-    @keyframes roadLines{0%{left:-200px;} 100%{left:calc(100vw + 200px);}}
-    .star{position:absolute;width:2px;height:2px;background:white;border-radius:50%;animation:twinkle 2s ease-in-out infinite;}
-    @keyframes twinkle{0%,100%{opacity:0.2;transform:scale(1);} 50%{opacity:1;transform:scale(1.5);}}
-    .truck-wrapper{position:absolute;bottom:55px;left:50%;width:90vw;max-width:620px;z-index:10;transform:translateX(-150vw);animation:truckDrive 2.2s cubic-bezier(0.22,1,0.36,1) forwards;animation-delay:0.4s;}
-    @keyframes truckDrive{0%{transform:translateX(-150vw);} 70%{transform:translateX(-48%);} 85%{transform:translateX(-52%);} 100%{transform:translateX(-50%);}}
-    .truck-svg{width:100%;height:auto;display:block;filter:drop-shadow(0 8px 32px rgba(74, 164, 246, 0.5));}
-    .exhaust{position:absolute;bottom:38.75%;left:-4.83%;}
-    .puff{position:absolute;width:18px;height:18px;background:rgba(180,180,200,0.35);border-radius:50%;animation:puffUp 0.9s ease-out infinite;}
-    .puff:nth-child(2){animation-delay:0.3s;left:-8px;} .puff:nth-child(3){animation-delay:0.6s;left:-4px;}
-    @keyframes puffUp{0%{transform:translateY(0) scale(1);opacity:0.6;} 100%{transform:translateY(-40px) scale(2.5);opacity:0;}}
-    .headlight-beam{position:absolute;right:-25.8%;bottom:17.5%;width:25.8%;height:25%;background:linear-gradient(to right,rgba(253,230,138,0.55),transparent);clip-path:polygon(0 30%,100% 0%,100% 100%,0 70%);animation:beamPulse 1.4s ease-in-out infinite;}
-    @keyframes beamPulse{0%,100%{opacity:0.8;} 50%{opacity:1;}}
-    
-    .intro-brand{position:absolute;top:15%;text-align:center;opacity:0;animation:brandReveal 0.8s ease forwards;animation-delay:2.2s;}
-    @keyframes brandReveal{0%{opacity:0;transform:translateY(-20px);} 100%{opacity:1;transform:translateY(0);}}
-    
-    .brand-logo-custom {display:flex;align-items:center;justify-content:center;margin:0 auto 1rem; opacity:0; animation:logoPulseCustom 2s ease-in-out infinite, brandReveal 0.8s ease forwards; animation-delay:2.2s;}
-    @keyframes logoPulseCustom{0%,100%{filter:drop-shadow(0 0 10px rgba(74, 164, 246, 0.4));} 50%{filter:drop-shadow(0 0 25px rgba(74, 164, 246, 0.8));}}
-    
-    .intro-subtitle{font-size:0.78rem;font-weight:700;letter-spacing:0.35em;color:#64748b;margin-top:0.25rem;}
-    .intro-enter-btn{margin-top:2rem;background:linear-gradient(135deg,#4AA4F6,#2563EB);color:white;border:none;cursor:pointer;padding:0.9rem 2.5rem;border-radius:9999px;font-size:1rem;font-weight:800;letter-spacing:0.08em;box-shadow:0 8px 24px rgba(74, 164, 246, 0.4);opacity:0;animation:btnReveal 0.6s ease forwards;animation-delay:3s;transition:transform 0.15s,box-shadow 0.15s;}
-    .intro-enter-btn:hover{transform:scale(1.05);box-shadow:0 12px 32px rgba(74, 164, 246, 0.6);}
-    @keyframes btnReveal{0%{opacity:0;transform:scale(0.85);} 100%{opacity:1;transform:scale(1);}}
-    .ground-glow{position:absolute;bottom:55px;left:50%;transform:translateX(-50%);width:90vw;max-width:620px;height:30px;background:radial-gradient(ellipse at center,rgba(74, 164, 246, 0.3) 0%,transparent 70%);animation:glowPulse 1.5s ease-in-out infinite;animation-delay:2.2s;}
-    @keyframes glowPulse{0%,100%{opacity:0.6;} 50%{opacity:1;}}
-    #truckIntro.hide-intro{animation:introFadeOut 0.6s ease forwards;}
-    @keyframes introFadeOut{0%{opacity:1;} 100%{opacity:0;pointer-events:none;}}
+    /* ===== MİL UYUMLULUK: iOS Safe Area & Temel Reset ===== */
+    :root {
+        --safe-top: env(safe-area-inset-top, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+        --safe-left: env(safe-area-inset-left, 0px);
+        --safe-right: env(safe-area-inset-right, 0px);
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+        height: -webkit-fill-available;
+    }
+
+    body {
+        background-color: #F8FAFC;
+        color: #334155;
+        -webkit-tap-highlight-color: transparent;
+        max-width: 100vw;
+        overflow-x: hidden;
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+        -webkit-font-smoothing: antialiased;
+        overscroll-behavior-y: none;
+        touch-action: pan-y;
+    }
+
+    /* ===== TEMEL KARTlar ===== */
+    .glass-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 1.25rem;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+    }
+
+    /* ===== INPUT STİL — iOS zoom önleme için 16px zorunlu ===== */
+    .input-style {
+        width: 100%;
+        background-color: #F1F5F9;
+        border: 1px solid transparent;
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        font-size: 16px !important; /* iOS zoom engeller */
+        color: #0F172A;
+        transition: all 0.2s;
+        outline: none;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+
+    .input-style:focus {
+        background-color: #FFFFFF;
+        border-color: #4AA4F6;
+        box-shadow: 0 0 0 3px rgba(74,164,246,0.1);
+    }
+
+    /* Tüm input/select/textarea için iOS zoom önleme */
+    input, select, textarea, button {
+        font-size: 16px;
+        -webkit-appearance: none;
+    }
+
+    input[type="date"],
+    input[type="month"],
+    input[type="number"],
+    input[type="password"],
+    input[type="text"],
+    input[type="email"],
+    select {
+        font-size: 16px !important;
+    }
+
+    /* ===== TOUCH HEDEF MİNİMUM BOYUT (44x44px) ===== */
+    button, a, [role="button"], .close-modal {
+        min-height: 44px;
+        min-width: 44px;
+        cursor: pointer;
+    }
+
+    /* Küçük icon butonlar için padding artırma */
+    .w-8.h-8 {
+        min-width: 40px !important;
+        min-height: 40px !important;
+    }
+
+    /* ===== WALLET KARTI ===== */
+    .wallet-card {
+        background: linear-gradient(135deg, #1E1B4B 0%, #4AA4F6 100%);
+        color: white;
+        border-radius: 1.25rem;
+        padding: 1.5rem;
+        box-shadow: 0 10px 15px -3px rgba(74,164,246,0.3);
+    }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* ===== PRINT ===== */
+    @media print {
+        body { background: white !important; }
+        .no-print { display: none !important; }
+        .glass-card { box-shadow: none !important; border: 1px solid #000 !important; }
+    }
+
+    /* ===== SPLASH SCREEN ===== */
+    #splashScreen {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: #0F172A;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        transition: opacity 0.8s ease-out;
+    }
+
+    .splash-logo { animation: pulseGlow 2s infinite; }
+    .loader-bar { width: 250px; height: 4px; background: #1E293B; margin-top: 30px; border-radius: 2px; overflow: hidden; position: relative; }
+    .loader-fill { height: 100%; background: #4AA4F6; width: 0%; animation: loadProgress 2.2s forwards ease-in-out; }
+
+    @keyframes pulseGlow {
+        0%,100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(74,164,246,0.4)); }
+        50% { transform: scale(1.05); filter: drop-shadow(0 0 30px rgba(74,164,246,0.9)); }
+    }
+    @keyframes loadProgress { 0%{width:0%;} 50%{width:60%;} 100%{width:100%;} }
+
+    /* ===== LOGIN SCREEN ===== */
+    #loginScreen {
+        position: fixed;
+        inset: 0;
+        background: #0F172A;
+        z-index: 9000;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: calc(var(--safe-top) + 1rem) var(--safe-right) calc(var(--safe-bottom) + 1rem) var(--safe-left);
+    }
+
+    /* ===== PDF WRAPPER ===== */
+    #pdfWrapper, #pdfTripWrapper, #pdfTripCostWrapper {
+        position: fixed;
+        top: 200vh; left: 0;
+        width: 800px;
+        background-color: #ffffff;
+        z-index: -100;
+        pointer-events: none;
+    }
+    #pdfTemplate, #pdfTripTemplate, #pdfTripCostTemplate {
+        background: white;
+        color: #1e293b;
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        padding: 40px;
+    }
+
+    /* ===== MODALLER — Mobil optimize ===== */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0; top: 0;
+        width: 100%; height: 100%;
+        background-color: rgba(15,23,42,0.9);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        justify-content: center;
+        align-items: flex-end; /* Mobilde aşağıdan çıkar */
+        padding-bottom: var(--safe-bottom);
+    }
+
+    @media (min-width: 640px) {
+        .modal { align-items: center; }
+    }
+
+    .modal-content {
+        background: white;
+        display: block;
+        width: 100%;
+        max-width: 450px;
+        border-radius: 20px 20px 0 0; /* Mobilde bottom sheet */
+        box-shadow: 0 -10px 50px rgba(0,0,0,0.3);
+        position: relative;
+        padding: 24px 24px calc(24px + var(--safe-bottom));
+        max-height: 92dvh;
+        max-height: 92vh; /* fallback */
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    @media (min-width: 640px) {
+        .modal-content {
+            border-radius: 16px;
+            padding: 24px;
+            max-height: 90vh;
+        }
+    }
+
+    .modal-content-wide { max-width: 600px; }
+
+    .close-modal {
+        position: absolute;
+        top: 12px; right: 16px;
+        font-size: 28px;
+        cursor: pointer;
+        color: #94A3B8;
+        transition: color 0.2s;
+        z-index: 10;
+        width: 44px; height: 44px;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .close-modal:hover { color: #0F172A; }
+
+    .risk-row { background-color: #FEF2F2 !important; }
+
+    /* ===== HEADER — Safe Area ile ===== */
+    #mainHeader {
+        padding-top: var(--safe-top);
+        padding-left: var(--safe-left);
+        padding-right: var(--safe-right);
+    }
+
+    /* ===== TOAST — Safe Area ile ===== */
+    #toast {
+        bottom: calc(1.25rem + var(--safe-bottom)) !important;
+    }
+
+    /* ===== ANA CONTENT — Safe Area ===== */
+    #mainContent {
+        padding-bottom: calc(1.5rem + var(--safe-bottom));
+        padding-left: max(1rem, var(--safe-left));
+        padding-right: max(1rem, var(--safe-right));
+    }
+
+    /* ===== TABLO SCROLL — Mobil yatay kaydırma ===== */
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid #E2E8F0;
+        border-radius: 0.75rem;
+    }
+
+    /* Tablo scroll hint — sağda gradient */
+    .overflow-x-auto {
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+
+    /* ===== TAB BAR ===== */
+    #mainTabs {
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory;
+        padding-bottom: 4px;
+    }
+
+    #mainTabs button {
+        scroll-snap-align: start;
+        flex-shrink: 0;
+    }
+
+    /* ===== INTRO TRUCK SECTION ===== */
+    #truckIntro {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: #060C1A;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    .road {
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        height: 110px;
+        background: #1a1a2e;
+        border-top: 3px solid #2d3748;
+        z-index: 5;
+    }
+
+    .road-line {
+        position: absolute;
+        top: 50%; left: -200px;
+        width: 120px; height: 6px;
+        border-radius: 3px;
+        background: #f59e0b;
+        animation: roadLines 0.6s linear infinite;
+    }
+    .road-line:nth-child(2) { animation-delay: -0.2s; }
+    .road-line:nth-child(3) { animation-delay: -0.4s; }
+
+    @keyframes roadLines { 0%{left:-200px;} 100%{left:calc(100vw + 200px);} }
+
+    .star {
+        position: absolute;
+        width: 2px; height: 2px;
+        background: white;
+        border-radius: 50%;
+        animation: twinkle 2s ease-in-out infinite;
+    }
+    @keyframes twinkle { 0%,100%{opacity:0.2;transform:scale(1);} 50%{opacity:1;transform:scale(1.5);} }
+
+    .truck-wrapper {
+        position: absolute;
+        bottom: 55px; left: 50%;
+        width: 90vw; max-width: 620px;
+        z-index: 10;
+        transform: translateX(-150vw);
+        animation: truckDrive 2.2s cubic-bezier(0.22,1,0.36,1) forwards;
+        animation-delay: 0.4s;
+    }
+    @keyframes truckDrive {
+        0%{transform:translateX(-150vw);}
+        70%{transform:translateX(-48%);}
+        85%{transform:translateX(-52%);}
+        100%{transform:translateX(-50%);}
+    }
+
+    .truck-svg {
+        width: 100%; height: auto;
+        display: block;
+        filter: drop-shadow(0 8px 32px rgba(74,164,246,0.5));
+    }
+
+    .exhaust { position: absolute; bottom: 38.75%; left: -4.83%; }
+    .puff {
+        position: absolute;
+        width: 18px; height: 18px;
+        background: rgba(180,180,200,0.35);
+        border-radius: 50%;
+        animation: puffUp 0.9s ease-out infinite;
+    }
+    .puff:nth-child(2){animation-delay:0.3s;left:-8px;}
+    .puff:nth-child(3){animation-delay:0.6s;left:-4px;}
+    @keyframes puffUp { 0%{transform:translateY(0) scale(1);opacity:0.6;} 100%{transform:translateY(-40px) scale(2.5);opacity:0;} }
+
+    .headlight-beam {
+        position: absolute;
+        right: -25.8%; bottom: 17.5%;
+        width: 25.8%; height: 25%;
+        background: linear-gradient(to right,rgba(253,230,138,0.55),transparent);
+        clip-path: polygon(0 30%,100% 0%,100% 100%,0 70%);
+        animation: beamPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes beamPulse { 0%,100%{opacity:0.8;} 50%{opacity:1;} }
+
+    .intro-brand {
+        position: absolute;
+        top: 10%;
+        text-align: center;
+        opacity: 0;
+        animation: brandReveal 0.8s ease forwards;
+        animation-delay: 2.2s;
+        padding: 0 1rem;
+        width: 100%;
+    }
+    @keyframes brandReveal { 0%{opacity:0;transform:translateY(-20px);} 100%{opacity:1;transform:translateY(0);} }
+
+    .brand-logo-custom {
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1rem;
+        opacity: 0;
+        animation: logoPulseCustom 2s ease-in-out infinite, brandReveal 0.8s ease forwards;
+        animation-delay: 2.2s;
+    }
+    @keyframes logoPulseCustom {
+        0%,100%{filter:drop-shadow(0 0 10px rgba(74,164,246,0.4));}
+        50%{filter:drop-shadow(0 0 25px rgba(74,164,246,0.8));}
+    }
+
+    .intro-subtitle {
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.25em;
+        color: #64748b;
+        margin-top: 0.25rem;
+    }
+
+    .intro-enter-btn {
+        margin-top: 2rem;
+        background: linear-gradient(135deg, #4AA4F6, #2563EB);
+        color: white;
+        border: none;
+        cursor: pointer;
+        padding: 0.9rem 2.5rem;
+        border-radius: 9999px;
+        font-size: 1rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        box-shadow: 0 8px 24px rgba(74,164,246,0.4);
+        opacity: 0;
+        animation: btnReveal 0.6s ease forwards;
+        animation-delay: 3s;
+        transition: transform 0.15s, box-shadow 0.15s;
+        min-height: 52px;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .intro-enter-btn:active { transform: scale(0.97); }
+    @keyframes btnReveal { 0%{opacity:0;transform:scale(0.85);} 100%{opacity:1;transform:scale(1);} }
+
+    .ground-glow {
+        position: absolute;
+        bottom: 55px; left: 50%;
+        transform: translateX(-50%);
+        width: 90vw; max-width: 620px;
+        height: 30px;
+        background: radial-gradient(ellipse at center,rgba(74,164,246,0.3) 0%,transparent 70%);
+        animation: glowPulse 1.5s ease-in-out infinite;
+        animation-delay: 2.2s;
+    }
+    @keyframes glowPulse { 0%,100%{opacity:0.6;} 50%{opacity:1;} }
+
+    #truckIntro.hide-intro { animation: introFadeOut 0.6s ease forwards; }
+    @keyframes introFadeOut { 0%{opacity:1;} 100%{opacity:0;pointer-events:none;} }
+
+    /* ===== MOBİL ÖZEL DÜZENLEMELER ===== */
+    @media (max-width: 640px) {
+
+        /* Header kompakt */
+        #mainHeader .container { padding-left: 0.75rem; padding-right: 0.75rem; }
+
+        /* Tab butonları daha geniş touch hedefi */
+        #mainTabs button {
+            padding: 0.6rem 0.9rem;
+            font-size: 0.75rem;
+        }
+
+        /* Ana içerik padding azaltma */
+        #mainContent.container { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+
+        /* Kart padding azaltma */
+        .glass-card.p-5 { padding: 1rem !important; }
+        .glass-card.p-6 { padding: 1rem !important; }
+
+        /* Wallet card font boyutları */
+        .wallet-card { padding: 1.25rem; }
+        #mySafeEUR, #mySafeUSD, #mySafeTRY { font-size: 1rem !important; }
+
+        /* Modal bottom sheet tam genişlik */
+        .modal-content {
+            width: 100% !important;
+            max-width: 100% !important;
+            border-radius: 20px 20px 0 0 !important;
+        }
+
+        /* Sefer paneli butonlar tam genişlik */
+        #tripStartBox button, #tripActiveBox button { width: 100%; margin-top: 0.5rem; }
+
+        /* Panel başlıkları küçültme */
+        .text-2xl { font-size: 1.25rem !important; }
+
+        /* Tablo scroll göstergesi */
+        .overflow-x-auto::after {
+            content: '';
+            position: absolute;
+            right: 0; top: 0; bottom: 0;
+            width: 24px;
+            background: linear-gradient(to left, rgba(255,255,255,0.9), transparent);
+            pointer-events: none;
+            border-radius: 0 0.75rem 0.75rem 0;
+        }
+
+        /* Form'larda tam genişlik inputlar */
+        .flex.gap-2 > input, .flex.gap-2 > select {
+            min-width: 0;
+        }
+
+        /* Analytics filtre bölümü */
+        #advStartDate, #advEndDate { width: 100% !important; }
+
+        /* Intro brand küçük ekrana uyum */
+        .intro-brand { top: 8%; }
+        .brand-logo-custom svg { width: 4rem !important; height: 4rem !important; }
+        .intro-brand .text-white { font-size: 2.5rem !important; }
+        .intro-subtitle { letter-spacing: 0.15em; font-size: 0.65rem; }
+
+        /* Truck küçük ekranda aşağıda */
+        .truck-wrapper { bottom: 40px; }
+        .road { height: 85px; }
+
+        /* Active trip info sarma */
+        #tripActiveBox .text-xs, #tripActiveBox .text-\[11px\] { font-size: 10px !important; }
+    }
+
+    /* ===== iPhone Dinamik Ada (14 Pro, 15, 16 vb.) ===== */
+    @supports (padding-top: env(safe-area-inset-top)) {
+        #mainHeader {
+            padding-top: max(0px, env(safe-area-inset-top));
+        }
+        #loginScreen {
+            padding-top: max(2rem, env(safe-area-inset-top));
+            padding-bottom: max(2rem, env(safe-area-inset-bottom));
+        }
+        #splashScreen {
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        #truckIntro {
+            padding-top: env(safe-area-inset-top);
+        }
+        #toast {
+            bottom: calc(1.25rem + env(safe-area-inset-bottom)) !important;
+        }
+        .modal {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .modal-content {
+            padding-bottom: calc(24px + env(safe-area-inset-bottom));
+        }
+    }
+
+    /* ===== Landscape mod — yatay ===== */
+    @media (max-height: 500px) and (orientation: landscape) {
+        .intro-brand { top: 2%; }
+        .brand-logo-custom { display: none; }
+        #splashScreen .w-32 { width: 4rem !important; height: 4rem !important; }
+        .loader-bar { margin-top: 10px; }
+        #loginScreen .w-11\/12 { padding: 1.5rem !important; }
+    }
+
+    /* ===== Büyük tablet / iPad ===== */
+    @media (min-width: 768px) {
+        .modal { align-items: center; }
+        .modal-content {
+            border-radius: 16px !important;
+            padding: 24px !important;
+            width: 90% !important;
+        }
+    }
+
+    /* ===== Active state mobil dokunma geri bildirimi ===== */
+    button:active, [role="button"]:active {
+        opacity: 0.8;
+        transform: scale(0.98);
+        transition: transform 0.1s, opacity 0.1s;
+    }
+
+    /* Buton aktif geçişini sadece görsel için override */
+    .intro-enter-btn:active { transform: scale(0.97) !important; opacity: 1 !important; }
 </style>
 </head>
 <body class="antialiased min-h-screen flex flex-col overflow-hidden" id="appBody">
@@ -132,8 +624,8 @@
             <h2 class="text-2xl font-bold text-white">Sisteme Giriş Yapın</h2>
         </div>
         <form id="loginForm" onsubmit="handleLogin(event); return false;" class="space-y-5">
-            <div><input type="text" id="loginUser" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none" placeholder="Kullanıcı Adı"></div>
-            <div><input type="password" id="loginPass" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none" placeholder="Şifre"></div>
+            <div><input type="text" id="loginUser" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none" style="font-size:16px" placeholder="Kullanıcı Adı"></div>
+            <div><input type="password" id="loginPass" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none" style="font-size:16px" placeholder="Şifre"></div>
             <div class="flex items-center mt-2"><label class="flex items-center text-sm text-slate-300 cursor-pointer select-none"><input type="checkbox" id="rememberMe" class="mr-2 w-4 h-4 accent-primary rounded bg-slate-900 border-slate-700 cursor-pointer">Beni Hatırla</label></div>
             <button type="submit" id="loginBtn" class="w-full bg-primary hover:bg-blue-500 text-white py-3.5 rounded-xl font-bold shadow-lg transition-all mt-4 text-lg">Giriş Yap</button>
         </form>
@@ -141,7 +633,7 @@
 </div>
 
 <header class="bg-white border-b border-slate-200 sticky top-0 z-40 no-print opacity-0 transition-opacity duration-1000" id="mainHeader">
-    <div class="container mx-auto px-4 py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-y-3">
+    <div class="container mx-auto px-3 sm:px-4 py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-y-3">
         <div class="flex items-center gap-2">
             <div class="p-1 text-primary">
                 <svg class="w-9 h-9" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -160,7 +652,7 @@
             <div class="relative ml-2" id="driverSearchWrapper"><select id="activeUser" class="hidden" onchange="changeUser()"></select><div class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 flex items-center gap-2"><i class="fa-solid fa-magnifying-glass text-slate-400 text-xs"></i><input type="text" id="driverSearchInput" placeholder="Şoför ara..." autocomplete="off" class="bg-transparent text-sm font-semibold text-slate-700 outline-none w-32 sm:w-40 placeholder:font-normal placeholder:text-slate-400" oninput="filterDriverSearch()" onfocus="showDriverDropdown()" onblur="hideDriverDropdown()"></div><div id="driverDropdown" class="hidden absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 min-w-[170px] max-h-52 overflow-y-auto py-1"></div></div>
         </div>
     </div>
-    <div class="container mx-auto px-4 py-2 overflow-x-auto hide-scrollbar flex gap-2 border-t border-slate-100 whitespace-nowrap" id="mainTabs">
+    <div class="container mx-auto px-3 sm:px-4 py-1.5 overflow-x-auto hide-scrollbar flex gap-1.5 sm:gap-2 border-t border-slate-100 whitespace-nowrap" id="mainTabs">
         <button onclick="switchTab('DRIVER')" id="tab-DRIVER" class="role-btn bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md flex"><i class="fa-solid fa-truck mr-1"></i> Şoför Paneli</button>
         <button onclick="switchTab('OPERATIONS')" id="tab-OPERATIONS" class="role-btn bg-transparent text-slate-500 px-4 py-2 rounded-xl text-sm font-semibold transition-all hidden"><i class="fa-solid fa-list-check mr-1"></i> Operasyon</button>
         <button onclick="switchTab('ACCOUNTING')" id="tab-ACCOUNTING" class="role-btn bg-transparent text-slate-500 px-4 py-2 rounded-xl text-sm font-semibold transition-all hidden"><i class="fa-solid fa-wallet mr-1"></i> Muhasebe & Cari</button>
@@ -173,7 +665,7 @@
     </div>
 </header>
 
-<main class="flex-grow container mx-auto px-4 py-6 max-w-6xl opacity-0 transition-opacity duration-1000" id="mainContent">
+<main class="flex-grow container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl opacity-0 transition-opacity duration-1000" id="mainContent">
     <div id="panel-PATRON" class="panel-section hidden-panel">
         <div class="mb-4 flex items-center justify-between"><div><h2 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-chart-line text-indigo-500 mr-2"></i>İş Zekası & Yönetim Ekranı</h2></div></div>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -239,7 +731,7 @@
             </div>
             <div class="glass-card p-5 lg:col-span-2">
                 <h3 class="font-bold text-slate-800 text-lg mb-4">Son Eklenen Masraflar</h3>
-                <div id="driverList" class="space-y-3 max-h-[500px] overflow-y-auto pr-2"></div>
+                <div id="driverList" class="space-y-3 max-h-[50dvh] max-h-[500px] overflow-y-auto -webkit-overflow-scrolling-touch pr-2"></div>
             </div>
         </div>
     </div>
@@ -247,11 +739,11 @@
     <div id="panel-OPERATIONS" class="panel-section hidden-panel">
         <div class="glass-card p-5 mb-6 border-l-4 border-amber-500">
             <div class="flex justify-between items-center mb-2"><h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-satellite-dish text-amber-500 mr-2 animate-pulse"></i>Sistemdeki Tüm Aktif Seferler (Canlı)</h3><button onclick="openOpsTripModal()" class="bg-amber-100 text-amber-700 hover:bg-amber-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm"><i class="fa-solid fa-plus mr-1"></i> Yeni Ekle</button></div>
-            <div class="overflow-x-auto border border-slate-200 rounded-xl"><table class="w-full text-left text-sm whitespace-nowrap min-w-[800px]"><thead class="bg-amber-50 text-amber-700 font-bold text-xs uppercase border-b border-slate-200"><tr><th class="p-3">Şoför</th><th class="p-3">Sefer/Dosya No</th><th class="p-3">Pozisyon No</th><th class="p-3">Güzergah</th><th class="p-3">Araç & Dorse</th><th class="p-3">Başlangıç KM</th><th class="p-3 text-right">İşlem</th></tr></thead><tbody id="opsActiveTripsList" class="divide-y divide-slate-100 text-slate-700 bg-white"></tbody></table></div>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl relative"><table class="w-full text-left text-sm whitespace-nowrap min-w-[800px]"><thead class="bg-amber-50 text-amber-700 font-bold text-xs uppercase border-b border-slate-200"><tr><th class="p-3">Şoför</th><th class="p-3">Sefer/Dosya No</th><th class="p-3">Pozisyon No</th><th class="p-3">Güzergah</th><th class="p-3">Araç & Dorse</th><th class="p-3">Başlangıç KM</th><th class="p-3 text-right">İşlem</th></tr></thead><tbody id="opsActiveTripsList" class="divide-y divide-slate-100 text-slate-700 bg-white"></tbody></table></div>
         </div>
         <div class="glass-card p-5">
             <h3 class="font-bold text-slate-800 text-lg mb-4">Onay Bekleyen Masraflar</h3>
-            <div class="overflow-x-auto border border-slate-200 rounded-xl"><table class="w-full text-left text-sm whitespace-nowrap min-w-[900px]"><thead class="bg-slate-50 text-slate-500 font-medium text-xs uppercase border-b border-slate-200"><tr><th class="p-4">Personel / Tarih</th><th class="p-4">Kategori & Açıklama</th><th class="p-4">Tutar</th><th class="p-4">Sefer/Dosya No</th><th class="p-4">Onaylayan</th><th class="p-4 text-right">İşlem</th></tr></thead><tbody id="operationsList" class="divide-y divide-slate-100 text-slate-700"></tbody></table></div>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl relative"><table class="w-full text-left text-sm whitespace-nowrap min-w-[900px]"><thead class="bg-slate-50 text-slate-500 font-medium text-xs uppercase border-b border-slate-200"><tr><th class="p-4">Personel / Tarih</th><th class="p-4">Kategori & Açıklama</th><th class="p-4">Tutar</th><th class="p-4">Sefer/Dosya No</th><th class="p-4">Onaylayan</th><th class="p-4 text-right">İşlem</th></tr></thead><tbody id="operationsList" class="divide-y divide-slate-100 text-slate-700"></tbody></table></div>
         </div>
         <div class="glass-card p-5 mt-6 border-l-4 border-indigo-500">
             <h3 class="font-bold text-slate-800 text-lg mb-4">Son Onaylanan Masraflar (Düzelt / Sil)</h3>
@@ -275,7 +767,7 @@
                 <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3"><h3 class="font-bold text-slate-800 text-lg">Personel Cari Ekstresi</h3><button onclick="exportAccountingCSV()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5"><i class="fa-solid fa-download"></i> Tümünü İndir</button></div>
                 <div class="relative w-full md:w-72"><i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-indigo-400"></i><input type="text" id="searchCariInput" onkeyup="filterCari()" placeholder="Şoför adı ile filtrele..." class="w-full bg-slate-50 border border-indigo-200 text-sm rounded-xl pl-9 pr-3 py-2 font-medium outline-none"></div>
             </div>
-            <div class="overflow-x-auto border border-slate-200 rounded-xl"><table class="w-full text-left text-sm whitespace-nowrap min-w-[900px] overflow-hidden"><thead class="bg-slate-800 text-white text-xs uppercase font-semibold"><tr><th class="p-3">Personel</th><th class="p-3 text-right">Verilen Toplam Avans</th><th class="p-3 text-right">Onaylı Toplam Masraf</th><th class="p-3 text-right">Net Bakiye (Kasa)</th><th class="p-3 text-right no-print">İşlemler (Ekstre / PDF / Excel)</th></tr></thead><tbody id="accountingCariList" class="divide-y divide-slate-200 text-slate-700 bg-white"></tbody></table></div>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl relative"><table class="w-full text-left text-sm whitespace-nowrap min-w-[900px] overflow-hidden"><thead class="bg-slate-800 text-white text-xs uppercase font-semibold"><tr><th class="p-3">Personel</th><th class="p-3 text-right">Verilen Toplam Avans</th><th class="p-3 text-right">Onaylı Toplam Masraf</th><th class="p-3 text-right">Net Bakiye (Kasa)</th><th class="p-3 text-right no-print">İşlemler (Ekstre / PDF / Excel)</th></tr></thead><tbody id="accountingCariList" class="divide-y divide-slate-200 text-slate-700 bg-white"></tbody></table></div>
         </div>
     </div>
 
@@ -289,7 +781,7 @@
         </div>
         <div class="glass-card p-5 mb-6">
             <div class="flex items-center justify-between mb-4"><h3 class="font-bold text-slate-800"><i class="fa-solid fa-gauge-high text-cyan-500 mr-2"></i>Araç Bazlı Performans</h3><button onclick="exportFleetCSV()" class="bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5"><i class="fa-solid fa-file-csv"></i> Filo Raporu İndir</button></div>
-            <div class="overflow-x-auto border border-slate-200 rounded-xl"><table class="w-full text-left text-sm whitespace-nowrap min-w-[700px]"><thead class="bg-slate-800 text-white text-xs uppercase font-semibold"><tr><th class="p-3">Plaka</th><th class="p-3 text-right">Toplam Sefer</th><th class="p-3 text-right">Toplam KM</th><th class="p-3 text-right">Bakım / Yakıt Gideri</th><th class="p-3 text-right">Maliyet / KM</th><th class="p-3 text-center">Durum</th></tr></thead><tbody id="fleetVehicleTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl relative"><table class="w-full text-left text-sm whitespace-nowrap min-w-[700px]"><thead class="bg-slate-800 text-white text-xs uppercase font-semibold"><tr><th class="p-3">Plaka</th><th class="p-3 text-right">Toplam Sefer</th><th class="p-3 text-right">Toplam KM</th><th class="p-3 text-right">Bakım / Yakıt Gideri</th><th class="p-3 text-right">Maliyet / KM</th><th class="p-3 text-center">Durum</th></tr></thead><tbody id="fleetVehicleTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div>
         </div>
         <div class="glass-card p-5"><h3 class="font-bold text-slate-800 mb-4"><i class="fa-solid fa-satellite-dish text-emerald-500 mr-2 animate-pulse"></i>Şu An Yolda Olan Araçlar</h3><div id="fleetActiveTripsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div></div>
     </div>
@@ -300,7 +792,7 @@
                 <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-truck-fast text-emerald-500"></i>Tamamlanan Sefer Raporu</h3>
                 <div class="flex items-center gap-2 w-full md:w-auto"><div class="relative flex-grow md:w-56"><i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-emerald-400"></i><input type="text" id="searchTripInput" onkeyup="filterTrips()" placeholder="Arama..." class="w-full bg-slate-50 border border-emerald-200 text-sm rounded-xl pl-9 pr-3 py-2 font-medium outline-none"></div><button onclick="exportTripsCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow-sm transition-all"><i class="fa-solid fa-file-csv"></i> Excel</button><button onclick="exportTripsPDF()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow-sm transition-all"><i class="fa-solid fa-file-pdf"></i> PDF</button></div>
             </div>
-            <div class="overflow-x-auto border border-slate-200 rounded-xl"><table class="w-full text-left text-sm whitespace-nowrap min-w-[900px] overflow-hidden"><thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold border-b border-slate-200"><tr><th class="p-4">Tarih</th><th class="p-4">Sefer/Dosya No</th><th class="p-4">Pozisyon No</th><th class="p-4">Personel</th><th class="p-4">Güzergah</th><th class="p-4">Çekici & Dorse</th><th class="p-4 text-right">KM Bilgisi</th><th class="p-4 text-center">İşlem</th></tr></thead><tbody id="tripReportList" class="divide-y divide-slate-100 text-slate-700"></tbody></table></div>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl relative"><table class="w-full text-left text-sm whitespace-nowrap min-w-[900px] overflow-hidden"><thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold border-b border-slate-200"><tr><th class="p-4">Tarih</th><th class="p-4">Sefer/Dosya No</th><th class="p-4">Pozisyon No</th><th class="p-4">Personel</th><th class="p-4">Güzergah</th><th class="p-4">Çekici & Dorse</th><th class="p-4 text-right">KM Bilgisi</th><th class="p-4 text-center">İşlem</th></tr></thead><tbody id="tripReportList" class="divide-y divide-slate-100 text-slate-700"></tbody></table></div>
         </div>
     </div>
 
@@ -339,7 +831,7 @@
             </div>
             <div class="glass-card p-5 lg:col-span-2">
                 <h3 class="font-bold text-slate-800 text-lg mb-4 border-b border-slate-100 pb-2">Sistem Kullanıcıları</h3>
-                <div class="overflow-x-auto border border-slate-200 rounded-xl"><table class="w-full text-left text-sm whitespace-nowrap min-w-[600px] overflow-hidden"><thead class="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-200"><tr><th class="p-3">Kullanıcı Adı</th><th class="p-3">Sabit Plaka / Dorse</th><th class="p-3">Yetki / Rol</th><th class="p-3 text-center">Durum</th><th class="p-3 text-right">İşlem</th></tr></thead><tbody id="userListTable" class="divide-y divide-slate-100"></tbody></table></div>
+                <div class="overflow-x-auto border border-slate-200 rounded-xl relative"><table class="w-full text-left text-sm whitespace-nowrap min-w-[600px] overflow-hidden"><thead class="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-200"><tr><th class="p-3">Kullanıcı Adı</th><th class="p-3">Sabit Plaka / Dorse</th><th class="p-3">Yetki / Rol</th><th class="p-3 text-center">Durum</th><th class="p-3 text-right">İşlem</th></tr></thead><tbody id="userListTable" class="divide-y divide-slate-100"></tbody></table></div>
             </div>
         </div>
     </div>
@@ -362,7 +854,7 @@
         </div>
         <div class="glass-card p-5 mb-6">
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 border-b border-slate-100 pb-3 gap-2"><h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-scale-balanced text-rose-500 mr-2"></i>Borç / Alacak Ekstresi</h3></div>
-            <div class="overflow-x-auto border border-slate-200 rounded-xl"><table class="w-full text-left text-sm whitespace-nowrap min-w-[800px] overflow-hidden"><thead class="bg-slate-800 text-white text-xs uppercase font-semibold"><tr><th class="p-3">Personel</th><th class="p-3 text-right">Verilen Avans</th><th class="p-3 text-right">Onaylı Masraf</th><th class="p-3 text-right">Net Bakiye</th><th class="p-3 text-center">Durum</th><th class="p-3 text-center">Son 30 Gün Masraf</th></tr></thead><tbody id="debtBalanceList" class="divide-y divide-slate-100 bg-white"></tbody></table></div>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl relative"><table class="w-full text-left text-sm whitespace-nowrap min-w-[800px] overflow-hidden"><thead class="bg-slate-800 text-white text-xs uppercase font-semibold"><tr><th class="p-3">Personel</th><th class="p-3 text-right">Verilen Avans</th><th class="p-3 text-right">Onaylı Masraf</th><th class="p-3 text-right">Net Bakiye</th><th class="p-3 text-center">Durum</th><th class="p-3 text-center">Son 30 Gün Masraf</th></tr></thead><tbody id="debtBalanceList" class="divide-y divide-slate-100 bg-white"></tbody></table></div>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <div class="glass-card p-5"><div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 border-b border-slate-100 pb-3 gap-2"><h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-trophy text-amber-500 mr-2"></i>Şoför Performans Kartı</h3><select id="perfDriverSelect" onchange="renderPerformanceCard()" class="input-style text-xs py-1 px-2 w-full sm:w-44"></select></div><div id="performanceCardBody"><div class="text-center text-slate-400 py-6 text-sm">Şoför seçiniz...</div></div></div>
@@ -419,7 +911,7 @@
 
 <div id="editPastTripModal" class="modal flex" style="display:none;"><div class="modal-content modal-content-wide border-t-4 border-emerald-500 w-11/12"><span class="close-modal" onclick="closeEditPastTripModal()">&times;</span><h3 class="text-xl font-bold text-slate-800 mb-4 mt-2"><i class="fa-solid fa-road text-emerald-500 mr-2"></i>Seferi Düzelt</h3><form id="editPastTripForm" onsubmit="savePastTripEdit(event); return false;" class="space-y-3"><input type="hidden" id="editPastTripId"><div class="flex gap-2"><input type="text" id="editPastTripNo" required class="w-1/3 input-style font-bold text-indigo-600"><input type="text" id="editPastTripPosNo" placeholder="Poz No" class="w-1/3 input-style font-bold text-amber-600"><input type="text" id="editPastTripRoute" required class="w-1/3 input-style"></div><div class="flex gap-2"><input type="text" id="editPastTripPlate" required class="w-1/2 input-style uppercase"><input type="text" id="editPastTripTrailer" class="w-1/2 input-style uppercase"></div><div class="flex gap-2 bg-slate-50 p-3 rounded-xl"><input type="number" id="editPastStartKm" required class="w-1/2 input-style font-bold"><input type="number" id="editPastEndKm" required class="w-1/2 input-style font-bold text-emerald-600"></div><button type="submit" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold">Kaydet & Hesapla</button></form></div></div>
 
-<div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 translate-y-20 opacity-0 transition-all duration-300 z-50 pointer-events-none w-[90%] max-w-sm text-center flex justify-center"><div class="bg-slate-800 text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-3 font-medium text-sm w-fit"><i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i><span id="toast-msg"></span></div></div>
+<div id="toast" class="fixed left-1/2 transform -translate-x-1/2 translate-y-20 opacity-0 transition-all duration-300 z-50 pointer-events-none w-[90%] max-w-sm text-center flex justify-center" style="bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px))"><div class="bg-slate-800 text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-3 font-medium text-sm w-fit"><i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i><span id="toast-msg"></span></div></div>
 
 <div id="pdfWrapper"><div id="pdfTemplate"><div style="display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #0F172A; padding-bottom:20px; margin-bottom:30px;"><div style="display:flex; align-items:center; gap:15px;"><svg width="48" height="48" viewBox="0 0 100 100" fill="#4AA4F6" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="15" width="24" height="70"/><path d="M44 55 L 75 24 H 95 L 44 75 Z"/><rect x="70" y="60" width="25" height="25"/></svg><div><h1 style="margin:0; font-size:28px; font-weight:800; color:#0F172A; letter-spacing:-1px; text-transform:lowercase;">karekara</h1><p style="margin:2px 0 0 0; font-size:11px; font-weight:bold; color:#64748B;">FİLO & HARCIRAH YÖNETİMİ</p></div></div><div style="text-align:right;"><h2 style="margin:0; font-size:22px; color:#4AA4F6; font-weight:800;">HESAP EKSTRESİ</h2><p style="margin:5px 0 0 0; font-size:14px; color:#475569;">Tarih: <b><span id="pdfDate"></span></b></p></div></div><div style="background-color:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:15px; margin-bottom:25px;"><p style="margin:0 0 5px 0; font-size:12px; color:#64748B;">PERSONEL ADI SOYADI</p><p style="margin:0; font-size:18px; font-weight:bold; color:#0F172A;" id="pdfName"></p></div><h4 style="margin:0 0 10px 0; font-size:14px; color:#0F172A; border-bottom:2px solid #CBD5E1; padding-bottom:5px;">1. ALINAN AVANSLAR</h4><table style="width:100%; border-collapse:collapse; margin-bottom:25px; font-size:13px;"><thead><tr style="background-color:#F1F5F9;"><th style="padding:10px; text-align:left; border:1px solid #CBD5E1;">Tarih</th><th style="padding:10px; text-align:left; border:1px solid #CBD5E1;">Açıklama</th><th style="padding:10px; text-align:right; border:1px solid #CBD5E1;">Tutar</th></tr></thead><tbody id="pdfAvansTable"></tbody></table><h4 style="margin:0 0 10px 0; font-size:14px; color:#0F172A; border-bottom:2px solid #CBD5E1; padding-bottom:5px;">2. ONAYLANMIŞ HARCAMALAR</h4><table style="width:100%; border-collapse:collapse; margin-bottom:30px; font-size:13px;"><thead><tr style="background-color:#F1F5F9;"><th style="padding:10px; text-align:left; border:1px solid #CBD5E1;">Tarih</th><th style="padding:10px; text-align:left; border:1px solid #CBD5E1;">Kategori</th><th style="padding:10px; text-align:left; border:1px solid #CBD5E1;">Dosya/Sefer</th><th style="padding:10px; text-align:left; border:1px solid #CBD5E1;">Açıklama</th><th style="padding:10px; text-align:right; border:1px solid #CBD5E1;">Tutar</th></tr></thead><tbody id="pdfHarcamaTable"></tbody></table><div style="border:2px solid #4AA4F6; padding:20px; background-color:#F0F7FF; border-radius:8px; text-align:center;"><p style="margin:0 0 10px 0; font-size:14px; font-weight:bold; color:#1D4ED8;">PERSONELDE KALAN NET KASA BAKİYESİ</p><div style="display:flex; justify-content:center; gap:30px; font-size:20px; font-weight:800; color:#0F172A;" id="pdfBakiye"></div></div><div style="display:flex; justify-content:space-between; margin-top:50px; padding:0 40px;"><div style="text-align:center;"><p style="margin:0 0 40px 0; font-size:14px; font-weight:bold;">Personel İmza</p><p style="margin:0; font-size:14px; color:#64748B;" id="pdfSignName"></p></div><div style="text-align:center;"><p style="margin:0 0 40px 0; font-size:14px; font-weight:bold;">Firma Yetkilisi Onay</p><p style="margin:0; font-size:14px; color:#64748B;">karekara Muhasebe</p></div></div></div></div>
 
@@ -777,6 +1269,83 @@
     function showDriverDropdown(q=''){const dd=document.getElementById('driverDropdown'); if(!dd)return; if(currentRole==='DRIVER'){dd.classList.add('hidden'); return;} const drvs=getDrivers(); const filtered=q?drvs.filter(d=>d.toLowerCase().includes(q)):drvs; if(filtered.length===0){dd.innerHTML='<div class="px-3 py-2 text-xs text-slate-400 italic">Bulunamadı</div>'; dd.classList.remove('hidden'); return;} dd.innerHTML=filtered.map(d=>'<div class="px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-primary cursor-pointer rounded-lg flex items-center gap-2 transition-colors" onmousedown="selectDriver(\'' + d + '\')">' + '<i class="fa-solid fa-user text-slate-300 text-xs"></i>' + d + '</div>').join(''); dd.classList.remove('hidden');}
     function hideDriverDropdown(){setTimeout(()=>{const dd=document.getElementById('driverDropdown'); if(dd)dd.classList.add('hidden'); const si=document.getElementById('driverSearchInput'); if(si&&currentUser)si.value=currentUser;},200);}
     function selectDriver(name){const uSel=document.getElementById('activeUser'); const si=document.getElementById('driverSearchInput'); if(uSel)uSel.value=name; if(si)si.value=name; const dd=document.getElementById('driverDropdown'); if(dd)dd.classList.add('hidden'); currentUser=name; renderAll(); checkActiveTrip();}
+
+    /* ===== MOBİL PERFORMANS & DOKUNMA İYİLEŞTİRMELERİ ===== */
+    
+    // iOS momentum scroll — tüm scrollable elementler için
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.overflow-y-auto, .overflow-x-auto, .hide-scrollbar').forEach(el => {
+            el.style.webkitOverflowScrolling = 'touch';
+        });
+    });
+
+    // Double-tap zoom engelleme (iOS) — Tailwind zaten handle ediyor ama ek güvence
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(e) {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) {
+            // Only prevent zoom on non-input elements
+            if (!['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
+                e.preventDefault();
+            }
+        }
+        lastTouchEnd = now;
+    }, { passive: false });
+
+    // Modal açıldığında body scroll kilitleme
+    function lockBodyScroll() {
+        document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.width = '100%';
+    }
+    function unlockBodyScroll() {
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.width = '';
+    }
+
+    // Tüm modal açma/kapama fonksiyonlarını wrap et
+    const _origOpenTripModal = window.openTripModal;
+    window.openTripModal = function() { lockBodyScroll(); if(_origOpenTripModal) _origOpenTripModal(); };
+    const _origCloseTripModal = window.closeTripModal;
+    window.closeTripModal = function() { unlockBodyScroll(); if(_origCloseTripModal) _origCloseTripModal(); };
+
+    const _origOpenEndTripModal = window.openEndTripModal;
+    window.openEndTripModal = function(id) { lockBodyScroll(); if(_origOpenEndTripModal) _origOpenEndTripModal(id); };
+    const _origCloseEndTripModal = window.closeEndTripModal;
+    window.closeEndTripModal = function() { unlockBodyScroll(); if(_origCloseEndTripModal) _origCloseEndTripModal(); };
+
+    const _origOpenOpsTripModal = window.openOpsTripModal;
+    window.openOpsTripModal = function() { lockBodyScroll(); if(_origOpenOpsTripModal) _origOpenOpsTripModal(); };
+    const _origCloseOpsTripModal = window.closeOpsTripModal;
+    window.closeOpsTripModal = function() { unlockBodyScroll(); if(_origCloseOpsTripModal) _origCloseOpsTripModal(); };
+
+    // ESC tuşu ile modal kapatma
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            unlockBodyScroll();
+            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+        }
+    });
+
+    // Modal dışına tıklama ile kapatma
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                unlockBodyScroll();
+            }
+        });
+    });
+
+    // iOS input focus — klavye açıldığında scroll fix
+    document.querySelectorAll('input, select, textarea').forEach(input => {
+        input.addEventListener('focus', function() {
+            setTimeout(() => {
+                this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 350);
+        });
+    });
 
     if('serviceWorker' in navigator){
         window.addEventListener('load',()=>{

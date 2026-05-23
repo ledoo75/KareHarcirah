@@ -1001,7 +1001,21 @@
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <div class="glass-card p-5"><div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 border-b border-slate-100 pb-3 gap-2"><h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-trophy text-amber-500 mr-2"></i>Şoför Performans Kartı</h3><select id="perfDriverSelect" onchange="renderPerformanceCard()" class="input-style text-xs py-1 px-2 w-full sm:w-44"></select></div><div id="performanceCardBody"><div class="text-center text-slate-400 py-6 text-sm">Şoför seçiniz...</div></div></div>
-            <div class="glass-card p-5"><div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 border-b border-slate-100 pb-3 gap-2"><h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-calendar-check text-indigo-500 mr-2"></i>Aylık Özet Raporu</h3><div class="flex gap-2 items-center w-full sm:w-auto"><input type="month" id="monthlyReportMonth" class="input-style text-xs py-1 px-2 w-full sm:w-36"><button onclick="renderMonthlyReport()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Getir</button></div></div><div id="monthlyReportBody"><div class="text-center text-slate-400 py-6 text-sm">Ay seçip "Getir" butonuna basın...</div></div></div>
+            <div class="glass-card p-5">
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 border-b border-slate-100 pb-3 gap-3">
+    <div>
+      <h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-calendar-check text-indigo-500 mr-2"></i>Aylık Özet Raporu</h3>
+      <p class="text-xs text-slate-400 mt-0.5">Sefer, masraf, avans ve personel bazlı kapsamlı ay raporu</p>
+    </div>
+    <div class="flex flex-wrap gap-2 items-center w-full sm:w-auto">
+      <input type="month" id="monthlyReportMonth" class="input-style text-sm py-1.5 px-3 w-full sm:w-36" onchange="renderMonthlyReport()">
+      <button onclick="renderMonthlyReport()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-magnifying-glass"></i> Getir</button>
+      <button onclick="exportMonthlyPDF()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+      <button onclick="exportMonthlyExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-file-excel"></i> Excel</button>
+    </div>
+  </div>
+  <div id="monthlyReportBody"><div class="text-center text-slate-400 py-8 text-sm"><i class="fa-regular fa-calendar text-3xl block mb-2 opacity-30"></i>Ay seçip "Getir" butonuna basın...</div></div>
+</div>
         </div>
         <div class="glass-card p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-l-4 border-indigo-500">
             <h3 class="font-bold text-slate-800 text-lg w-full sm:w-auto"><i class="fa-solid fa-filter text-indigo-500 mr-2"></i>Gelişmiş Analiz Filtresi</h3>
@@ -1973,7 +1987,312 @@
     function renderAnalyticsTab(){renderDebtBalanceList(); renderSystemLog(); const s=document.getElementById('perfDriverSelect'); if(s){s.innerHTML='<option value="">-- Şoför Seç --</option>'; getDrivers().forEach(d=>{s.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`;});} const mI=document.getElementById('monthlyReportMonth'); if(mI&&!mI.value)mI.value=new Date().toISOString().slice(0,7); generateSystemAlerts(); let t=new Date(); let fD=new Date(t.getFullYear(),t.getMonth(),1).toISOString().split('T')[0]; let lD=new Date(t.getFullYear(),t.getMonth()+1,0).toISOString().split('T')[0]; if(!document.getElementById('advStartDate').value)document.getElementById('advStartDate').value=fD; if(!document.getElementById('advEndDate').value)document.getElementById('advEndDate').value=lD; if(!document.getElementById('tripCostStartDate').value)document.getElementById('tripCostStartDate').value=fD; if(!document.getElementById('tripCostEndDate').value)document.getElementById('tripCostEndDate').value=lD; renderAdvancedAnalytics();}
     function renderDebtBalanceList(){const tb=document.getElementById('debtBalanceList'); if(!tb)return; tb.innerHTML=''; const a3=new Date(new Date()-30*24*60*60*1000); const f=(v,c)=>{if(v===0)return'-'; return`<span class="${v>0?'text-emerald-700 font-bold':'text-rose-700 font-bold'}">${parseFloat(v).toLocaleString('tr-TR',{minimumFractionDigits:2})} ${c}</span>`;}; getDrivers().forEach(drv=>{let aE=0,aU=0,aT=0,eE=0,eU=0,eT=0; advances.filter(a=>a.driver===drv).forEach(a=>{if(a.currency==='EUR')aE+=a.amount;else if(a.currency==='USD')aU+=a.amount;else aT+=a.amount;}); expenses.filter(x=>x.driver===drv&&x.status==='APPROVED').forEach(x=>{if(x.currency==='EUR')eE+=x.amount;else if(x.currency==='USD')eU+=x.amount;else eT+=x.amount;}); const nE=aE-eE,nU=aU-eU,nT=aT-eT; let r3E=0,r3U=0,r3T=0; expenses.filter(x=>x.driver===drv&&x.status==='APPROVED'&&new Date(x.date)>=a3).forEach(x=>{if(x.currency==='EUR')r3E+=x.amount;else if(x.currency==='USD')r3U+=x.amount;else r3T+=x.amount;}); const iD=nE<0||nU<0||nT<0; const iC=!iD&&(nE>0||nU>0||nT>0); let sB=iD?'<span class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold">BORÇLU ⚠️</span>':(iC?'<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-[10px] font-bold">ALACAKLI ✓</span>':'<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded text-[10px] font-bold">DENGELİ</span>'); let aS=[aE>0?`${aE.toLocaleString('tr-TR',{minimumFractionDigits:2})} €`:'',aU>0?`${aU.toLocaleString('tr-TR',{minimumFractionDigits:2})} $`:'',aT>0?`${aT.toLocaleString('tr-TR',{minimumFractionDigits:2})} ₺`:''].filter(Boolean).join('<br>')||'-'; let eS=[eE>0?`${eE.toLocaleString('tr-TR',{minimumFractionDigits:2})} €`:'',eU>0?`${eU.toLocaleString('tr-TR',{minimumFractionDigits:2})} $`:'',eT>0?`${eT.toLocaleString('tr-TR',{minimumFractionDigits:2})} ₺`:''].filter(Boolean).join('<br>')||'-'; let nS=[f(nE,'€'),f(nU,'$'),f(nT,'₺')].filter(s=>s!=='-').join('<br>')||'-'; let rS=[r3E>0?`${r3E.toLocaleString('tr-TR',{minimumFractionDigits:2})} €`:'',r3U>0?`${r3U.toLocaleString('tr-TR',{minimumFractionDigits:2})} $`:'',r3T>0?`${r3T.toLocaleString('tr-TR',{minimumFractionDigits:2})} ₺`:''].filter(Boolean).join('<br>')||'<span class="text-slate-400">0</span>'; tb.innerHTML+=`<tr class="border-b border-slate-100 hover:bg-slate-50 ${iD?'bg-rose-50':(iC?'bg-emerald-50/40':'')}"><td class="p-3 font-bold"><i class="fa-solid fa-circle-user text-slate-300 mr-2"></i>${esc(drv)}</td><td class="p-3 text-right text-xs text-blue-700">${aS}</td><td class="p-3 text-right text-xs text-orange-700">${eS}</td><td class="p-3 text-right text-sm">${nS}</td><td class="p-3 text-center">${sB}</td><td class="p-3 text-right text-xs text-slate-600">${rS}</td></tr>`;});}
     function renderPerformanceCard(){const drv=document.getElementById('perfDriverSelect').value; const bd=document.getElementById('performanceCardBody'); if(!drv){bd.innerHTML='<div class="text-center text-slate-400 py-6 text-sm">Şoför seçiniz...</div>'; return;} const ts=driverTrips.filter(t=>t.driver===drv&&t.status==='COMPLETED'); const tKm=ts.reduce((s,t)=>s+t.totalKm,0); const aKm=ts.length>0?Math.round(tKm/ts.length):0; const aT=driverTrips.find(t=>t.driver===drv&&t.status==='ACTIVE'); const pC={}; ts.forEach(t=>{pC[t.plate]=(pC[t.plate]||0)+1;}); const tP=Object.entries(pC).sort((a,b)=>b[1]-a[1])[0]; let tE=0,tA=0; expenses.filter(e=>e.driver===drv&&e.status==='APPROVED').forEach(e=>{tE+=e.currency==='EUR'?e.amount:(e.currency==='USD'?e.amount*0.9:e.amount*0.028);}); advances.filter(a=>a.driver===drv).forEach(a=>{tA+=a.currency==='EUR'?a.amount:(a.currency==='USD'?a.amount*0.9:e.amount*0.028);}); bd.innerHTML=`<div class="grid grid-cols-2 gap-3 mb-4"><div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-center"><p class="text-[10px] font-bold text-indigo-500 uppercase">Toplam Sefer</p><p class="text-2xl font-black text-indigo-700">${ts.length}</p></div><div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-center"><p class="text-[10px] font-bold text-emerald-500 uppercase">Toplam KM</p><p class="text-2xl font-black text-emerald-700">${tKm.toLocaleString()}</p></div><div class="bg-amber-50 border border-amber-100 rounded-xl p-3 text-center"><p class="text-[10px] font-bold text-amber-500 uppercase">Ort. Sefer KM</p><p class="text-2xl font-black text-amber-700">${aKm.toLocaleString()}</p></div><div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center"><p class="text-[10px] font-bold text-slate-500 uppercase">En Çok Kullan Araç</p><p class="text-base font-black text-slate-700 uppercase">${tP?esc(tP[0]):'-'}</p></div></div><div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2 text-sm"><div class="flex justify-between"><span class="text-slate-500">Toplam Avans (€)</span><span class="font-bold text-blue-700">~${tA.toLocaleString('tr-TR',{minimumFractionDigits:2})} €</span></div><div class="flex justify-between"><span class="text-slate-500">Toplam Masraf (€)</span><span class="font-bold text-orange-700">~${tE.toLocaleString('tr-TR',{minimumFractionDigits:2})} €</span></div><div class="flex justify-between border-t border-slate-200 pt-2"><span class="font-bold text-slate-700">Aktif Sefer</span><span class="font-bold">${aT?`<span class="text-rose-600 animate-pulse">🟥 ${esc(aT.tripNo)}</span>`:'<span class="text-slate-400">-</span>'}</span></div></div>`;}
-    function renderMonthlyReport(){const mV=document.getElementById('monthlyReportMonth').value; const bd=document.getElementById('monthlyReportBody'); if(!mV){bd.innerHTML='<div class="text-center text-slate-400 py-4 text-sm">Ay seçiniz.</div>'; return;} const mE=expenses.filter(e=>e.status==='APPROVED'&&e.date&&e.date.startsWith(mV)); const mA=advances.filter(a=>a.date&&a.date.startsWith(mV)); const mT=driverTrips.filter(t=>t.status==='COMPLETED'&&t.endDate&&t.endDate.startsWith(mV)); let eE=0,eU=0,eT=0,aE=0,aU=0,aT=0; mE.forEach(e=>{if(e.currency==='EUR')eE+=e.amount;else if(e.currency==='USD')eU+=e.amount;else eT+=e.amount;}); mA.forEach(a=>{if(a.currency==='EUR')aE+=a.amount;else if(a.currency==='USD')aU+=a.amount;else aT+=a.amount;}); const tK=mT.reduce((s,t)=>s+t.totalKm,0); const uD=[...new Set(mE.map(e=>e.driver))].length; let cS={}; mE.forEach(e=>{if(!cS[e.category])cS[e.category]={e:0,u:0,t:0}; if(e.currency==='EUR')cS[e.category].e+=e.amount;else if(e.currency==='USD')cS[e.category].u+=e.amount;else cS[e.category].t+=e.amount;}); let cR=Object.entries(cS).map(([c,v])=>{let p=[v.e>0?`${v.e.toLocaleString('tr-TR',{minimumFractionDigits:2})} €`:'',v.u>0?`${v.u.toLocaleString('tr-TR',{minimumFractionDigits:2})} $`:'',v.t>0?`${v.t.toLocaleString('tr-TR',{minimumFractionDigits:2})} ₺`:''].filter(Boolean).join(' / '); return `<div class="flex justify-between items-center py-1.5 border-b border-slate-100"><span class="text-sm text-slate-600">${catIcons[c]||'📝'} ${c}</span><span class="font-bold text-slate-800 text-sm">${p}</span></div>`;}).join(''); const fm=(e,u,t)=>[e>0?`${e.toLocaleString('tr-TR',{minimumFractionDigits:2})} €`:'',u>0?`${u.toLocaleString('tr-TR',{minimumFractionDigits:2})} $`:'',t>0?`${t.toLocaleString('tr-TR',{minimumFractionDigits:2})} ₺`:''].filter(Boolean).join(' / ')||'0'; const[y,m]=mV.split('-'); const mN=new Date(y,parseInt(m)-1,1).toLocaleString('tr-TR',{month:'long',year:'numeric'}); bd.innerHTML=`<div class="text-center mb-4"><p class="text-lg font-black text-slate-800">${mN} Özeti</p></div><div class="grid grid-cols-2 gap-2 mb-4"><div class="bg-rose-50 border border-rose-100 rounded-xl p-3"><p class="text-[10px] font-bold text-rose-500 uppercase mb-1">Toplam Masraf</p><p class="text-sm font-bold text-rose-700">${fm(eE,eU,eT)}</p></div><div class="bg-blue-50 border border-blue-100 rounded-xl p-3"><p class="text-[10px] font-bold text-blue-500 uppercase mb-1">Dağıtılan Avans</p><p class="text-sm font-bold text-blue-700">${fm(aE,aU,aT)}</p></div><div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3"><p class="text-[10px] font-bold text-emerald-500 uppercase mb-1">Tamamlanan Sefer</p><p class="text-xl font-black text-emerald-700">${mT.length} sefer / ${tK.toLocaleString()} KM</p></div><div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3"><p class="text-[10px] font-bold text-indigo-500 uppercase mb-1">Aktif Personel</p><p class="text-xl font-black text-indigo-700">${uD} şoför</p></div></div><div class="bg-slate-50 rounded-xl p-3 border border-slate-200"><p class="text-[10px] font-bold text-slate-500 uppercase mb-2">Kategori Bazlı Masraflar</p>${cR||'<p class="text-xs text-slate-400 text-center py-2">Kayıt yok.</p>'}</div>`;}
+    // ── Aylık rapor için yardımcı ──
+    function getMonthlyData(mV){
+        const mE=expenses.filter(e=>e.status==='APPROVED'&&e.date&&e.date.startsWith(mV));
+        const mA=advances.filter(a=>a.date&&a.date.startsWith(mV));
+        const mT=driverTrips.filter(t=>t.status==='COMPLETED'&&t.endDate&&t.endDate.startsWith(mV));
+        let eE=0,eU=0,eT=0,aE=0,aU=0,aT=0;
+        mE.forEach(e=>{if(e.currency==='EUR')eE+=e.amount;else if(e.currency==='USD')eU+=e.amount;else eT+=e.amount;});
+        mA.forEach(a=>{if(a.currency==='EUR')aE+=a.amount;else if(a.currency==='USD')aU+=a.amount;else aT+=a.amount;});
+        const tK=mT.reduce((s,t)=>s+(t.totalKm||0),0);
+        const drivers=getDrivers();
+        // Personel bazlı
+        const drvData=drivers.map(drv=>{
+            const dExp=mE.filter(e=>e.driver===drv);
+            const dAdv=mA.filter(a=>a.driver===drv);
+            const dTrips=mT.filter(t=>t.driver===drv);
+            let dEE=0,dEU=0,dET=0,dAE=0,dAU=0,dAT=0;
+            dExp.forEach(e=>{if(e.currency==='EUR')dEE+=e.amount;else if(e.currency==='USD')dEU+=e.amount;else dET+=e.amount;});
+            dAdv.forEach(a=>{if(a.currency==='EUR')dAE+=a.amount;else if(a.currency==='USD')dAU+=a.amount;else dAT+=a.amount;});
+            return {drv,expE:dEE,expU:dEU,expT:dET,advE:dAE,advU:dAU,advT:dAT,trips:dTrips.length,km:dTrips.reduce((s,t)=>s+(t.totalKm||0),0),expenses:dExp};
+        }).filter(d=>d.expE||d.expU||d.expT||d.advE||d.advU||d.advT||d.trips);
+        // Kategori bazlı
+        let cS={};
+        mE.forEach(e=>{if(!cS[e.category])cS[e.category]={e:0,u:0,t:0}; if(e.currency==='EUR')cS[e.category].e+=e.amount;else if(e.currency==='USD')cS[e.category].u+=e.amount;else cS[e.category].t+=e.amount;});
+        const [y,m]=mV.split('-');
+        const mN=new Date(y,parseInt(m)-1,1).toLocaleString('tr-TR',{month:'long',year:'numeric'});
+        return {mE,mA,mT,eE,eU,eT,aE,aU,aT,tK,drvData,cS,mN,mV,y,m};
+    }
+
+    function renderMonthlyReport(){
+        const mV=document.getElementById('monthlyReportMonth').value;
+        const bd=document.getElementById('monthlyReportBody');
+        if(!mV){bd.innerHTML='<div class="text-center text-slate-400 py-4 text-sm">Ay seçiniz.</div>'; return;}
+        const D=getMonthlyData(mV);
+        const fm=(e,u,t)=>{let p=[e>0?`${e.toLocaleString('tr-TR',{minimumFractionDigits:2})} €`:'',u>0?`${u.toLocaleString('tr-TR',{minimumFractionDigits:2})} $`:'',t>0?`${t.toLocaleString('tr-TR',{minimumFractionDigits:2})} ₺`:''].filter(Boolean).join(' / '); return p||'0';};
+        const totalEurEq=D.eE+(D.eU*0.9)+(D.eT*0.028);
+        const prevM=new Date(parseInt(D.y),parseInt(D.m)-2,1);
+        const prevMV=prevM.toISOString().slice(0,7);
+        const prevE=expenses.filter(e=>e.status==='APPROVED'&&e.date&&e.date.startsWith(prevMV));
+        const prevEur=prevE.reduce((s,e)=>s+(e.currency==='EUR'?e.amount:e.currency==='USD'?e.amount*0.9:e.amount*0.028),0);
+        const trend=prevEur>0?((totalEurEq-prevEur)/prevEur*100):0;
+        const trendColor=trend>10?'text-rose-600':trend<-10?'text-emerald-600':'text-slate-500';
+        const trendIcon=trend>0?'fa-arrow-trend-up':'fa-arrow-trend-down';
+
+        // Kategori satırları
+        let cR=Object.entries(D.cS).sort((a,b)=>(b[1].e+b[1].u*0.9+b[1].t*0.028)-(a[1].e+a[1].u*0.9+a[1].t*0.028)).map(([c,v])=>{
+            let p=[v.e>0?`${v.e.toLocaleString('tr-TR',{minimumFractionDigits:2})} €`:'',v.u>0?`${v.u.toLocaleString('tr-TR',{minimumFractionDigits:2})} $`:'',v.t>0?`${v.t.toLocaleString('tr-TR',{minimumFractionDigits:2})} ₺`:''].filter(Boolean).join(' / ');
+            const eur=v.e+v.u*0.9+v.t*0.028; const pct=totalEurEq>0?Math.round(eur/totalEurEq*100):0;
+            return `<div class="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0">
+                <span class="text-lg w-7 text-center">${catIcons[c]||'📝'}</span>
+                <div class="flex-1"><div class="flex justify-between items-center mb-1"><span class="text-xs font-bold text-slate-700">${c}</span><span class="text-xs font-bold text-slate-800">${p}</span></div>
+                <div class="h-1.5 bg-slate-100 rounded-full"><div class="h-1.5 bg-primary rounded-full" style="width:${pct}%"></div></div></div>
+                <span class="text-[10px] text-slate-400 w-8 text-right">${pct}%</span></div>`;
+        }).join('');
+
+        // Personel tablosu
+        let drvR=D.drvData.map(d=>{
+            const net=(d.advE-d.expE);
+            const netStr=net!==0?`<span class="${net>0?'text-emerald-600':'text-rose-600'} font-bold">${net>0?'+':''}${net.toLocaleString('tr-TR',{minimumFractionDigits:2})} €</span>`:`<span class="text-slate-400">—</span>`;
+            return `<tr class="border-b border-slate-100 hover:bg-slate-50">
+                <td class="p-3 font-bold text-sm"><i class="fa-solid fa-circle-user text-slate-300 mr-2"></i>${esc(d.drv)}</td>
+                <td class="p-3 text-right text-xs text-emerald-700 font-bold">${d.expE>0||d.expU>0||d.expT>0?fm(d.expE,d.expU,d.expT):'—'}</td>
+                <td class="p-3 text-right text-xs text-blue-700 font-bold">${d.advE>0||d.advU>0||d.advT>0?fm(d.advE,d.advU,d.advT):'—'}</td>
+                <td class="p-3 text-right text-xs">${netStr}</td>
+                <td class="p-3 text-right text-xs text-slate-600">${d.trips} sefer / ${d.km.toLocaleString()} KM</td>
+            </tr>`;
+        }).join('');
+
+        // Sefer listesi
+        let tripR=D.mT.slice(0,8).map(t=>`<tr class="border-b border-slate-100 hover:bg-slate-50">
+            <td class="p-2 text-xs text-slate-500">${t.endDate}</td>
+            <td class="p-2 font-bold text-primary text-xs">${esc(t.tripNo)}</td>
+            <td class="p-2 text-xs font-bold text-slate-700">${esc(t.driver)}</td>
+            <td class="p-2 text-xs text-slate-500">${esc(t.route)}</td>
+            <td class="p-2 text-right text-xs font-bold text-emerald-600">${(t.totalKm||0).toLocaleString()} KM</td>
+        </tr>`).join('');
+        if(!tripR) tripR='<tr><td colspan="5" class="p-4 text-center text-slate-400 text-xs">Tamamlanan sefer yok.</td></tr>';
+
+        bd.innerHTML=`
+        <div class="flex items-center justify-between mb-5">
+            <div><h2 class="text-xl font-black text-slate-800">${D.mN} Raporu</h2>
+            <div class="flex items-center gap-2 mt-1"><i class="fa-solid ${trendIcon} text-xs ${trendColor}"></i><span class="text-xs ${trendColor} font-semibold">${trend>0?'+':''}${trend.toFixed(1)}% önceki aya göre</span></div></div>
+        </div>
+
+        <!-- KPI kartları -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+            <div class="bg-rose-50 border border-rose-100 rounded-xl p-4">
+                <p class="text-[10px] font-bold text-rose-400 uppercase tracking-wider mb-1">Toplam Masraf</p>
+                <p class="text-sm font-black text-rose-700 leading-tight">${fm(D.eE,D.eU,D.eT)}</p>
+                <p class="text-[10px] text-rose-400 mt-1">≈ ${totalEurEq.toLocaleString('tr-TR',{maximumFractionDigits:0})} € eşdeğeri</p>
+            </div>
+            <div class="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                <p class="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1">Dağıtılan Avans</p>
+                <p class="text-sm font-black text-blue-700 leading-tight">${fm(D.aE,D.aU,D.aT)}</p>
+                <p class="text-[10px] text-blue-400 mt-1">${D.drvData.filter(d=>d.advE||d.advU||d.advT).length} personele</p>
+            </div>
+            <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+                <p class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-1">Tamamlanan Sefer</p>
+                <p class="text-xl font-black text-emerald-700">${D.mT.length}</p>
+                <p class="text-[10px] text-emerald-500 mt-1">${D.tK.toLocaleString()} KM toplam</p>
+            </div>
+            <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+                <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-1">Aktif Personel</p>
+                <p class="text-xl font-black text-indigo-700">${D.drvData.length}</p>
+                <p class="text-[10px] text-indigo-400 mt-1">${D.mE.length} masraf fişi</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            <!-- Kategori kırılımı -->
+            <div class="bg-white border border-slate-200 rounded-xl p-4">
+                <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2"><i class="fa-solid fa-chart-pie text-primary text-base"></i> Kategori Kırılımı</h4>
+                ${cR||'<p class="text-xs text-slate-400 py-4 text-center">Masraf yok.</p>'}
+            </div>
+            <!-- Sefer listesi -->
+            <div class="bg-white border border-slate-200 rounded-xl p-4">
+                <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2"><i class="fa-solid fa-truck text-emerald-500 text-base"></i> Tamamlanan Seferler${D.mT.length>8?' <span class="text-[10px] text-slate-400 font-normal">(ilk 8)</span>':''}</h4>
+                <div class="overflow-x-auto"><table class="w-full text-left whitespace-nowrap min-w-[400px]"><tbody>${tripR}</tbody></table></div>
+            </div>
+        </div>
+
+        <!-- Personel bazlı tablo -->
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
+                <i class="fa-solid fa-users text-indigo-500"></i>
+                <h4 class="text-sm font-bold text-slate-800">Personel Bazlı Özet</h4>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm whitespace-nowrap min-w-[600px]">
+                    <thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+                        <tr><th class="p-3">Personel</th><th class="p-3 text-right">Harcama</th><th class="p-3 text-right">Avans</th><th class="p-3 text-right">Net Bakiye</th><th class="p-3 text-right">Sefer / KM</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">${drvR||'<tr><td colspan="5" class="p-4 text-center text-slate-400 text-xs">Kayıt yok.</td></tr>'}</tbody>
+                </table>
+            </div>
+        </div>`;
+    }
+
+    async function exportMonthlyPDF(){
+        const mV=document.getElementById('monthlyReportMonth').value;
+        if(!mV){showToast('Önce ay seçiniz!','error'); return;}
+        showToast('PDF Hazırlanıyor...','success');
+        const D=getMonthlyData(mV);
+        const today=new Date().toLocaleDateString('tr-TR');
+        const fname='Aylik_Rapor_'+D.mV+'_'+new Date().toISOString().split('T')[0]+'.pdf';
+        const fm=(e,u,t)=>{let p=[e>0?e.toFixed(2)+' €':'',u>0?u.toFixed(2)+' $':'',t>0?t.toFixed(2)+' ₺':''].filter(Boolean).join(' / '); return p||'0';};
+        const totalEurEq=D.eE+(D.eU*0.9)+(D.eT*0.028);
+        const prevM=new Date(parseInt(D.y),parseInt(D.m)-2,1);
+        const prevMV=prevM.toISOString().slice(0,7);
+        const prevE=expenses.filter(e=>e.status==='APPROVED'&&e.date&&e.date.startsWith(prevMV));
+        const prevEur=prevE.reduce((s,e)=>s+(e.currency==='EUR'?e.amount:e.currency==='USD'?e.amount*0.9:e.amount*0.028),0);
+        const trend=prevEur>0?((totalEurEq-prevEur)/prevEur*100):0;
+
+        async function svgToPng(svgStr,w,h){return new Promise(resolve=>{const img=new Image();const blob=new Blob([svgStr],{type:'image/svg+xml'});const url=URL.createObjectURL(blob);img.onload=()=>{const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);URL.revokeObjectURL(url);resolve(c.toDataURL('image/png'));};img.onerror=()=>{URL.revokeObjectURL(url);resolve(null);};img.src=url;});}
+        const logoSvg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="20" y="15" width="24" height="70" fill="#4AA4F6"/><path d="M44 55 L 75 24 H 95 L 44 75 Z" fill="#4AA4F6"/><rect x="70" y="60" width="25" height="25" fill="#4AA4F6"/></svg>`;
+        const logoPng=await svgToPng(logoSvg,120,120);
+
+        // KPI satırları
+        const kpiCols=[
+            [{text:'TOPLAM MASRAF',style:'kpiLabel'},{text:fm(D.eE,D.eU,D.eT),style:'kpiVal',color:'#BE123C'},{text:'≈ '+totalEurEq.toLocaleString('tr-TR',{maximumFractionDigits:0})+' € eşd.',style:'kpiSub'}],
+            [{text:'DAĞITILAN AVANS',style:'kpiLabel'},{text:fm(D.aE,D.aU,D.aT),style:'kpiVal',color:'#1D4ED8'},{text:D.drvData.filter(d=>d.advE||d.advU||d.advT).length+' personele',style:'kpiSub'}],
+            [{text:'TAMAMLANAN SEFER',style:'kpiLabel'},{text:String(D.mT.length),style:'kpiVal',color:'#065F46'},{text:D.tK.toLocaleString()+' KM toplam',style:'kpiSub'}],
+            [{text:'AKTİF PERSONEL',style:'kpiLabel'},{text:String(D.drvData.length),style:'kpiVal',color:'#3730A3'},{text:D.mE.length+' masraf fişi',style:'kpiSub'}],
+        ];
+
+        // Kategori satırları
+        const catRows=Object.entries(D.cS).sort((a,b)=>(b[1].e+b[1].u*0.9+b[1].t*0.028)-(a[1].e+a[1].u*0.9+a[1].t*0.028)).map(([c,v])=>[
+            {text:c,style:'td'},{text:[v.e>0?v.e.toFixed(2)+' €':'',v.u>0?v.u.toFixed(2)+' $':'',v.t>0?v.t.toFixed(2)+' ₺':''].filter(Boolean).join(' / ')||'0',style:'tdR'}
+        ]);
+        if(!catRows.length) catRows.push([{text:'Kayıt yok.',style:'tdGray',colSpan:2,alignment:'center'},{}]);
+
+        // Personel satırları
+        const drvRows=D.drvData.map(d=>{
+            const net=d.advE-d.expE;
+            return[
+                {text:d.drv,style:'td',bold:true},
+                {text:d.expE>0||d.expU>0||d.expT>0?fm(d.expE,d.expU,d.expT):'—',style:'tdR'},
+                {text:d.advE>0||d.advU>0||d.advT>0?fm(d.advE,d.advU,d.advT):'—',style:'tdR'},
+                {text:net!==0?(net>0?'+':'')+net.toFixed(2)+' €':'—',style:'tdR',color:net>0?'#059669':net<0?'#DC2626':'#6B7280'},
+                {text:d.trips+' / '+d.km.toLocaleString()+' KM',style:'tdR'}
+            ];
+        });
+        if(!drvRows.length) drvRows.push([{text:'Kayıt yok.',style:'tdGray',colSpan:5,alignment:'center'},{},{},{},{}]);
+
+        // Sefer satırları
+        const tripRows=D.mT.slice(0,15).map(t=>[
+            {text:t.endDate,style:'td'},{text:esc(t.tripNo),style:'td',bold:true},
+            {text:esc(t.driver),style:'td'},{text:esc(t.route),style:'td'},
+            {text:(t.totalKm||0).toLocaleString()+' KM',style:'tdR'}
+        ]);
+        if(!tripRows.length) tripRows.push([{text:'Kayıt yok.',style:'tdGray',colSpan:5,alignment:'center'},{},{},{},{}]);
+
+        const headerContent=logoPng?[{columns:[
+            {stack:[{image:logoPng,width:28,margin:[0,0,0,2]},{text:'karekara',style:'brandName'},{text:'FİLO & HARCIRAH YÖNETİMİ',style:'brandSub'}],width:130},
+            {stack:[{text:'AYLIK ÖZET RAPORU',style:'docTitle'},{text:D.mN,style:'docDate',margin:[0,3,0,0]},{text:'Düzenleme: '+today,style:'docDate'}],alignment:'right'}
+        ],margin:[0,0,0,6]}]:[{text:'karekara — AYLIK ÖZET RAPORU — '+D.mN,style:'docTitle',alignment:'center',margin:[0,0,0,6]}];
+
+        try{
+            pdfMake.createPdf({
+                pageSize:'A4', pageMargins:[28,28,28,42],
+                defaultStyle:{font:'Roboto',fontSize:8.5,lineHeight:1.35},
+                footer:(cp,pc)=>({columns:[{text:'karekara Harcırah Yönetim Sistemi  •  '+D.mN+' Raporu',style:'footerL'},{text:cp+' / '+pc,style:'footerR',alignment:'right'}],margin:[28,6,28,0]}),
+                content:[
+                    ...headerContent,
+                    {canvas:[{type:'rect',x:0,y:0,w:539,h:3,r:1.5,color:'#0F172A'}],margin:[0,0,0,10]},
+                    // Trend bandı
+                    {table:{widths:['*'],body:[[{stack:[
+                        {columns:[
+                            {text:D.mN+' dönemi  •  '+D.mE.length+' onaylı masraf  •  '+D.mA.length+' avans işlemi',style:'subheader'},
+                            {text:(trend>0?'↑ +':'↓ ')+trend.toFixed(1)+'% önceki aya göre',style:'subheader',alignment:'right',color:trend>10?'#BE123C':trend<-10?'#065F46':'#64748B'}
+                        ]},
+                    ],fillColor:'#F8FAFC',border:[false,false,false,false],margin:[8,6,8,6]}]]},layout:'noBorders',margin:[0,0,0,12]},
+                    // KPI 4'lü grid — 2 sütun × 2 satır
+                    {columns:[
+                        {table:{widths:['*'],body:[[{stack:[{text:kpiCols[0][0].text,style:'kpiLabel'},{text:kpiCols[0][1].text,style:'kpiVal',color:kpiCols[0][1].color},{text:kpiCols[0][2].text,style:'kpiSub'}],fillColor:'#FFF1F2',margin:[10,8,10,8],border:[false,false,false,false]}]]},layout:'noBorders',margin:[0,0,4,0]},
+                        {table:{widths:['*'],body:[[{stack:[{text:kpiCols[1][0].text,style:'kpiLabel'},{text:kpiCols[1][1].text,style:'kpiVal',color:kpiCols[1][1].color},{text:kpiCols[1][2].text,style:'kpiSub'}],fillColor:'#EFF6FF',margin:[10,8,10,8],border:[false,false,false,false]}]]},layout:'noBorders',margin:[0,0,4,0]},
+                        {table:{widths:['*'],body:[[{stack:[{text:kpiCols[2][0].text,style:'kpiLabel'},{text:kpiCols[2][1].text,style:'kpiVal',color:kpiCols[2][1].color},{text:kpiCols[2][2].text,style:'kpiSub'}],fillColor:'#ECFDF5',margin:[10,8,10,8],border:[false,false,false,false]}]]},layout:'noBorders',margin:[0,0,4,0]},
+                        {table:{widths:['*'],body:[[{stack:[{text:kpiCols[3][0].text,style:'kpiLabel'},{text:kpiCols[3][1].text,style:'kpiVal',color:kpiCols[3][1].color},{text:kpiCols[3][2].text,style:'kpiSub'}],fillColor:'#EEF2FF',margin:[10,8,10,8],border:[false,false,false,false]}]]},layout:'noBorders'}
+                    ],margin:[0,0,0,14],columnGap:4},
+                    // Kategori + Sefer yan yana
+                    {columns:[
+                        {stack:[
+                            {columns:[{canvas:[{type:'rect',x:0,y:0,w:4,h:12,r:2,color:'#4AA4F6'}],width:8},{text:'KATEGORİ KIRILIMI',style:'secTitle',margin:[0,1,0,0]}],margin:[0,0,0,5]},
+                            {table:{widths:['*',60],headerRows:1,body:[[{text:'Kategori',style:'th'},{text:'Tutar',style:'th',alignment:'right'}],...catRows]},
+                             layout:{hLineWidth:(i,n)=>(i===0||i===1||i===n.table.body.length)?0.5:0.2,vLineWidth:()=>0,hLineColor:()=>'#E2E8F0',fillColor:ri=>ri===0?'#1E293B':ri%2===0?'#FFFFFF':'#F8FAFC',paddingLeft:()=>7,paddingRight:()=>7,paddingTop:()=>4,paddingBottom:()=>4}}
+                        ],width:'48%'},
+                        {width:8,text:''},
+                        {stack:[
+                            {columns:[{canvas:[{type:'rect',x:0,y:0,w:4,h:12,r:2,color:'#10B981'}],width:8},{text:'TAMAMLANAN SEFERLER',style:'secTitle',margin:[0,1,0,0]}],margin:[0,0,0,5]},
+                            {table:{widths:[42,28,'*',30],headerRows:1,body:[[{text:'Tarih',style:'th'},{text:'Sefer No',style:'th'},{text:'Şoför',style:'th'},{text:'KM',style:'th',alignment:'right'}],...D.mT.slice(0,10).map(t=>[{text:t.endDate,style:'td'},{text:esc(t.tripNo),style:'td',bold:true},{text:esc(t.driver),style:'td'},{text:(t.totalKm||0).toLocaleString(),style:'tdR'}])]},
+                             layout:{hLineWidth:(i,n)=>(i===0||i===1||i===n.table.body.length)?0.5:0.2,vLineWidth:()=>0,hLineColor:()=>'#E2E8F0',fillColor:ri=>ri===0?'#1E293B':ri%2===0?'#FFFFFF':'#F8FAFC',paddingLeft:()=>7,paddingRight:()=>7,paddingTop:()=>4,paddingBottom:()=>4}}
+                        ],width:'*'}
+                    ],margin:[0,0,0,14],columnGap:0},
+                    // Personel tablosu
+                    {columns:[{canvas:[{type:'rect',x:0,y:0,w:4,h:12,r:2,color:'#8B5CF6'}],width:8},{text:'PERSONEL BAZLI ÖZET',style:'secTitle',margin:[0,1,0,0]}],margin:[0,0,0,5]},
+                    {table:{widths:['*',60,60,50,60],headerRows:1,body:[
+                        [{text:'Personel',style:'th'},{text:'Harcama',style:'th',alignment:'right'},{text:'Avans',style:'th',alignment:'right'},{text:'Net',style:'th',alignment:'right'},{text:'Sefer/KM',style:'th',alignment:'right'}],
+                        ...D.drvData.map(d=>{const net=d.advE-d.expE; return[{text:d.drv,style:'td',bold:true},{text:d.expE>0||d.expU>0||d.expT>0?fm(d.expE,d.expU,d.expT):'—',style:'tdR'},{text:d.advE>0||d.advU>0||d.advT>0?fm(d.advE,d.advU,d.advT):'—',style:'tdR'},{text:net!==0?(net>0?'+':'')+net.toFixed(2)+' €':'—',style:'tdR',color:net>0?'#059669':net<0?'#DC2626':'#6B7280'},{text:d.trips+' / '+d.km.toLocaleString()+' KM',style:'tdR'}];})
+                    ]},
+                     layout:{hLineWidth:(i,n)=>(i===0||i===1||i===n.table.body.length)?0.5:0.2,vLineWidth:()=>0,hLineColor:()=>'#E2E8F0',fillColor:ri=>ri===0?'#1E293B':ri%2===0?'#FFFFFF':'#F8FAFC',paddingLeft:()=>7,paddingRight:()=>7,paddingTop:()=>5,paddingBottom:()=>5}},
+                ],
+                styles:{
+                    brandName:{fontSize:16,bold:true,color:'#0F172A',characterSpacing:-0.5},brandSub:{fontSize:6,bold:true,color:'#64748B',characterSpacing:1.2},
+                    docTitle:{fontSize:14,bold:true,color:'#4AA4F6'},docDate:{fontSize:8,color:'#475569'},
+                    subheader:{fontSize:8,color:'#64748B'},
+                    kpiLabel:{fontSize:6.5,bold:true,color:'#6B7280',characterSpacing:0.8,margin:[0,0,0,2]},
+                    kpiVal:{fontSize:13,bold:true},kpiSub:{fontSize:7,color:'#9CA3AF',margin:[0,1,0,0]},
+                    secTitle:{fontSize:8.5,bold:true,color:'#0F172A'},
+                    th:{fontSize:7,bold:true,color:'#FFFFFF'},
+                    td:{fontSize:7.5,color:'#374151'},tdR:{fontSize:7.5,color:'#374151',alignment:'right'},
+                    tdGray:{fontSize:7.5,color:'#9CA3AF',italics:true},
+                    footerL:{fontSize:6.5,color:'#94A3B8'},footerR:{fontSize:6.5,color:'#94A3B8'}
+                }
+            }).download(fname);
+            showToast('PDF İndirildi ✓','success');
+        }catch(err){showToast('PDF hatası: '+err.message,'error');console.error(err);}
+    }
+
+    function exportMonthlyExcel(){
+        const mV=document.getElementById('monthlyReportMonth').value;
+        if(!mV){showToast('Önce ay seçiniz!','error'); return;}
+        if(typeof XLSX==='undefined'){showToast('XLSX kütüphanesi yüklenmedi','error'); return;}
+        const D=getMonthlyData(mV);
+        const wb=XLSX.utils.book_new();
+
+        // Sayfa 1: Özet
+        const sumRows=[
+            ['AYLIK ÖZET RAPORU — '+D.mN],[],
+            ['KPI','Değer','Detay'],
+            ['Toplam Masraf (EUR)',D.eE,''],['Toplam Masraf (USD)',D.eU,''],['Toplam Masraf (TRY)',D.eT,''],
+            ['Dağıtılan Avans (EUR)',D.aE,''],['Dağıtılan Avans (USD)',D.aU,''],['Dağıtılan Avans (TRY)',D.aT,''],
+            ['Tamamlanan Sefer',D.mT.length,'adet'],['Toplam KM',D.tK,'km'],
+            ['Masraf Fişi',D.mE.length,'adet'],['Aktif Personel',D.drvData.length,'kişi'],[],
+            ['KATEGORİ KIRILIMI'],['Kategori','EUR','USD','TRY'],
+            ...Object.entries(D.cS).map(([c,v])=>[c,v.e,v.u,v.t])
+        ];
+        XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sumRows),'Özet');
+
+        // Sayfa 2: Personel
+        const drvRows=[['Personel','Harcama EUR','Harcama USD','Harcama TRY','Avans EUR','Avans USD','Avans TRY','Net EUR','Sefer','KM'],
+            ...D.drvData.map(d=>[d.drv,d.expE,d.expU,d.expT,d.advE,d.advU,d.advT,d.advE-d.expE,d.trips,d.km])];
+        const wsD=XLSX.utils.aoa_to_sheet(drvRows);
+        wsD['!cols']=[{wch:18},{wch:12},{wch:12},{wch:12},{wch:10},{wch:10},{wch:10},{wch:10},{wch:8},{wch:10}];
+        XLSX.utils.book_append_sheet(wb,wsD,'Personel');
+
+        // Sayfa 3: Masraflar
+        const expRows=[['Tarih','Personel','Kategori','Açıklama','Sefer No','Tutar','Para Birimi','Plaka','Onaylayan'],
+            ...D.mE.map(e=>[e.date,e.driver,e.category,e.tripName||'',e.tripId||'',e.amount,e.currency,e.plaka||'',e.approvedBy||''])];
+        const wsE=XLSX.utils.aoa_to_sheet(expRows);
+        wsE['!cols']=[{wch:12},{wch:14},{wch:10},{wch:28},{wch:12},{wch:10},{wch:8},{wch:12},{wch:12}];
+        XLSX.utils.book_append_sheet(wb,wsE,'Masraflar');
+
+        // Sayfa 4: Seferler
+        const tripRows2=[['Bitiş Tarihi','Sefer No','Poz No','Personel','Güzergah','Plaka','Dorse','Baş KM','Bit KM','Toplam KM'],
+            ...D.mT.map(t=>[t.endDate,t.tripNo,t.posNo||'',t.driver,t.route,t.plate,t.trailer||'',t.startKm,t.endKm,t.totalKm])];
+        const wsT=XLSX.utils.aoa_to_sheet(tripRows2);
+        wsT['!cols']=[{wch:12},{wch:12},{wch:12},{wch:14},{wch:22},{wch:12},{wch:12},{wch:10},{wch:10},{wch:10}];
+        XLSX.utils.book_append_sheet(wb,wsT,'Seferler');
+
+        // Sayfa 5: Avanslar
+        const advRows=[['Tarih','Personel','Tutar','Para Birimi','Veren'],
+            ...D.mA.map(a=>[a.date,a.driver,a.amount,a.currency,a.givenBy||''])];
+        XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(advRows),'Avanslar');
+
+        XLSX.writeFile(wb,'Aylik_Rapor_'+D.mV+'.xlsx');
+        showToast('Excel İndirildi ✓ (5 sayfa)','success');
+    }
     function renderSystemLog(){cLogs.orderBy('timestamp','desc').limit(50).onSnapshot(snap=>{const tb=document.getElementById('systemLogList'); if(!tb)return; tb.innerHTML=''; const ls=snap.docs.map(d=>d.data()); ls.forEach(l=>{const sM={approved:'<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold">Onaylandı</span>',rejected:'<span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-[10px] font-bold">Reddedildi</span>',advance:'<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">Avans</span>',trip:'<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold">Sefer</span>'}; let df=l.timestamp?l.timestamp.toDate().toLocaleString('tr-TR'):l.date; tb.innerHTML+=`<tr class="border-b border-slate-100 hover:bg-slate-50"><td class="p-3 text-xs font-bold text-slate-500">${df}</td><td class="p-3 text-sm text-slate-700 font-medium">${l.action}</td><td class="p-3 font-bold text-slate-800">${esc(l.driver)||'-'}</td><td class="p-3 text-right font-bold text-slate-700">${parseFloat(l.amount).toLocaleString('tr-TR',{minimumFractionDigits:l.currency==='KM'?0:2})} ${l.currency}</td><td class="p-3 text-center">${sM[l.status]||''}</td></tr>`;}); if(ls.length===0)tb.innerHTML=`<tr><td colspan="5" class="p-4 text-center text-slate-500">Kayıt yok.</td></tr>`;});}
     
     function renderFleetPanel(){

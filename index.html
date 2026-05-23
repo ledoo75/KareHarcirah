@@ -161,13 +161,14 @@
     #loginScreen {
         position: fixed;
         inset: 0;
-        background: #0F172A;
+        background: #060C1A;
         z-index: 9000;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        padding: calc(var(--safe-top) + 1rem) var(--safe-right) calc(var(--safe-bottom) + 1rem) var(--safe-left);
+        overflow: hidden;
+        padding: max(2rem, env(safe-area-inset-top, 2rem)) max(1.25rem, env(safe-area-inset-right, 1.25rem)) max(2rem, env(safe-area-inset-bottom, 2rem)) max(1.25rem, env(safe-area-inset-left, 1.25rem));
     }
 
     /* ===== PDF WRAPPER ===== */
@@ -549,7 +550,7 @@
         .brand-logo-custom { display: none; }
         #splashScreen .w-32 { width: 4rem !important; height: 4rem !important; }
         .loader-bar { margin-top: 10px; }
-        #loginScreen .w-11\/12 { padding: 1.5rem !important; }
+        12 { padding: 1.5rem !important; }/12 { padding: 1.5rem !important; }
     }
 
     /* ===== Büyük tablet / iPad ===== */
@@ -612,25 +613,146 @@
 </div>
 
 <div id="loginScreen" style="display:none;">
-    <div class="w-11/12 max-w-md bg-slate-800 border border-slate-700 rounded-3xl p-8 shadow-2xl">
-        <div class="text-center mb-8">
-            <div class="w-20 h-20 bg-[#4AA4F6]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-10 h-10 text-primary" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <!-- Arka plan dekoratif elementler -->
+    <div style="position:absolute;top:-80px;left:-80px;width:280px;height:280px;background:radial-gradient(circle,rgba(74,164,246,0.15) 0%,transparent 70%);pointer-events:none;"></div>
+    <div style="position:absolute;bottom:-60px;right:-60px;width:220px;height:220px;background:radial-gradient(circle,rgba(74,164,246,0.1) 0%,transparent 70%);pointer-events:none;"></div>
+    <div style="position:absolute;top:30%;right:5%;width:3px;height:3px;background:#4AA4F6;border-radius:50%;opacity:0.6;"></div>
+    <div style="position:absolute;top:20%;left:8%;width:2px;height:2px;background:#4AA4F6;border-radius:50%;opacity:0.4;"></div>
+    <div style="position:absolute;top:65%;left:5%;width:4px;height:4px;background:#4AA4F6;border-radius:50%;opacity:0.3;"></div>
+
+    <div style="width:100%;max-width:400px;padding:0 1.25rem;position:relative;z-index:1;">
+        
+        <!-- Logo & Başlık — TAM ORTALI -->
+        <div style="text-align:center;margin-bottom:2.5rem;">
+            <div style="width:80px;height:80px;background:rgba(74,164,246,0.12);border:1px solid rgba(74,164,246,0.25);border-radius:24px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;box-shadow:0 0 32px rgba(74,164,246,0.2);">
+                <svg style="width:40px;height:40px;color:#4AA4F6;fill:#4AA4F6;" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                     <rect x="20" y="15" width="24" height="70"/>
                     <path d="M44 55 L 75 24 H 95 L 44 75 Z"/>
                     <rect x="70" y="60" width="25" height="25"/>
                 </svg>
             </div>
-            <h2 class="text-2xl font-bold text-white">Sisteme Giriş Yapın</h2>
+            <h1 style="font-size:2.4rem;font-weight:900;color:#ffffff;letter-spacing:-2px;line-height:1;margin:0 0 0.35rem;text-transform:lowercase;">karekara</h1>
+            <p style="font-size:0.65rem;font-weight:700;letter-spacing:0.3em;color:#475569;text-transform:uppercase;margin:0;">Harcırah Yönetim Sistemi</p>
         </div>
-        <form id="loginForm" onsubmit="handleLogin(event); return false;" class="space-y-5">
-            <div><input type="text" id="loginUser" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none" style="font-size:16px" placeholder="Kullanıcı Adı"></div>
-            <div><input type="password" id="loginPass" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-primary outline-none" style="font-size:16px" placeholder="Şifre"></div>
-            <div class="flex items-center mt-2"><label class="flex items-center text-sm text-slate-300 cursor-pointer select-none"><input type="checkbox" id="rememberMe" class="mr-2 w-4 h-4 accent-primary rounded bg-slate-900 border-slate-700 cursor-pointer">Beni Hatırla</label></div>
-            <button type="submit" id="loginBtn" class="w-full bg-primary hover:bg-blue-500 text-white py-3.5 rounded-xl font-bold shadow-lg transition-all mt-4 text-lg">Giriş Yap</button>
-        </form>
+
+        <!-- Form Kartı -->
+        <div style="background:rgba(30,41,59,0.7);border:1px solid rgba(74,164,246,0.2);border-radius:24px;padding:1.75rem 1.5rem;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 24px 60px rgba(0,0,0,0.4);">
+            
+            <p style="text-align:center;font-size:0.8rem;color:#94A3B8;margin:0 0 1.5rem;font-weight:500;">Hesabınıza giriş yapın</p>
+
+            <form id="loginForm" onsubmit="handleLogin(event); return false;">
+                
+                <!-- Kullanıcı Adı -->
+                <div style="margin-bottom:0.875rem;">
+                    <div style="position:relative;">
+                        <div style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#475569;pointer-events:none;">
+                            <i class="fa-solid fa-user" style="font-size:14px;"></i>
+                        </div>
+                        <input 
+                            type="text" 
+                            id="loginUser" 
+                            required 
+                            autocomplete="username"
+                            placeholder="Kullanıcı Adı" 
+                            style="width:100%;background:rgba(15,23,42,0.8);border:1.5px solid rgba(74,164,246,0.2);border-radius:14px;padding:14px 14px 14px 42px;font-size:16px;color:#f1f5f9;outline:none;transition:border-color 0.2s,box-shadow 0.2s;-webkit-appearance:none;box-sizing:border-box;"
+                            onfocus="this.style.borderColor='#4AA4F6';this.style.boxShadow='0 0 0 3px rgba(74,164,246,0.15)'"
+                            onblur="this.style.borderColor='rgba(74,164,246,0.2)';this.style.boxShadow='none'"
+                        >
+                    </div>
+                </div>
+
+                <!-- Şifre -->
+                <div style="margin-bottom:0.875rem;">
+                    <div style="position:relative;">
+                        <div style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#475569;pointer-events:none;">
+                            <i class="fa-solid fa-lock" style="font-size:14px;"></i>
+                        </div>
+                        <input 
+                            type="password" 
+                            id="loginPass" 
+                            required 
+                            autocomplete="current-password"
+                            placeholder="Şifre" 
+                            style="width:100%;background:rgba(15,23,42,0.8);border:1.5px solid rgba(74,164,246,0.2);border-radius:14px;padding:14px 42px 14px 42px;font-size:16px;color:#f1f5f9;outline:none;transition:border-color 0.2s,box-shadow 0.2s;-webkit-appearance:none;box-sizing:border-box;"
+                            onfocus="this.style.borderColor='#4AA4F6';this.style.boxShadow='0 0 0 3px rgba(74,164,246,0.15)'"
+                            onblur="this.style.borderColor='rgba(74,164,246,0.2)';this.style.boxShadow='none'"
+                        >
+                        <!-- Şifre göster/gizle -->
+                        <button type="button" onclick="togglePassVis()" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#475569;cursor:pointer;padding:4px;min-height:auto;min-width:auto;" id="passToggleBtn">
+                            <i class="fa-solid fa-eye" id="passToggleIcon" style="font-size:14px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Beni Hatırla -->
+                <div style="margin-bottom:1.25rem;">
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;">
+                        <div style="position:relative;width:20px;height:20px;flex-shrink:0;">
+                            <input type="checkbox" id="rememberMe" style="opacity:0;position:absolute;inset:0;cursor:pointer;width:100%;height:100%;margin:0;">
+                            <div id="checkboxBox" style="width:20px;height:20px;border:2px solid rgba(74,164,246,0.4);border-radius:6px;background:rgba(15,23,42,0.8);display:flex;align-items:center;justify-content:center;transition:all 0.15s;pointer-events:none;">
+                                <i class="fa-solid fa-check" id="checkboxIcon" style="font-size:10px;color:#4AA4F6;display:none;"></i>
+                            </div>
+                        </div>
+                        <span style="font-size:0.85rem;color:#94A3B8;font-weight:500;">Beni Hatırla</span>
+                    </label>
+                </div>
+
+                <!-- Giriş Butonu -->
+                <button 
+                    type="submit" 
+                    id="loginBtn" 
+                    style="width:100%;background:linear-gradient(135deg,#4AA4F6,#2563EB);color:white;border:none;padding:15px;border-radius:14px;font-size:1rem;font-weight:800;letter-spacing:0.02em;box-shadow:0 8px 24px rgba(74,164,246,0.35);transition:transform 0.15s,box-shadow 0.15s;cursor:pointer;-webkit-appearance:none;min-height:52px;"
+                    ontouchstart="this.style.transform='scale(0.98)'"
+                    ontouchend="this.style.transform='scale(1)'"
+                >
+                    <i class="fa-solid fa-arrow-right-to-bracket" style="margin-right:8px;"></i>Giriş Yap
+                </button>
+
+            </form>
+        </div>
+
+        <!-- Alt bilgi -->
+        <p style="text-align:center;margin-top:1.5rem;font-size:0.7rem;color:#334155;font-weight:500;">
+            KareKara v1.5 &nbsp;·&nbsp; Güvenli Bağlantı
+        </p>
     </div>
+
+    <script>
+        // Şifre göster/gizle
+        function togglePassVis() {
+            const inp = document.getElementById('loginPass');
+            const icon = document.getElementById('passToggleIcon');
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                inp.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+            }
+        }
+
+        // Checkbox özel stil
+        document.addEventListener('DOMContentLoaded', function() {
+            const cb = document.getElementById('rememberMe');
+            const box = document.getElementById('checkboxBox');
+            const icon = document.getElementById('checkboxIcon');
+            if (cb && box && icon) {
+                cb.addEventListener('change', function() {
+                    if (this.checked) {
+                        box.style.background = 'rgba(74,164,246,0.2)';
+                        box.style.borderColor = '#4AA4F6';
+                        icon.style.display = 'block';
+                    } else {
+                        box.style.background = 'rgba(15,23,42,0.8)';
+                        box.style.borderColor = 'rgba(74,164,246,0.4)';
+                        icon.style.display = 'none';
+                    }
+                });
+            }
+        });
+    </script>
 </div>
+
 
 <header class="bg-white border-b border-slate-200 sticky top-0 z-40 no-print opacity-0 transition-opacity duration-1000" id="mainHeader">
     <div class="container mx-auto px-3 sm:px-4 py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-y-3">

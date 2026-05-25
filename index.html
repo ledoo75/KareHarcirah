@@ -995,7 +995,7 @@
             <!-- Maaş Manuel Giriş -->
             <div class="glass-card p-4 border-l-4 border-violet-400">
                 <div class="flex items-center justify-between mb-3">
-                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="fa-solid fa-sliders text-violet-500"></i> Sürücü Maaşları <span class="text-slate-400 font-normal text-xs">(EUR)</span></h3>
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="fa-solid fa-sliders text-violet-500"></i> Sürücü Maaşları <span class="text-slate-400 font-normal text-xs">(TRY)</span></h3>
                     <div class="flex gap-2">
                         <button onclick="addSalaryRow()" class="text-xs text-violet-600 hover:underline font-bold flex items-center gap-1"><i class="fa-solid fa-plus"></i> Ekle</button>
                         <button onclick="saveSalaries()" class="bg-violet-600 hover:bg-violet-700 text-white px-2 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button>
@@ -2263,7 +2263,7 @@
         row.innerHTML=`
             <input list="plateSuggestions" class="sr-plate input-style text-sm uppercase flex-1" placeholder="34 XX 000" value="${plate}" oninput="this.value=this.value.toUpperCase()"/>
             <datalist id="plateSuggestions">${plates.map(p=>`<option value="${esc(p)}">`).join('')}</datalist>
-            <input type="number" class="sr-salary input-style text-sm w-40 font-bold" placeholder="Aylık maaş (EUR)" value="${salary}"/>
+            <input type="number" class="sr-salary input-style text-sm w-40 font-bold" placeholder="Aylık maaş (TRY)" value="${salary}"/>
             <button onclick="this.closest('.salary-row').remove()" class="bg-rose-50 text-rose-500 hover:bg-rose-100 px-2 py-1.5 rounded-lg text-xs transition"><i class="fa-solid fa-trash"></i></button>`;
         list.appendChild(row);
     }
@@ -2530,7 +2530,7 @@
 
             // Maaş (TRY → EUR)
             const salaryTry=vcSalaries[plate]||0;
-            const salaryEur=salaryTry;
+            const salaryEur=toEur(salaryTry,'TRY');
 
             // Sefer masrafları: o araçla yapılan seferlere ait TÜM onaylı masraflar
             // (sürücü + sefer no eşleşmesi)

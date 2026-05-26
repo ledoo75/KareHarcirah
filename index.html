@@ -2665,6 +2665,49 @@
                 <td class="p-3 text-right text-orange-300 text-base">${totAll.toLocaleString('tr-TR',{minimumFractionDigits:2})} €</td>
                 <td class="p-3 text-right text-orange-300">${totKm>0?(totAll/totKm).toLocaleString('tr-TR',{minimumFractionDigits:3}):'-'} €</td>
             </tr>`;
+
+            // Önceki ay karşılaştırma satırı
+            const prevDate=new Date(parseInt(y),parseInt(m)-2,1);
+            const prevMV=prevDate.getFullYear()+'-'+String(prevDate.getMonth()+1).padStart(2,'0');
+            const prevMN=prevDate.toLocaleString('tr-TR',{month:'long',year:'numeric'});
+            const prevExp=expenses.filter(e=>e.status==='APPROVED'&&(e.date||'').startsWith(prevMV));
+            const prevTrips=driverTrips.filter(t=>t.status==='COMPLETED'&&(t.endDate||'').startsWith(prevMV));
+            const prevPlates=[...new Set([...prevTrips.map(t=>t.plate),...prevExp.filter(e=>e.plaka).map(e=>e.plaka.toUpperCase())])].filter(Boolean);
+            const allPrevPlates=[...new Set([...plates,...prevPlates])];
+            if(allPrevPlates.length>0||prevExp.length>0){
+                let pH=0,pY=0,pM=0,pS=0;
+                allPrevPlates.forEach(plate=>{
+                    pH+=parseFloat(vcHgs[prevMV]?.[plate])||0;
+                    pY+=parseFloat(vcYakit[prevMV]?.[plate])||0;
+                    pM+=vcSalaries[prevMV]?.[plate]||0;
+                    const pPt=prevTrips.filter(t=>(t.plate||'').toUpperCase()===plate);
+                    const pDrv=pPt.length>0?pPt[pPt.length-1].driver:'-';
+                    const pNos=new Set(pPt.map(t=>String(t.tripNo||'').trim()));
+                    pS+=prevExp.filter(e=>{
+                        const dm=e.driver===pDrv&&pNos.size>0&&pNos.has(String(e.tripId||'').trim());
+                        const pm=(e.plaka||'').toUpperCase()===plate;
+                        return (dm||pm)&&e.category!=='OTOYOL'&&e.category!=='MAZOT';
+                    }).reduce((s,e)=>s+toEur(e.amount,e.currency),0);
+                });
+                const pAll=pH+pY+pM+pS;
+                const diff=(v,p)=>{
+                    if(!p) return '';
+                    const d=v-p; const pct=(d/p*100);
+                    const col=d>0?'color:#FCA5A5':'color:#6EE7B7';
+                    const arrow=d>0?'↑':'↓';
+                    return `<span style="${col};font-size:10px;margin-left:4px;font-weight:600">${arrow}${Math.abs(pct).toFixed(0)}%</span>`;
+                };
+                body.innerHTML+=`
+                <tr class="bg-slate-700/80 text-slate-300 text-xs">
+                    <td class="p-2 pl-3" colspan="2"><span class="text-slate-400 text-[10px]">↔ Geçen Ay (${prevMN})</span></td>
+                    <td class="p-2 text-right">${pH>0?pH.toLocaleString('tr-TR',{minimumFractionDigits:2})+' €':'-'}${diff(totHgs,pH)}</td>
+                    <td class="p-2 text-right">${pY>0?pY.toLocaleString('tr-TR',{minimumFractionDigits:2})+' €':'-'}${diff(totYakit,pY)}</td>
+                    <td class="p-2 text-right">${pM>0?pM.toLocaleString('tr-TR',{minimumFractionDigits:2})+' €':'-'}${diff(totMaas,pM)}</td>
+                    <td class="p-2 text-right">${pS>0?pS.toLocaleString('tr-TR',{minimumFractionDigits:2})+' €':'-'}${diff(totSefer,pS)}</td>
+                    <td class="p-2 text-right font-bold text-slate-200">${pAll>0?pAll.toLocaleString('tr-TR',{minimumFractionDigits:2})+' €':'-'}${diff(totAll,pAll)}</td>
+                    <td class="p-2"></td>
+                </tr>`;
+            }
         }
     }
 

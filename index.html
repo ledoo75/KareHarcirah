@@ -972,7 +972,7 @@
                     <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="fa-solid fa-road text-red-500"></i> HGS / Otoyol <span class="text-slate-400 font-normal text-xs">(EUR)</span></h3>
                 </div>
                 <div class="flex gap-1.5 mb-2 p-2 bg-red-50 rounded-xl border border-red-100">
-                    <input list="hgsPlateList" id="hgsPlate" class="input-style text-xs flex-1 font-bold uppercase" placeholder="Plaka" oninput="this.value=this.value.toUpperCase()"/>
+                    <input list="hgsPlateList" id="hgsPlate" class="input-style text-xs flex-1 font-bold uppercase" placeholder="Plaka seç..." oninput="this.value=this.value.toUpperCase()" onfocus="fillPlateSelects()"/>
                     <datalist id="hgsPlateList"></datalist>
                     <input type="date" id="hgsDate" class="input-style text-xs w-28"/>
                     <input type="number" step="0.01" id="hgsEurInput" class="input-style text-xs w-20 font-bold text-red-700" placeholder="€"/>
@@ -987,7 +987,7 @@
                     <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="fa-solid fa-gas-pump text-amber-500"></i> Yakıt / Mazot <span class="text-slate-400 font-normal text-xs">(EUR)</span></h3>
                 </div>
                 <div class="flex gap-1.5 mb-2 p-2 bg-amber-50 rounded-xl border border-amber-100">
-                    <input list="yakitPlateList" id="yakitPlate" class="input-style text-xs flex-1 font-bold uppercase" placeholder="Plaka" oninput="this.value=this.value.toUpperCase()"/>
+                    <input list="yakitPlateList" id="yakitPlate" class="input-style text-xs flex-1 font-bold uppercase" placeholder="Plaka seç..." oninput="this.value=this.value.toUpperCase()" onfocus="fillPlateSelects()"/>
                     <datalist id="yakitPlateList"></datalist>
                     <input type="date" id="yakitDate" class="input-style text-xs w-28"/>
                     <input type="number" step="0.01" id="yakitEurInput" class="input-style text-xs w-20 font-bold text-amber-700" placeholder="€"/>
@@ -1002,7 +1002,7 @@
                     <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="fa-solid fa-sliders text-violet-500"></i> Sürücü Maaşları <span class="text-slate-400 font-normal text-xs">(EUR)</span></h3>
                 </div>
                 <div class="flex gap-1.5 mb-2 p-2 bg-violet-50 rounded-xl border border-violet-100">
-                    <input list="salaryPlateList" id="salaryPlate" class="input-style text-xs flex-1 font-bold uppercase" placeholder="Plaka" oninput="this.value=this.value.toUpperCase()"/>
+                    <input list="salaryPlateList" id="salaryPlate" class="input-style text-xs flex-1 font-bold uppercase" placeholder="Plaka seç..." oninput="this.value=this.value.toUpperCase()" onfocus="fillPlateSelects()"/>
                     <datalist id="salaryPlateList"></datalist>
                     <input type="date" id="salaryDate" class="input-style text-xs w-28"/>
                     <input type="number" step="0.01" id="salaryEurInput" class="input-style text-xs w-20 font-bold text-violet-700" placeholder="€"/>
@@ -1480,11 +1480,11 @@
         if(currentRole==='ADMIN'||currentRole==='PATRON'||currentRole==='OPS'||currentRole==='OPS_MANAGER'||currentRole==='ACCOUNTING'||currentRole==='FLEET'){
             listeners.push(cExpenses.orderBy('timestamp','desc').onSnapshot(s=>{expenses=s.docs.map(d=>({id:d.id,...d.data()})); renderAll();})); 
             listeners.push(cAdvances.orderBy('timestamp','desc').onSnapshot(s=>{advances=s.docs.map(d=>({id:d.id,...d.data()})); renderAll();})); 
-            listeners.push(cTrips.orderBy('timestamp','desc').onSnapshot(s=>{driverTrips=s.docs.map(d=>({id:d.id,...d.data()})); renderAll();}));
+            listeners.push(cTrips.orderBy('timestamp','desc').onSnapshot(s=>{driverTrips=s.docs.map(d=>({id:d.id,...d.data()})); renderAll(); fillPlateSelects();}));
         }else{
             listeners.push(cExpenses.where('driver','==',user.username).onSnapshot(s=>{expenses=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.timestamp-a.timestamp); renderAll();})); 
             listeners.push(cAdvances.where('driver','==',user.username).onSnapshot(s=>{advances=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.timestamp-a.timestamp); renderAll();})); 
-            listeners.push(cTrips.where('driver','==',user.username).onSnapshot(s=>{driverTrips=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.timestamp-a.timestamp); checkActiveTrip(); renderAll();}));
+            listeners.push(cTrips.where('driver','==',user.username).onSnapshot(s=>{driverTrips=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.timestamp-a.timestamp); checkActiveTrip(); renderAll(); fillPlateSelects();}));
         } 
         
         setupAuditLogListener(); 
@@ -1793,8 +1793,7 @@
     function renderOpsActiveTrips(){const l=document.getElementById('opsActiveTripsList'); if(!l)return; l.innerHTML=''; let act=driverTrips.filter(t=>t.status==='ACTIVE'); act.forEach(t=>{let btns=`<button onclick="openEditActiveTripModal('${t.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg"><i class="fa-solid fa-pen"></i></button><button onclick="openEndTripModal('${t.id}')" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg ml-1"><i class="fa-solid fa-stop"></i></button><button onclick="deleteTrip('${t.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg ml-1"><i class="fa-solid fa-trash"></i></button>`; l.innerHTML+=`<tr class="border-b border-slate-100 hover:bg-amber-50/50"><td class="p-3 font-bold"><i class="fa-solid fa-user text-slate-300 mr-2"></i>${esc(t.driver)}</td><td class="p-3 font-bold text-indigo-600">${esc(t.tripNo)}</td><td class="p-3 font-bold text-amber-600">${esc(t.posNo || '-')}</td><td class="p-3 text-sm text-slate-600">${esc(t.route)}</td><td class="p-3 text-xs"><span class="bg-slate-100 px-2 py-1 rounded font-bold">${esc(t.plate)}</span> / ${esc(t.trailer)||'-'}</td><td class="p-3 font-bold">${t.startKm.toLocaleString()} KM</td><td class="p-3 text-right">${btns}</td></tr>`;}); if(act.length===0)l.innerHTML=`<tr><td colspan="7" class="p-4 text-center text-slate-500">Sistemde devam eden sefer yok.</td></tr>`;}
     
     function renderAll(){
-        if(!currentUser)return; const bal=getDriverBalance(currentUser); if(document.getElementById('driverNameTitle'))document.getElementById('driverNameTitle').innerText=currentUser;
-        if(document.getElementById('mySafeEUR'))document.getElementById('mySafeEUR').innerHTML=formatMoney(bal.e,'€'); if(document.getElementById('mySafeUSD'))document.getElementById('mySafeUSD').innerHTML=formatMoney(bal.u,'$'); if(document.getElementById('mySafeTRY'))document.getElementById('mySafeTRY').innerHTML=formatMoney(bal.t,'₺');
+        if(!currentUser)return; const bal=getDriverBalance(currentUser); if(document.getElementById('driverNameTitle'))document.getElementById('driverNameTitle').innerText=currentUser;        if(document.getElementById('mySafeEUR'))document.getElementById('mySafeEUR').innerHTML=formatMoney(bal.e,'€'); if(document.getElementById('mySafeUSD'))document.getElementById('mySafeUSD').innerHTML=formatMoney(bal.u,'$'); if(document.getElementById('mySafeTRY'))document.getElementById('mySafeTRY').innerHTML=formatMoney(bal.t,'₺');
         const dList=document.getElementById('driverList'); if(dList){dList.innerHTML=''; let mE=expenses.filter(e=>e.driver===currentUser); mE.forEach(e=>{let bC=e.status==='APPROVED'?'bg-emerald-100 text-emerald-700':(e.status==='REJECTED'?'bg-rose-100 text-rose-700':'bg-amber-100 text-amber-700'); let sT=e.status==='PENDING_OP'?'Bekliyor':(e.status==='APPROVED'?'Onaylandı':'Red'); let tT=e.tripId?`<span class="text-[9px] font-bold text-indigo-400 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded mt-0.5 inline-block">${esc(e.tripId)}</span>`:''; const canEdit=canEditExpense(e); const canDel=canDeleteExpense(e); let editBtns=''; if(canEdit||canDel){editBtns=`<div class="flex gap-1 mt-1.5">${canEdit?`<button onclick="editExpense('${e.id}')" class="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg text-[10px] font-bold hover:bg-blue-100 transition"><i class="fa-solid fa-pen mr-1"></i>Düzenle</button>`:''}${canDel?`<button onclick="deleteExpense('${e.id}')" class="bg-rose-50 text-rose-600 px-2 py-1 rounded-lg text-[10px] font-bold hover:bg-rose-100 transition"><i class="fa-solid fa-trash mr-1"></i>Sil</button>`:''}</div>`;} else if(e.status==='APPROVED'){editBtns=`<div class="mt-1.5"><span class="text-[10px] text-slate-400"><i class="fa-solid fa-lock mr-1"></i>Onaylandı — düzenlenemez</span></div>`;} dList.innerHTML+=`<div class="p-4 bg-white border border-slate-100 rounded-xl shadow-sm flex justify-between items-start mb-2 hover:shadow-md transition"><div class="flex items-start gap-3"><div class="text-2xl bg-slate-50 w-10 h-10 flex items-center justify-center rounded-lg shrink-0">${catIcons[e.category]||'📝'}</div><div><div class="text-[10px] text-slate-400 font-bold">${e.date}</div><div class="text-sm font-bold text-slate-800">${esc(e.tripName)}</div>${tT}${editBtns}</div></div><div class="text-right flex flex-col items-end gap-1 ml-2"><div class="text-base text-slate-800 whitespace-nowrap">${formatMoney(e.amount,e.currency)}</div><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${bC}">${sT}</span></div></div>`;}); if(mE.length===0)dList.innerHTML=`<div class="text-center py-6 text-slate-400 text-sm">Masraf yok.</div>`;}
         const fP=document.getElementById('panel-FLEET'); if(fP&&fP.style.display!=='none')renderFleetPanel();
         if(['ADMIN','OPS','PATRON','OPS_MANAGER'].includes(currentRole)){
@@ -1806,6 +1805,8 @@
             const adL=document.getElementById('recentAdvancesList'); if(adL){adL.innerHTML=''; advances.sort((a,b)=>b.timestamp-a.timestamp).slice(0,15).forEach(a=>{let aB=`<button onclick="editAdvance('${a.id}')" class="bg-blue-50 text-blue-600 w-7 h-7 rounded-md mr-1"><i class="fa-solid fa-pen text-[10px]"></i></button><button onclick="deleteAdvance('${a.id}')" class="bg-rose-50 text-rose-600 w-7 h-7 rounded-md"><i class="fa-solid fa-trash text-[10px]"></i></button>`; const advD=document.getElementById('advDate'); if(advD&&!advD.value)advD.value=new Date().toISOString().split('T')[0]; adL.innerHTML+=`<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="p-2 text-[10px] text-slate-400">${a.date}</td><td class="p-2 font-bold">${esc(a.driver)}</td><td class="p-2 font-bold text-emerald-600">${formatMoney(a.amount,a.currency)}</td><td class="p-2 text-[10px] text-slate-400">${esc(a.givenBy||'-')}</td><td class="p-2 text-right">${aB}</td></tr>`;});}
             const uL=document.getElementById('userListTable'); if(uL){uL.innerHTML=users.map(u=>{let rN=u.role==='ADMIN'?'Yönetici':(u.role==='OPS'?'Operasyon':(u.role==='OPS_MANAGER'?'Ops Müdürü':(u.role==='ACCOUNTING'?'Muhasebe':(u.role==='FLEET'?'Filo':(u.role==='PATRON'?'Patron':'Şoför'))))); let rC=u.role==='ADMIN'?'bg-rose-100 text-rose-700':(u.role==='OPS'?'bg-emerald-100 text-emerald-700':(u.role==='ACCOUNTING'?'bg-blue-100 text-blue-700':(u.role==='PATRON'?'bg-amber-100 text-amber-700':'bg-indigo-100 text-indigo-700'))); let sB=u.isBlocked?'<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold uppercase"><i class="fa-solid fa-lock mr-1"></i>Kısıtlı</span>':'<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold uppercase">Aktif</span>'; let pT=u.role==='DRIVER'?`<span class="bg-slate-100 border border-slate-200 px-2 py-1 rounded text-[10px] font-bold text-slate-600">${esc(u.defaultPlate)||'Yok'} / ${esc(u.defaultTrailer)||'Yok'}</span>`:'-'; let pB=`<button onclick="openPermissionsModal('${u.id}')" class="bg-purple-50 text-purple-600 w-8 h-8 rounded-lg mr-1"><i class="fa-solid fa-shield-halved"></i></button>`; let eB=`<button onclick="loadUserForEdit('${u.id}')" class="bg-blue-50 text-blue-600 w-8 h-8 rounded-lg mr-1"><i class="fa-solid fa-pen"></i></button>`; let bB=u.username==='Tanju'?'':`<button onclick="toggleUserStatus('${u.id}')" class="${u.isBlocked?'bg-green-50 text-green-600':'bg-orange-50 text-orange-600'} w-8 h-8 rounded-lg mr-1"><i class="fa-solid ${u.isBlocked?'fa-unlock':'fa-lock'}"></i></button>`; let dB=u.username==='Tanju'?'<span class="text-[10px] text-slate-400 font-bold bg-slate-100 px-2 py-1 rounded">Kurucu</span>':`<button onclick="deleteUser('${u.id}')" class="bg-red-50 text-red-600 w-8 h-8 rounded-lg"><i class="fa-solid fa-trash"></i></button>`; return `<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="p-3 font-bold"><i class="fa-solid fa-circle-user text-slate-300 mr-2 text-lg align-middle"></i>${esc(u.username)}</td><td class="p-3 text-xs">${pT}</td><td class="p-3"><span class="${rC} px-2 py-1 rounded text-[10px] font-bold uppercase">${rN}</span></td><td class="p-3 text-center">${sB}</td><td class="p-3 text-right flex justify-end">${pB}${eB}${bB}${dB}</td></tr>`;}).join('');} updatePatronDashboard();
         }
+        // Araç maliyeti plaka listesini güncelle
+        fillPlateSelects();
     }
     
     function showToast(msg,type){const t=document.getElementById('toast'); document.getElementById('toast-msg').innerText=msg; document.getElementById('toast-icon').className=type==='success'?'fa-solid fa-circle-check text-emerald-400 text-xl':'fa-solid fa-circle-exclamation text-rose-400 text-xl'; t.classList.remove('translate-y-20','opacity-0'); setTimeout(()=>t.classList.add('translate-y-20','opacity-0'),2500);}
@@ -2243,48 +2244,11 @@
     // ══════════════════════════════════════════════
 
     // Maaş verileri localStorage'da: {plate: tryAmount}
-    let vcSalaries = (()=>{
-        const raw=JSON.parse(localStorage.getItem('kk_vc_salaries')||'{}');
-        // Eski format {plate:number} → yeni format {YYYY-MM:{plate:number}} migrate et
-        const isOldFormat=Object.keys(raw).length>0&&Object.values(raw).every(v=>typeof v==='number');
-        if(isOldFormat){
-            const now=new Date().toISOString().slice(0,7);
-            const migrated={[now]:raw};
-            localStorage.setItem('kk_vc_salaries',JSON.stringify(migrated));
-            return migrated;
-        }
-        return raw;
-    })();
+    let vcSalaries = {}; // Firebase'den yüklenir — loadAllVcFromFirebase()
 
-    function saveSalaries(){
-        const mV=getMonthKey();
-        if(!vcSalaries[mV]) vcSalaries[mV]={};
-        document.querySelectorAll('.salary-row').forEach(r=>{
-            const p=r.querySelector('.sr-plate').value.trim().toUpperCase();
-            const s=parseFloat(r.querySelector('.sr-salary').value)||0;
-            if(p){ if(s>0) vcSalaries[mV][p]=s; else delete vcSalaries[mV][p]; }
-        });
-        localStorage.setItem('kk_vc_salaries',JSON.stringify(vcSalaries));
-        showToast('Maaşlar kaydedildi ✓','success');
-        renderVehicleCost();
-    }
+    function saveSalaries(){ loadSalaryRows(); renderVehicleCost(); } // yeni sistem: salaryAddEntry()
 
-    function addSalaryRow(plate='',salary=''){
-        const list=document.getElementById('salaryRowList'); if(!list)return;
-        // Plakaları araçlardan öner
-        const plates=[...new Set([
-            ...driverTrips.map(t=>t.plate),
-            ...expenses.filter(e=>e.plaka).map(e=>e.plaka)
-        ])].filter(Boolean).sort();
-        const row=document.createElement('div');
-        row.className='salary-row flex gap-2 items-center';
-        row.innerHTML=`
-            <input list="plateSuggestions" class="sr-plate input-style text-sm uppercase flex-1" placeholder="34 XX 000" value="${plate}" oninput="this.value=this.value.toUpperCase()"/>
-            <datalist id="plateSuggestions">${plates.map(p=>`<option value="${esc(p)}">`).join('')}</datalist>
-            <input type="number" class="sr-salary input-style text-sm w-40 font-bold" placeholder="Aylık maaş (EUR)" value="${salary}"/>
-            <button onclick="this.closest('.salary-row').remove()" class="bg-rose-50 text-rose-500 hover:bg-rose-100 px-2 py-1.5 rounded-lg text-xs transition"><i class="fa-solid fa-trash"></i></button>`;
-        list.appendChild(row);
-    }
+    function addSalaryRow(){}
 
     function updateVcMonthLabel(){
         const s=document.getElementById('vcStartMonth')?.value;
@@ -2383,29 +2347,12 @@
     }
 
 
-    // HGS verisi: {plate: {month: eurAmount}} — localStorage
-    let vcHgs = (()=>{
-        const raw=JSON.parse(localStorage.getItem('kk_vc_hgs')||'{}');
-        const isOldFormat=Object.keys(raw).length>0&&Object.values(raw).every(v=>typeof v==='number');
-        if(isOldFormat){ const now=new Date().toISOString().slice(0,7); const m={[now]:raw}; localStorage.setItem('kk_vc_hgs',JSON.stringify(m)); return m; }
-        return raw;
-    })();
-    let vcYakit = (()=>{
-        const raw=JSON.parse(localStorage.getItem('kk_vc_yakit')||'{}');
-        const isOldFormat=Object.keys(raw).length>0&&Object.values(raw).every(v=>typeof v==='number');
-        if(isOldFormat){ const now=new Date().toISOString().slice(0,7); const m={[now]:raw}; localStorage.setItem('kk_vc_yakit',JSON.stringify(m)); return m; }
-        return raw;
-    })();
+    let vcHgs = {};   // Firebase'den yüklenir — loadAllVcFromFirebase()
+    let vcYakit = {}; // Firebase'den yüklenir — loadAllVcFromFirebase()
 
     function getMonthKey(){ const si=document.getElementById('vcStartMonth'); return (si&&si.value)?si.value:(document.getElementById('vcMonth').value || new Date().toISOString().slice(0,7)); }
 
-    function plateOptions(){
-        const plates=[...new Set([
-            ...driverTrips.map(t=>t.plate),
-            ...expenses.filter(e=>e.plaka).map(e=>e.plaka)
-        ])].filter(Boolean).sort();
-        return plates.map(p=>`<option value="${esc(p)}">`).join('');
-    }
+    function plateOptions(){ return ''; }
 
     function addHgsRow(plate='', eur=''){
         const list=document.getElementById('hgsRowList'); if(!list)return;
@@ -2421,30 +2368,27 @@
 
     // ── Plaka dropdown doldur ──────────────────────────────────
     function fillPlateSelects(){
-        const fromTrips=driverTrips.map(t=>t.plate);
-        const fromExp=expenses.filter(e=>e.plaka).map(e=>e.plaka);
-        const fromHgs=Object.values(loadVcEntries('hgs')).flat().map(e=>e.plate);
-        const fromYakit=Object.values(loadVcEntries('yakit')).flat().map(e=>e.plate);
-        const fromSalary=Object.values(loadVcEntries('salary')).flat().map(e=>e.plate);
-        const plates=[...new Set([...fromTrips,...fromExp,...fromHgs,...fromYakit,...fromSalary])].filter(Boolean).sort();
+        const fromTrips=[...new Set(driverTrips.map(t=>t.plate).filter(Boolean))];
+        const fromExp=[...new Set(expenses.filter(e=>e.plaka).map(e=>e.plaka))];
+        const fromUsers=[...new Set(users.filter(u=>u.defaultPlate).map(u=>u.defaultPlate))];
+        const fromFleet=[...new Set((typeof fleet!=='undefined'?fleet:[]).map(f=>f.plate||f.plaka).filter(Boolean))];
+        const plates=[...new Set([...fromTrips,...fromExp,...fromUsers,...fromFleet])].filter(Boolean).map(p=>p.toUpperCase().trim()).filter(p=>p.length>2).sort();
 
         const mV=getMonthKey();
         const defaultDate=mV+'-01';
 
-        // Datalist doldur
         ['hgsPlateList','yakitPlateList','salaryPlateList'].forEach(id=>{
             const dl=document.getElementById(id); if(!dl) return;
             dl.innerHTML=plates.map(p=>`<option value="${esc(p)}">`).join('');
         });
-        // İlk plakaları set et (boşsa)
+        // İlk plate sadece boşsa ata
         ['hgsPlate','yakitPlate','salaryPlate'].forEach(id=>{
-            const inp=document.getElementById(id); if(!inp||inp.value) return;
-            if(plates.length) inp.value=plates[0];
+            const inp=document.getElementById(id); if(!inp) return;
+            // Datalist güncellendi, mevcut değeri koru
         });
-        // Tarihleri seçili aya set et
         ['hgsDate','yakitDate','salaryDate'].forEach(id=>{
             const el=document.getElementById(id); if(!el) return;
-            if(!el.value || !el.value.startsWith(mV)) el.value=defaultDate;
+            if(!el.value||!el.value.startsWith(mV)) el.value=defaultDate;
         });
     }
 

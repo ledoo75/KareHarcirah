@@ -2466,18 +2466,18 @@
     function fillPlateSelects(){
         const plates=[...new Set([...driverTrips.map(t=>t.plate),...expenses.filter(e=>e.plaka).map(e=>e.plaka)])].filter(Boolean).sort();
         const mV=getMonthKey();
-        // Seçili ayın ilk günü varsayılan tarih olarak set et
         const defaultDate=mV+'-01';
         ['hgsPlate','yakitPlate','salaryPlate'].forEach(id=>{
-            const sel=document.getElementById(id); if(!sel)return;
+            const sel=document.getElementById(id); if(!sel) return;
             const cur=sel.value;
-            sel.innerHTML=plates.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
-            if(cur&&plates.includes(cur)) sel.value=cur;
+            sel.innerHTML=plates.length
+                ? plates.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('')
+                : '<option value="">— Araç yok —</option>';
+            if(cur && plates.includes(cur)) sel.value=cur;
         });
         ['hgsDate','yakitDate','salaryDate'].forEach(id=>{
-            const el=document.getElementById(id); if(!el)return;
-            // Tarihi seçili aya zorla
-            if(!el.value||!el.value.startsWith(mV)) el.value=defaultDate;
+            const el=document.getElementById(id); if(!el) return;
+            if(!el.value || !el.value.startsWith(mV)) el.value=defaultDate;
         });
     }
 
@@ -2505,8 +2505,16 @@
         data[mV].push({plate,date,eur,id:Date.now()});
         saveVcEntries('hgs',data);
         document.getElementById('hgsEurInput').value='';
-        loadHgsRows(); renderVehicleCost();
-        showToast('HGS eklendi ✓','success');
+        // Seçili ay değiştiyse ayı güncelle
+        const si=document.getElementById('vcStartMonth');
+        const ei=document.getElementById('vcEndMonth');
+        const vm=document.getElementById('vcMonth');
+        if(si) si.value=mV;
+        if(ei) ei.value=mV;
+        if(vm) vm.value=mV;
+        updateVcMonthLabel(); clearVcBtns();
+        loadHgsRows(); loadYakitRows(); loadSalaryRows(); renderVehicleCost();
+        showToast('HGS eklendi ✓ — '+mV,'success');
     }
 
     function hgsDeleteEntry(mV,id){
@@ -2562,8 +2570,15 @@
         data[mV].push({plate,date,eur,id:Date.now()});
         saveVcEntries('yakit',data);
         document.getElementById('yakitEurInput').value='';
-        loadYakitRows(); renderVehicleCost();
-        showToast('Yakıt eklendi ✓','success');
+        const si=document.getElementById('vcStartMonth');
+        const ei=document.getElementById('vcEndMonth');
+        const vm=document.getElementById('vcMonth');
+        if(si) si.value=mV;
+        if(ei) ei.value=mV;
+        if(vm) vm.value=mV;
+        updateVcMonthLabel(); clearVcBtns();
+        loadHgsRows(); loadYakitRows(); loadSalaryRows(); renderVehicleCost();
+        showToast('Yakıt eklendi ✓ — '+mV,'success');
     }
 
     function yakitDeleteEntry(mV,id){
@@ -2649,8 +2664,15 @@
         data[mV].push({plate,date,eur,id:Date.now()});
         saveVcEntries('salary',data);
         document.getElementById('salaryEurInput').value='';
-        loadSalaryRows(); renderVehicleCost();
-        showToast('Maaş eklendi ✓','success');
+        const si=document.getElementById('vcStartMonth');
+        const ei=document.getElementById('vcEndMonth');
+        const vm=document.getElementById('vcMonth');
+        if(si) si.value=mV;
+        if(ei) ei.value=mV;
+        if(vm) vm.value=mV;
+        updateVcMonthLabel(); clearVcBtns();
+        loadHgsRows(); loadYakitRows(); loadSalaryRows(); renderVehicleCost();
+        showToast('Maaş eklendi ✓ — '+mV,'success');
     }
 
     function salaryDeleteEntry(mV,id){

@@ -1007,6 +1007,53 @@
 
         </div>
 
+        <!-- DKV / UTA CSV Import -->
+        <div class="glass-card p-4 mb-5 border-l-4 border-blue-400">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-credit-card text-blue-500"></i> DKV / UTA Yakıt Kartı Import
+                        <span class="text-slate-400 font-normal text-xs">(CSV)</span>
+                    </h3>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Yakıt kartı ekstresini yükle → işlemler otomatik plakaya dağılır</p>
+                </div>
+                <div class="flex gap-2 flex-wrap">
+                    <select id="csvImportType" class="input-style text-xs py-1 px-2">
+                        <option value="dkv">DKV</option>
+                        <option value="uta">UTA</option>
+                        <option value="as24">AS24</option>
+                        <option value="generic">Genel (Plaka, Tutar)</option>
+                    </select>
+                    <label class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
+                        <i class="fa-solid fa-upload"></i> CSV Yükle
+                        <input type="file" accept=".csv,.txt" class="hidden" onchange="handleCsvImport(this)"/>
+                    </label>
+                    <button onclick="downloadCsvTemplate()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-download"></i> Şablon
+                    </button>
+                </div>
+            </div>
+            <!-- Önizleme alanı -->
+            <div id="csvPreview" class="hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs font-bold text-slate-700" id="csvPreviewTitle"></p>
+                    <div class="flex gap-2">
+                        <button onclick="csvImportConfirm()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-check"></i> Onayla & İçe Aktar</button>
+                        <button onclick="csvImportCancel()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition">İptal</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto border border-blue-100 rounded-xl">
+                    <table class="w-full text-xs whitespace-nowrap">
+                        <thead class="bg-blue-50 text-blue-700 font-bold">
+                            <tr id="csvPreviewHead"></tr>
+                        </thead>
+                        <tbody id="csvPreviewBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-2" id="csvPreviewNote"></p>
+            </div>
+        </div>
+
         <!-- KPI Özet Kartları -->
         <div id="vcKpiCards" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5"></div>
 
@@ -2239,14 +2286,14 @@
     let vcSalaries = JSON.parse(localStorage.getItem('kk_vc_salaries')||'{}');
 
     function saveSalaries(){
-        const obj={};
+        const mV=getMonthKey();
+        if(!vcSalaries[mV]) vcSalaries[mV]={};
         document.querySelectorAll('.salary-row').forEach(r=>{
             const p=r.querySelector('.sr-plate').value.trim().toUpperCase();
             const s=parseFloat(r.querySelector('.sr-salary').value)||0;
-            if(p) obj[p]=s;
+            if(p){ if(s>0) vcSalaries[mV][p]=s; else delete vcSalaries[mV][p]; }
         });
-        vcSalaries=obj;
-        localStorage.setItem('kk_vc_salaries',JSON.stringify(obj));
+        localStorage.setItem('kk_vc_salaries',JSON.stringify(vcSalaries));
         showToast('Maaşlar kaydedildi ✓','success');
         renderVehicleCost();
     }
@@ -2395,12 +2442,13 @@
         const mV=getMonthKey();
         if(!vcHgs[mV]) vcHgs[mV]={};
         document.querySelectorAll('.hgs-row').forEach(r=>{
-            const p=r.querySelector('.hr-plate').value.trim().toUpperCase();
+            const p=r.dataset.plate;
             const v=parseFloat(r.querySelector('.hr-eur').value)||0;
-            if(p && v>0){ vcHgs[mV][p]=(parseFloat(vcHgs[mV][p])||0)+v; r.querySelector('.hr-eur').value=''; }
+            if(p){ if(v>0) vcHgs[mV][p]=v; else delete vcHgs[mV][p]; }
         });
         localStorage.setItem('kk_vc_hgs',JSON.stringify(vcHgs));
-        loadHgsRows(); showToast('HGS kaydedildi ✓','success'); renderVehicleCost();
+        showToast('HGS kaydedildi ✓','success');
+        renderVehicleCost();
     }
 
     function loadHgsRows(){
@@ -2408,23 +2456,26 @@
         list.innerHTML='';
         const mV=getMonthKey();
         const saved=vcHgs[mV]||{};
+        // Sistemdeki tüm plakalar
         const plates=[...new Set([...driverTrips.map(t=>t.plate),...expenses.filter(e=>e.plaka).map(e=>e.plaka)])].filter(Boolean).sort();
-        plates.forEach(p=>addHgsRow(p,''));
-        if(Object.keys(saved).length){
-            const div=document.createElement('div');
-            div.className='mt-2 pt-2 border-t border-red-200';
-            div.innerHTML='<p class="text-[9px] font-bold text-red-400 uppercase tracking-wide mb-1">Bu Ay Toplam</p>';
-            Object.entries(saved).forEach(([p,total])=>{
-                const t=parseFloat(total)||0;
-                div.innerHTML+=`<div class="flex items-center gap-2 py-1 border-b border-red-50 last:border-0">
-                    <span class="text-xs font-bold text-slate-700 flex-1">${esc(p)}</span>
-                    <input type="number" step="0.01" value="${t}" class="input-style text-xs w-24 font-bold text-red-700 text-right" onchange="hgsSaveEdit('${esc(p)}',this.value)"/>
-                    <span class="text-[10px] text-red-400 font-bold">€</span>
-                    <button onclick="hgsDelete('${esc(p)}')" class="text-rose-300 hover:text-rose-600 text-xs ml-1"><i class="fa-solid fa-trash"></i></button>
-                </div>`;
-            });
-            list.appendChild(div);
+        // Kaydedilen plakaları da ekle (sistemde olmayan plakalar için)
+        const allPlates=[...new Set([...plates,...Object.keys(saved)])].sort();
+
+        if(!allPlates.length){
+            list.innerHTML='<div class="text-[10px] text-slate-400 text-center py-2">Kayıtlı araç yok.</div>';
+            return;
         }
+        allPlates.forEach(p=>{
+            const val=parseFloat(saved[p.toUpperCase()]||saved[p])||0;
+            const row=document.createElement('div');
+            row.className='hgs-row flex gap-2 items-center py-1 border-b border-red-50 last:border-0';
+            row.dataset.plate=p.toUpperCase();
+            row.innerHTML=`
+                <span class="text-xs font-bold text-slate-700 flex-1 uppercase">${esc(p)}</span>
+                <input type="number" step="0.01" class="hr-eur input-style text-xs w-24 font-bold text-red-700 text-right" placeholder="0.00" value="${val||''}"/>
+                <span class="text-[10px] text-red-400 font-bold">€</span>`;
+            list.appendChild(row);
+        });
     }
     function hgsSaveEdit(plate,val){ const mV=getMonthKey(); if(!vcHgs[mV])vcHgs[mV]={}; const v=parseFloat(val)||0; if(v>0)vcHgs[mV][plate]=v; else delete vcHgs[mV][plate]; localStorage.setItem('kk_vc_hgs',JSON.stringify(vcHgs)); renderVehicleCost(); }
     function hgsDelete(plate){ const mV=getMonthKey(); if(vcHgs[mV])delete vcHgs[mV][plate]; localStorage.setItem('kk_vc_hgs',JSON.stringify(vcHgs)); loadHgsRows(); renderVehicleCost(); }
@@ -2445,12 +2496,12 @@
         const mV=getMonthKey();
         if(!vcYakit[mV]) vcYakit[mV]={};
         document.querySelectorAll('.yakit-row').forEach(r=>{
-            const p=r.querySelector('.yr-plate').value.trim().toUpperCase();
+            const p=r.dataset.plate;
             const v=parseFloat(r.querySelector('.yr-eur').value)||0;
-            if(p && v>0){ vcYakit[mV][p]=(parseFloat(vcYakit[mV][p])||0)+v; r.querySelector('.yr-eur').value=''; }
+            if(p){ if(v>0) vcYakit[mV][p]=v; else delete vcYakit[mV][p]; }
         });
         localStorage.setItem('kk_vc_yakit',JSON.stringify(vcYakit));
-        loadYakitRows(); showToast('Yakıt kaydedildi ✓','success'); renderVehicleCost();
+        showToast('Yakıt kaydedildi ✓','success'); renderVehicleCost();
     }
 
     function loadYakitRows(){
@@ -2459,22 +2510,23 @@
         const mV=getMonthKey();
         const saved=vcYakit[mV]||{};
         const plates=[...new Set([...driverTrips.map(t=>t.plate),...expenses.filter(e=>e.plaka).map(e=>e.plaka)])].filter(Boolean).sort();
-        plates.forEach(p=>addYakitRow(p,''));
-        if(Object.keys(saved).length){
-            const div=document.createElement('div');
-            div.className='mt-2 pt-2 border-t border-amber-200';
-            div.innerHTML='<p class="text-[9px] font-bold text-amber-500 uppercase tracking-wide mb-1">Bu Ay Toplam</p>';
-            Object.entries(saved).forEach(([p,total])=>{
-                const t=parseFloat(total)||0;
-                div.innerHTML+=`<div class="flex items-center gap-2 py-1 border-b border-amber-50 last:border-0">
-                    <span class="text-xs font-bold text-slate-700 flex-1">${esc(p)}</span>
-                    <input type="number" step="0.01" value="${t}" class="input-style text-xs w-24 font-bold text-amber-700 text-right" onchange="yakitSaveEdit('${esc(p)}',this.value)"/>
-                    <span class="text-[10px] text-amber-400 font-bold">€</span>
-                    <button onclick="yakitDelete('${esc(p)}')" class="text-rose-300 hover:text-rose-600 text-xs ml-1"><i class="fa-solid fa-trash"></i></button>
-                </div>`;
-            });
-            list.appendChild(div);
+        const allPlates=[...new Set([...plates,...Object.keys(saved)])].sort();
+
+        if(!allPlates.length){
+            list.innerHTML='<div class="text-[10px] text-slate-400 text-center py-2">Kayıtlı araç yok.</div>';
+            return;
         }
+        allPlates.forEach(p=>{
+            const val=parseFloat(saved[p.toUpperCase()]||saved[p])||0;
+            const row=document.createElement('div');
+            row.className='yakit-row flex gap-2 items-center py-1 border-b border-amber-50 last:border-0';
+            row.dataset.plate=p.toUpperCase();
+            row.innerHTML=`
+                <span class="text-xs font-bold text-slate-700 flex-1 uppercase">${esc(p)}</span>
+                <input type="number" step="0.01" class="yr-eur input-style text-xs w-24 font-bold text-amber-700 text-right" placeholder="0.00" value="${val||''}"/>
+                <span class="text-[10px] text-amber-400 font-bold">€</span>`;
+            list.appendChild(row);
+        });
     }
     function yakitSaveEdit(plate,val){ const mV=getMonthKey(); if(!vcYakit[mV])vcYakit[mV]={}; const v=parseFloat(val)||0; if(v>0)vcYakit[mV][plate]=v; else delete vcYakit[mV][plate]; localStorage.setItem('kk_vc_yakit',JSON.stringify(vcYakit)); renderVehicleCost(); }
     function yakitDelete(plate){ const mV=getMonthKey(); if(vcYakit[mV])delete vcYakit[mV][plate]; localStorage.setItem('kk_vc_yakit',JSON.stringify(vcYakit)); loadYakitRows(); renderVehicleCost(); }
@@ -2482,12 +2534,13 @@
     function loadSalaryRows(){
         const list=document.getElementById('salaryRowList'); if(!list)return;
         list.innerHTML='';
-        if(Object.keys(vcSalaries).length===0){
-            // Mevcut plakalardan otomatik satır oluştur
-            const plates=[...new Set(driverTrips.map(t=>t.plate).filter(Boolean))].sort();
-            plates.forEach(p=>addSalaryRow(p,''));
-        } else {
-            Object.entries(vcSalaries).forEach(([p,s])=>addSalaryRow(p,s));
+        const mV=getMonthKey();
+        const saved=vcSalaries[mV]||{};
+        const plates=[...new Set([...driverTrips.map(t=>t.plate),...expenses.filter(e=>e.plaka).map(e=>e.plaka)])].filter(Boolean).sort();
+        if(plates.length>0){
+            plates.forEach(p=>addSalaryRow(p, saved[p.toUpperCase()]||saved[p]||''));
+        } else if(Object.keys(saved).length>0){
+            Object.entries(saved).forEach(([p,s])=>addSalaryRow(p,s));
         }
     }
 
@@ -2495,6 +2548,161 @@
         if(currency==='EUR') return amount;
         if(currency==='USD') return amount*0.92;
         return amount*0.024; // TRY → EUR yaklaşık kur
+    }
+
+    // ── DKV / UTA CSV Import ──────────────────────────────────
+    let _csvParsed = [];
+
+    function handleCsvImport(input){
+        const file = input.files[0]; if(!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            const text = e.target.result;
+            const type = document.getElementById('csvImportType').value;
+            _csvParsed = parseCsvForType(text, type);
+            if(!_csvParsed.length){ showToast('CSV okunamadı veya uygun veri bulunamadı.','error'); return; }
+            showCsvPreview(_csvParsed, type);
+        };
+        reader.readAsText(file, 'utf-8');
+        input.value = ''; // reset input
+    }
+
+    function parseCsvForType(text, type){
+        // Satırları ayır, boşları temizle
+        const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+        if(lines.length < 2) return [];
+
+        // CSV ayrıştır (virgül veya noktalı virgül)
+        const sep = lines[0].includes(';') ? ';' : ',';
+        const rows = lines.map(l => l.split(sep).map(c=>c.replace(/^["']|["']$/g,'').trim()));
+        const header = rows[0].map(h=>h.toLowerCase());
+
+        const result = [];
+
+        if(type === 'dkv'){
+            // DKV format: Kart No, Araç Plakası, Tarih, Ürün, Miktar (L), Tutar, Para Birimi
+            const pIdx = header.findIndex(h=>h.includes('plaka')||h.includes('vehicle')||h.includes('card'));
+            const aIdx = header.findIndex(h=>h.includes('amount')||h.includes('tutar')||h.includes('total')||h.includes('net'));
+            const cIdx = header.findIndex(h=>h.includes('currency')||h.includes('para')||h.includes('curr'));
+            const dIdx = header.findIndex(h=>h.includes('date')||h.includes('tarih'));
+            for(let i=1;i<rows.length;i++){
+                const r=rows[i]; if(r.length<3) continue;
+                const plate=(pIdx>=0?r[pIdx]:'').toUpperCase().replace(/\s/g,'');
+                const amtRaw=aIdx>=0?r[aIdx]:'0';
+                const amt=parseFloat(amtRaw.replace(',','.'))||0;
+                const cur=(cIdx>=0?r[cIdx]:'EUR').toUpperCase().includes('EUR')?'EUR':'OTHER';
+                const date=dIdx>=0?r[dIdx]:'';
+                if(plate&&amt>0) result.push({plate,amt,cur,date,raw:r.join(', ')});
+            }
+        } else if(type === 'uta'){
+            // UTA format: Vehicle Registration, Date, Product, Volume, Amount EUR
+            const pIdx = header.findIndex(h=>h.includes('registr')||h.includes('plaka')||h.includes('vehicle'));
+            const aIdx = header.findIndex(h=>h.includes('amount')||h.includes('eur')||h.includes('tutar'));
+            const dIdx = header.findIndex(h=>h.includes('date')||h.includes('tarih'));
+            for(let i=1;i<rows.length;i++){
+                const r=rows[i]; if(r.length<3) continue;
+                const plate=(pIdx>=0?r[pIdx]:'').toUpperCase().replace(/\s/g,'');
+                const amt=parseFloat((aIdx>=0?r[aIdx]:'0').replace(',','.'))||0;
+                const date=dIdx>=0?r[dIdx]:'';
+                if(plate&&amt>0) result.push({plate,amt,cur:'EUR',date,raw:r.join(', ')});
+            }
+        } else if(type === 'as24'){
+            // AS24: benzer UTA formatı
+            const pIdx = header.findIndex(h=>h.includes('plaque')||h.includes('plate')||h.includes('plaka')||h.includes('vehicle'));
+            const aIdx = header.findIndex(h=>h.includes('montant')||h.includes('amount')||h.includes('total'));
+            const dIdx = header.findIndex(h=>h.includes('date'));
+            for(let i=1;i<rows.length;i++){
+                const r=rows[i]; if(r.length<3) continue;
+                const plate=(pIdx>=0?r[pIdx]:'').toUpperCase().replace(/\s/g,'');
+                const amt=parseFloat((aIdx>=0?r[aIdx]:'0').replace(',','.'))||0;
+                const date=dIdx>=0?r[dIdx]:'';
+                if(plate&&amt>0) result.push({plate,amt,cur:'EUR',date,raw:r.join(', ')});
+            }
+        } else {
+            // Genel: ilk sütun plaka, ikinci sütun tutar
+            for(let i=1;i<rows.length;i++){
+                const r=rows[i]; if(r.length<2) continue;
+                const plate=r[0].toUpperCase().replace(/\s/g,'');
+                const amt=parseFloat(r[1].replace(',','.'))||0;
+                if(plate&&amt>0) result.push({plate,amt,cur:'EUR',date:r[2]||'',raw:r.join(', ')});
+            }
+        }
+
+        // Plaka bazında topla
+        const grouped = {};
+        result.forEach(({plate,amt,date})=>{
+            if(!grouped[plate]) grouped[plate]={plate,total:0,count:0,dates:[]};
+            grouped[plate].total+=amt;
+            grouped[plate].count++;
+            if(date) grouped[plate].dates.push(date);
+        });
+        return Object.values(grouped);
+    }
+
+    function showCsvPreview(data, type){
+        const preview = document.getElementById('csvPreview');
+        const head = document.getElementById('csvPreviewHead');
+        const body = document.getElementById('csvPreviewBody');
+        const title = document.getElementById('csvPreviewTitle');
+        const note = document.getElementById('csvPreviewNote');
+        if(!preview) return;
+
+        preview.classList.remove('hidden');
+        title.textContent = `${data.length} plaka bulundu — onaylayınca yakıt verilerine eklenecek`;
+        head.innerHTML = '<th class="p-2 text-left">Plaka</th><th class="p-2 text-right">Toplam (EUR)</th><th class="p-2 text-right">İşlem Sayısı</th><th class="p-2">Tarihler</th>';
+        body.innerHTML = data.map(d=>`
+            <tr class="hover:bg-blue-50">
+                <td class="p-2 font-bold text-slate-800">${esc(d.plate)}</td>
+                <td class="p-2 text-right font-bold text-amber-700">${d.total.toLocaleString('tr-TR',{minimumFractionDigits:2})} €</td>
+                <td class="p-2 text-right text-slate-500">${d.count}</td>
+                <td class="p-2 text-[10px] text-slate-400">${d.dates.slice(0,3).join(', ')}${d.dates.length>3?'...':''}</td>
+            </tr>`).join('');
+        note.textContent = `Seçili ay: ${getMonthKey()} — mevcut değerlere birikimli eklenecek`;
+    }
+
+    function csvImportConfirm(){
+        if(!_csvParsed.length) return;
+        const mV = getMonthKey();
+        if(!vcYakit[mV]) vcYakit[mV] = {};
+        _csvParsed.forEach(({plate,total})=>{
+            vcYakit[mV][plate] = (parseFloat(vcYakit[mV][plate])||0) + total;
+        });
+        localStorage.setItem('kk_vc_yakit', JSON.stringify(vcYakit));
+        csvImportCancel();
+        loadYakitRows();
+        renderVehicleCost();
+        showToast(`${_csvParsed.length} plaka için yakıt verisi aktarıldı ✓`,'success');
+        _csvParsed = [];
+    }
+
+    function csvImportCancel(){
+        const preview = document.getElementById('csvPreview');
+        if(preview) preview.classList.add('hidden');
+        _csvParsed = [];
+    }
+
+    function downloadCsvTemplate(){
+        const type = document.getElementById('csvImportType').value;
+        let header, example;
+        if(type==='dkv'){
+            header='Kart No;Araç Plakası;Tarih;Ürün;Miktar (L);Tutar;Para Birimi';
+            example='1234567;34NCH423;2026-05-15;Dizel;500;650,50;EUR\n1234567;34PGV555;2026-05-18;Dizel;450;590,00;EUR';
+        } else if(type==='uta'){
+            header='Vehicle Registration;Date;Product;Volume;Amount EUR';
+            example='34NCH423;2026-05-15;Diesel;500;650.50\n34PGV555;2026-05-18;Diesel;450;590.00';
+        } else if(type==='as24'){
+            header='Plaque;Date;Produit;Volume;Montant EUR';
+            example='34NCH423;2026-05-15;Diesel;500;650.50\n34PGV555;2026-05-18;Diesel;450;590.00';
+        } else {
+            header='Plaka,Tutar EUR,Tarih';
+            example='34NCH423,650.50,2026-05-15\n34PGV555,590.00,2026-05-18';
+        }
+        const csv = header+'\n'+example;
+        const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href=url; a.download=`sablon_${type}.csv`; a.click();
+        URL.revokeObjectURL(url);
     }
 
     function renderVehicleCost(){

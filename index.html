@@ -972,7 +972,8 @@
                     <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="fa-solid fa-road text-red-500"></i> HGS / Otoyol <span class="text-slate-400 font-normal text-xs">(EUR)</span></h3>
                 </div>
                 <div class="flex gap-1.5 mb-2 p-2 bg-red-50 rounded-xl border border-red-100">
-                    <select id="hgsPlate" class="input-style text-xs flex-1 font-bold uppercase"></select>
+                    <input list="hgsPlateList" id="hgsPlate" class="input-style text-xs flex-1 font-bold uppercase" placeholder="Plaka" oninput="this.value=this.value.toUpperCase()"/>
+                    <datalist id="hgsPlateList"></datalist>
                     <input type="date" id="hgsDate" class="input-style text-xs w-28"/>
                     <input type="number" step="0.01" id="hgsEurInput" class="input-style text-xs w-20 font-bold text-red-700" placeholder="€"/>
                     <button onclick="hgsAddEntry()" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-plus"></i></button>
@@ -986,7 +987,8 @@
                     <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="fa-solid fa-gas-pump text-amber-500"></i> Yakıt / Mazot <span class="text-slate-400 font-normal text-xs">(EUR)</span></h3>
                 </div>
                 <div class="flex gap-1.5 mb-2 p-2 bg-amber-50 rounded-xl border border-amber-100">
-                    <select id="yakitPlate" class="input-style text-xs flex-1 font-bold uppercase"></select>
+                    <input list="yakitPlateList" id="yakitPlate" class="input-style text-xs flex-1 font-bold uppercase" placeholder="Plaka" oninput="this.value=this.value.toUpperCase()"/>
+                    <datalist id="yakitPlateList"></datalist>
                     <input type="date" id="yakitDate" class="input-style text-xs w-28"/>
                     <input type="number" step="0.01" id="yakitEurInput" class="input-style text-xs w-20 font-bold text-amber-700" placeholder="€"/>
                     <button onclick="yakitAddEntry()" class="bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-plus"></i></button>
@@ -1000,7 +1002,8 @@
                     <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="fa-solid fa-sliders text-violet-500"></i> Sürücü Maaşları <span class="text-slate-400 font-normal text-xs">(EUR)</span></h3>
                 </div>
                 <div class="flex gap-1.5 mb-2 p-2 bg-violet-50 rounded-xl border border-violet-100">
-                    <select id="salaryPlate" class="input-style text-xs flex-1 font-bold uppercase"></select>
+                    <input list="salaryPlateList" id="salaryPlate" class="input-style text-xs flex-1 font-bold uppercase" placeholder="Plaka" oninput="this.value=this.value.toUpperCase()"/>
+                    <datalist id="salaryPlateList"></datalist>
                     <input type="date" id="salaryDate" class="input-style text-xs w-28"/>
                     <input type="number" step="0.01" id="salaryEurInput" class="input-style text-xs w-20 font-bold text-violet-700" placeholder="€"/>
                     <button onclick="salaryAddEntry()" class="bg-violet-600 hover:bg-violet-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-plus"></i></button>
@@ -1010,52 +1013,6 @@
 
         </div>
 
-        <!-- DKV / UTA CSV Import -->
-        <div class="glass-card p-4 mb-5 border-l-4 border-blue-400">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-                <div>
-                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                        <i class="fa-solid fa-credit-card text-blue-500"></i> DKV / UTA Yakıt Kartı Import
-                        <span class="text-slate-400 font-normal text-xs">(CSV)</span>
-                    </h3>
-                    <p class="text-[10px] text-slate-400 mt-0.5">Yakıt kartı ekstresini yükle → işlemler otomatik plakaya dağılır</p>
-                </div>
-                <div class="flex gap-2 flex-wrap">
-                    <select id="csvImportType" class="input-style text-xs py-1 px-2">
-                        <option value="dkv">DKV</option>
-                        <option value="uta">UTA</option>
-                        <option value="as24">AS24</option>
-                        <option value="generic">Genel (Plaka, Tutar)</option>
-                    </select>
-                    <label class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
-                        <i class="fa-solid fa-upload"></i> CSV Yükle
-                        <input type="file" accept=".csv,.txt" class="hidden" onchange="handleCsvImport(this)"/>
-                    </label>
-                    <button onclick="downloadCsvTemplate()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-download"></i> Şablon
-                    </button>
-                </div>
-            </div>
-            <!-- Önizleme alanı -->
-            <div id="csvPreview" class="hidden">
-                <div class="flex items-center justify-between mb-2">
-                    <p class="text-xs font-bold text-slate-700" id="csvPreviewTitle"></p>
-                    <div class="flex gap-2">
-                        <button onclick="csvImportConfirm()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-check"></i> Onayla & İçe Aktar</button>
-                        <button onclick="csvImportCancel()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition">İptal</button>
-                    </div>
-                </div>
-                <div class="overflow-x-auto border border-blue-100 rounded-xl">
-                    <table class="w-full text-xs whitespace-nowrap">
-                        <thead class="bg-blue-50 text-blue-700 font-bold">
-                            <tr id="csvPreviewHead"></tr>
-                        </thead>
-                        <tbody id="csvPreviewBody" class="divide-y divide-slate-100"></tbody>
-                    </table>
-                </div>
-                <p class="text-[10px] text-slate-400 mt-2" id="csvPreviewNote"></p>
-            </div>
-        </div>
 
         <!-- KPI Özet Kartları -->
         <div id="vcKpiCards" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5"></div>
@@ -1451,7 +1408,7 @@
     if(!firebase.apps.length){firebase.initializeApp(firebaseConfig);}
     const secondaryApp=firebase.initializeApp(firebaseConfig,"Secondary");
     const db=firebase.firestore(); const auth=firebase.auth();
-    const cUsers=db.collection('kare_users'); const cExpenses=db.collection('kare_expenses'); const cAdvances=db.collection('kare_advances'); const cTrips=db.collection('kare_trips'); const cLogs=db.collection('kare_logs');
+    const cUsers=db.collection('kare_users'); const cExpenses=db.collection('kare_expenses'); const cAdvances=db.collection('kare_advances'); const cTrips=db.collection('kare_trips'); const cLogs=db.collection('kare_logs'); const cVehicleCosts=db.collection('kare_vehicle_costs');
     let users=[]; let expenses=[]; let advances=[]; let driverTrips=[];
     let loggedInUser=null; let currentUser=""; let currentRole=""; 
     const catIcons={HARCIRAH:'💵',MAZOT:'⛽',OTOYOL:'🛣️',OTOPARK:'🅿️',GUMRUK:'🛂',YEMEK:'🍔',BAKIM:'🔧',TELEFON:'📱',DIGER:'📝'};
@@ -1560,7 +1517,7 @@
     
     function updateDriverDropdowns(){const uSel=document.getElementById('activeUser'); const aSel=document.getElementById('advDriver'); const si=document.getElementById('driverSearchInput'); uSel.innerHTML=''; if(aSel)aSel.innerHTML=''; if(currentRole==='DRIVER'){uSel.innerHTML=`<option value="${esc(loggedInUser.username)}">${esc(loggedInUser.username)}</option>`; uSel.disabled=true; if(si){si.value=loggedInUser.username; si.disabled=true; si.classList.add('opacity-60');}}else{uSel.disabled=false; if(si){si.disabled=false; si.classList.remove('opacity-60');} let drvs=getDrivers(); if(drvs.length===0){uSel.innerHTML=`<option value="">Şoför Yok</option>`;} drvs.forEach(d=>{uSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`; if(aSel)aSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`;}); uSel.value=currentUser; if(si)si.value=currentUser;} if(currentRole!=='DRIVER'&&getDrivers().length>0&&!getDrivers().includes(currentUser)){currentUser=getDrivers()[0]; uSel.value=currentUser; if(si)si.value=currentUser;}}
     function updateTabVisibility(){const defaultPerms={ADMIN:['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],PATRON:['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],OPS:['DRIVER','OPERATIONS','DASHBOARD','ANALYTICS'],OPS_MANAGER:['DRIVER','OPERATIONS','FLEET','DASHBOARD','ANALYTICS','VEHICLE_COST'],ACCOUNTING:['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],FLEET:['DRIVER','FLEET','DASHBOARD','VEHICLE_COST'],DRIVER:['DRIVER']}; let myTabs=loggedInUser.allowedTabs||defaultPerms[currentRole]||['DRIVER']; if(currentRole==='ADMIN')myTabs=defaultPerms['ADMIN'];['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'].forEach(tab=>{const el=document.getElementById(`tab-${tab}`); if(el)el.style.display=myTabs.includes(tab)?'flex':'none';});}
-    function switchTab(tabId){document.querySelectorAll('.role-btn').forEach(b=>{b.classList.remove('bg-slate-800','text-white','shadow-md'); b.classList.add('bg-transparent','text-slate-500');}); const activeBtn=document.getElementById(`tab-${tabId}`); if(activeBtn){activeBtn.classList.remove('bg-transparent','text-slate-500'); activeBtn.classList.add('bg-slate-800','text-white','shadow-md');} document.querySelectorAll('.panel-section').forEach(p=>p.style.display='none'); document.getElementById(`panel-${tabId}`).style.display='block'; localStorage.setItem('kare_last_tab',tabId); renderAll(); if(tabId==='PATRON'&&['ADMIN','PATRON'].includes(currentRole))updatePatronDashboard(); if(tabId==='DRIVER')checkActiveTrip(); if(tabId==='DASHBOARD')renderDashboard(); if(tabId==='FLEET')renderFleetPanel(); if(tabId==='ANALYTICS')renderAnalyticsTab(); if(tabId==='AUDITLOG'){auditPage=50; renderAuditLog();} if(tabId==='VEHICLE_COST'){const now=new Date().toISOString().slice(0,7); const si=document.getElementById('vcStartMonth'); const ei=document.getElementById('vcEndMonth'); const vm=document.getElementById('vcMonth'); if(si&&!si.value){si.value=now;} if(ei&&!ei.value){ei.value=now;} if(vm&&!vm.value){vm.value=now;} const b0=document.getElementById('vcBtn0'); if(b0){clearVcBtns(); b0.className='vc-month-btn bg-orange-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition';} updateVcMonthLabel(); loadSalaryRows(); loadHgsRows(); loadYakitRows(); renderVehicleCost();}}
+    function switchTab(tabId){document.querySelectorAll('.role-btn').forEach(b=>{b.classList.remove('bg-slate-800','text-white','shadow-md'); b.classList.add('bg-transparent','text-slate-500');}); const activeBtn=document.getElementById(`tab-${tabId}`); if(activeBtn){activeBtn.classList.remove('bg-transparent','text-slate-500'); activeBtn.classList.add('bg-slate-800','text-white','shadow-md');} document.querySelectorAll('.panel-section').forEach(p=>p.style.display='none'); document.getElementById(`panel-${tabId}`).style.display='block'; localStorage.setItem('kare_last_tab',tabId); renderAll(); if(tabId==='PATRON'&&['ADMIN','PATRON'].includes(currentRole))updatePatronDashboard(); if(tabId==='DRIVER')checkActiveTrip(); if(tabId==='DASHBOARD')renderDashboard(); if(tabId==='FLEET')renderFleetPanel(); if(tabId==='ANALYTICS')renderAnalyticsTab(); if(tabId==='AUDITLOG'){auditPage=50; renderAuditLog();} if(tabId==='VEHICLE_COST'){ loadAllVcFromFirebase();const now=new Date().toISOString().slice(0,7); const si=document.getElementById('vcStartMonth'); const ei=document.getElementById('vcEndMonth'); const vm=document.getElementById('vcMonth'); if(si&&!si.value){si.value=now;} if(ei&&!ei.value){ei.value=now;} if(vm&&!vm.value){vm.value=now;} const b0=document.getElementById('vcBtn0'); if(b0){clearVcBtns(); b0.className='vc-month-btn bg-orange-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition';} updateVcMonthLabel(); loadSalaryRows(); loadHgsRows(); loadYakitRows(); renderVehicleCost();}}
     function changeUser(){currentUser=document.getElementById('activeUser').value; renderAll(); if(currentRole!=='DRIVER')checkActiveTrip();}
     function filterCari(){let input=document.getElementById('searchCariInput').value.toLowerCase(); document.querySelectorAll('.cari-row').forEach(row=>{row.style.display=row.getAttribute('data-driver').toLowerCase().includes(input)?'':'none';});}
     
@@ -2464,37 +2421,68 @@
 
     // ── Plaka dropdown doldur ──────────────────────────────────
     function fillPlateSelects(){
-        const plates=[...new Set([...driverTrips.map(t=>t.plate),...expenses.filter(e=>e.plaka).map(e=>e.plaka)])].filter(Boolean).sort();
+        const fromTrips=driverTrips.map(t=>t.plate);
+        const fromExp=expenses.filter(e=>e.plaka).map(e=>e.plaka);
+        const fromHgs=Object.values(loadVcEntries('hgs')).flat().map(e=>e.plate);
+        const fromYakit=Object.values(loadVcEntries('yakit')).flat().map(e=>e.plate);
+        const fromSalary=Object.values(loadVcEntries('salary')).flat().map(e=>e.plate);
+        const plates=[...new Set([...fromTrips,...fromExp,...fromHgs,...fromYakit,...fromSalary])].filter(Boolean).sort();
+
         const mV=getMonthKey();
         const defaultDate=mV+'-01';
-        ['hgsPlate','yakitPlate','salaryPlate'].forEach(id=>{
-            const sel=document.getElementById(id); if(!sel) return;
-            const cur=sel.value;
-            sel.innerHTML=plates.length
-                ? plates.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('')
-                : '<option value="">— Araç yok —</option>';
-            if(cur && plates.includes(cur)) sel.value=cur;
+
+        // Datalist doldur
+        ['hgsPlateList','yakitPlateList','salaryPlateList'].forEach(id=>{
+            const dl=document.getElementById(id); if(!dl) return;
+            dl.innerHTML=plates.map(p=>`<option value="${esc(p)}">`).join('');
         });
+        // İlk plakaları set et (boşsa)
+        ['hgsPlate','yakitPlate','salaryPlate'].forEach(id=>{
+            const inp=document.getElementById(id); if(!inp||inp.value) return;
+            if(plates.length) inp.value=plates[0];
+        });
+        // Tarihleri seçili aya set et
         ['hgsDate','yakitDate','salaryDate'].forEach(id=>{
             const el=document.getElementById(id); if(!el) return;
             if(!el.value || !el.value.startsWith(mV)) el.value=defaultDate;
         });
     }
 
-    // ── Veri format: {YYYY-MM: [{plate,date,eur,id}]} ─────────
-    function vcKey(mV,type){ return 'kk_vc_'+type+'_v2'; }
+    // ── Vehicle Cost — Firebase ───────────────────────────────
+    let _vcCache={hgs:{},yakit:{},salary:{}};
+    let _vcLoaded={hgs:false,yakit:false,salary:false};
 
-    function loadVcEntries(type){
-        const raw=JSON.parse(localStorage.getItem('kk_vc_'+type+'_v2')||'{}');
-        return raw;
-    }
-    function saveVcEntries(type,data){
-        localStorage.setItem('kk_vc_'+type+'_v2',JSON.stringify(data));
-    }
     function getVcMonth(){ return getMonthKey(); }
 
+    function loadVcEntries(type){ return _vcCache[type]||{}; }
+
+    async function saveVcEntries(type,data){
+        _vcCache[type]=data;
+        // Tüm ay'ları Firebase'e yaz (upsert)
+        try{
+            await cVehicleCosts.doc(type).set({data:JSON.stringify(data),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+        }catch(e){ console.error('VC save error',e); }
+    }
+
+    async function loadAllVcFromFirebase(){
+        try{
+            for(const type of ['hgs','yakit','salary']){
+                const doc=await cVehicleCosts.doc(type).get();
+                if(doc.exists){
+                    _vcCache[type]=JSON.parse(doc.data().data||'{}');
+                } else {
+                    // Eski localStorage verisini migrate et
+                    const local=localStorage.getItem('kk_vc_'+type+'_v2');
+                    if(local){ _vcCache[type]=JSON.parse(local); await saveVcEntries(type,_vcCache[type]); }
+                }
+                _vcLoaded[type]=true;
+            }
+            loadHgsRows(); loadYakitRows(); loadSalaryRows(); renderVehicleCost();
+        }catch(e){ console.error('VC load error',e); }
+    }
+
     // ── HGS ──────────────────────────────────────────────────
-    function hgsAddEntry(){
+    async function hgsAddEntry(){
         const plate=document.getElementById('hgsPlate')?.value?.toUpperCase();
         const date=document.getElementById('hgsDate')?.value;
         const eur=parseFloat(document.getElementById('hgsEurInput')?.value)||0;
@@ -2503,7 +2491,7 @@
         const data=loadVcEntries('hgs');
         if(!data[mV])data[mV]=[];
         data[mV].push({plate,date,eur,id:Date.now()});
-        saveVcEntries('hgs',data);
+        await saveVcEntries('hgs',data);
         document.getElementById('hgsEurInput').value='';
         // Seçili ay değiştiyse ayı güncelle
         const si=document.getElementById('vcStartMonth');
@@ -2517,10 +2505,10 @@
         showToast('HGS eklendi ✓ — '+mV,'success');
     }
 
-    function hgsDeleteEntry(mV,id){
+    async function hgsDeleteEntry(mV,id){
         const data=loadVcEntries('hgs');
         if(data[mV]) data[mV]=data[mV].filter(e=>e.id!==id);
-        saveVcEntries('hgs',data); loadHgsRows(); renderVehicleCost();
+        await saveVcEntries('hgs',data); loadHgsRows(); renderVehicleCost();
     }
 
     function saveHgsData(){ loadHgsRows(); renderVehicleCost(); }
@@ -2559,7 +2547,7 @@
     }
 
     // ── Yakıt ─────────────────────────────────────────────────
-    function yakitAddEntry(){
+    async function yakitAddEntry(){
         const plate=document.getElementById('yakitPlate')?.value?.toUpperCase();
         const date=document.getElementById('yakitDate')?.value;
         const eur=parseFloat(document.getElementById('yakitEurInput')?.value)||0;
@@ -2568,7 +2556,7 @@
         const data=loadVcEntries('yakit');
         if(!data[mV])data[mV]=[];
         data[mV].push({plate,date,eur,id:Date.now()});
-        saveVcEntries('yakit',data);
+        await saveVcEntries('yakit',data);
         document.getElementById('yakitEurInput').value='';
         const si=document.getElementById('vcStartMonth');
         const ei=document.getElementById('vcEndMonth');
@@ -2581,10 +2569,10 @@
         showToast('Yakıt eklendi ✓ — '+mV,'success');
     }
 
-    function yakitDeleteEntry(mV,id){
+    async function yakitDeleteEntry(mV,id){
         const data=loadVcEntries('yakit');
         if(data[mV]) data[mV]=data[mV].filter(e=>e.id!==id);
-        saveVcEntries('yakit',data); loadYakitRows(); renderVehicleCost();
+        await saveVcEntries('yakit',data); loadYakitRows(); renderVehicleCost();
     }
 
     function saveYakitData(){ loadYakitRows(); renderVehicleCost(); }
@@ -2653,7 +2641,7 @@
             list.appendChild(wrap);
         });
     }
-    function salaryAddEntry(){
+    async function salaryAddEntry(){
         const plate=document.getElementById('salaryPlate')?.value?.toUpperCase();
         const date=document.getElementById('salaryDate')?.value;
         const eur=parseFloat(document.getElementById('salaryEurInput')?.value)||0;
@@ -2662,7 +2650,7 @@
         const data=loadVcEntries('salary');
         if(!data[mV])data[mV]=[];
         data[mV].push({plate,date,eur,id:Date.now()});
-        saveVcEntries('salary',data);
+        await saveVcEntries('salary',data);
         document.getElementById('salaryEurInput').value='';
         const si=document.getElementById('vcStartMonth');
         const ei=document.getElementById('vcEndMonth');
@@ -2675,10 +2663,10 @@
         showToast('Maaş eklendi ✓ — '+mV,'success');
     }
 
-    function salaryDeleteEntry(mV,id){
+    async function salaryDeleteEntry(mV,id){
         const data=loadVcEntries('salary');
         if(data[mV]) data[mV]=data[mV].filter(e=>e.id!==id);
-        saveVcEntries('salary',data); loadSalaryRows(); renderVehicleCost();
+        await saveVcEntries('salary',data); loadSalaryRows(); renderVehicleCost();
     }
 
     function saveSalaries(){ loadSalaryRows(); renderVehicleCost(); }
@@ -2723,161 +2711,12 @@
     }
 
     // ── DKV / UTA CSV Import ──────────────────────────────────
-    let _csvParsed = [];
 
-    function handleCsvImport(input){
-        const file = input.files[0]; if(!file) return;
-        const reader = new FileReader();
-        reader.onload = e => {
-            const text = e.target.result;
-            const type = document.getElementById('csvImportType').value;
-            _csvParsed = parseCsvForType(text, type);
-            if(!_csvParsed.length){ showToast('CSV okunamadı veya uygun veri bulunamadı.','error'); return; }
-            showCsvPreview(_csvParsed, type);
-        };
-        reader.readAsText(file, 'utf-8');
-        input.value = ''; // reset input
-    }
 
-    function parseCsvForType(text, type){
-        // Satırları ayır, boşları temizle
-        const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-        if(lines.length < 2) return [];
 
-        // CSV ayrıştır (virgül veya noktalı virgül)
-        const sep = lines[0].includes(';') ? ';' : ',';
-        const rows = lines.map(l => l.split(sep).map(c=>c.replace(/^["']|["']$/g,'').trim()));
-        const header = rows[0].map(h=>h.toLowerCase());
 
-        const result = [];
 
-        if(type === 'dkv'){
-            // DKV format: Kart No, Araç Plakası, Tarih, Ürün, Miktar (L), Tutar, Para Birimi
-            const pIdx = header.findIndex(h=>h.includes('plaka')||h.includes('vehicle')||h.includes('card'));
-            const aIdx = header.findIndex(h=>h.includes('amount')||h.includes('tutar')||h.includes('total')||h.includes('net'));
-            const cIdx = header.findIndex(h=>h.includes('currency')||h.includes('para')||h.includes('curr'));
-            const dIdx = header.findIndex(h=>h.includes('date')||h.includes('tarih'));
-            for(let i=1;i<rows.length;i++){
-                const r=rows[i]; if(r.length<3) continue;
-                const plate=(pIdx>=0?r[pIdx]:'').toUpperCase().replace(/\s/g,'');
-                const amtRaw=aIdx>=0?r[aIdx]:'0';
-                const amt=parseFloat(amtRaw.replace(',','.'))||0;
-                const cur=(cIdx>=0?r[cIdx]:'EUR').toUpperCase().includes('EUR')?'EUR':'OTHER';
-                const date=dIdx>=0?r[dIdx]:'';
-                if(plate&&amt>0) result.push({plate,amt,cur,date,raw:r.join(', ')});
-            }
-        } else if(type === 'uta'){
-            // UTA format: Vehicle Registration, Date, Product, Volume, Amount EUR
-            const pIdx = header.findIndex(h=>h.includes('registr')||h.includes('plaka')||h.includes('vehicle'));
-            const aIdx = header.findIndex(h=>h.includes('amount')||h.includes('eur')||h.includes('tutar'));
-            const dIdx = header.findIndex(h=>h.includes('date')||h.includes('tarih'));
-            for(let i=1;i<rows.length;i++){
-                const r=rows[i]; if(r.length<3) continue;
-                const plate=(pIdx>=0?r[pIdx]:'').toUpperCase().replace(/\s/g,'');
-                const amt=parseFloat((aIdx>=0?r[aIdx]:'0').replace(',','.'))||0;
-                const date=dIdx>=0?r[dIdx]:'';
-                if(plate&&amt>0) result.push({plate,amt,cur:'EUR',date,raw:r.join(', ')});
-            }
-        } else if(type === 'as24'){
-            // AS24: benzer UTA formatı
-            const pIdx = header.findIndex(h=>h.includes('plaque')||h.includes('plate')||h.includes('plaka')||h.includes('vehicle'));
-            const aIdx = header.findIndex(h=>h.includes('montant')||h.includes('amount')||h.includes('total'));
-            const dIdx = header.findIndex(h=>h.includes('date'));
-            for(let i=1;i<rows.length;i++){
-                const r=rows[i]; if(r.length<3) continue;
-                const plate=(pIdx>=0?r[pIdx]:'').toUpperCase().replace(/\s/g,'');
-                const amt=parseFloat((aIdx>=0?r[aIdx]:'0').replace(',','.'))||0;
-                const date=dIdx>=0?r[dIdx]:'';
-                if(plate&&amt>0) result.push({plate,amt,cur:'EUR',date,raw:r.join(', ')});
-            }
-        } else {
-            // Genel: ilk sütun plaka, ikinci sütun tutar
-            for(let i=1;i<rows.length;i++){
-                const r=rows[i]; if(r.length<2) continue;
-                const plate=r[0].toUpperCase().replace(/\s/g,'');
-                const amt=parseFloat(r[1].replace(',','.'))||0;
-                if(plate&&amt>0) result.push({plate,amt,cur:'EUR',date:r[2]||'',raw:r.join(', ')});
-            }
-        }
 
-        // Plaka bazında topla
-        const grouped = {};
-        result.forEach(({plate,amt,date})=>{
-            if(!grouped[plate]) grouped[plate]={plate,total:0,count:0,dates:[]};
-            grouped[plate].total+=amt;
-            grouped[plate].count++;
-            if(date) grouped[plate].dates.push(date);
-        });
-        return Object.values(grouped);
-    }
-
-    function showCsvPreview(data, type){
-        const preview = document.getElementById('csvPreview');
-        const head = document.getElementById('csvPreviewHead');
-        const body = document.getElementById('csvPreviewBody');
-        const title = document.getElementById('csvPreviewTitle');
-        const note = document.getElementById('csvPreviewNote');
-        if(!preview) return;
-
-        preview.classList.remove('hidden');
-        title.textContent = `${data.length} plaka bulundu — onaylayınca yakıt verilerine eklenecek`;
-        head.innerHTML = '<th class="p-2 text-left">Plaka</th><th class="p-2 text-right">Toplam (EUR)</th><th class="p-2 text-right">İşlem Sayısı</th><th class="p-2">Tarihler</th>';
-        body.innerHTML = data.map(d=>`
-            <tr class="hover:bg-blue-50">
-                <td class="p-2 font-bold text-slate-800">${esc(d.plate)}</td>
-                <td class="p-2 text-right font-bold text-amber-700">${d.total.toLocaleString('tr-TR',{minimumFractionDigits:2})} €</td>
-                <td class="p-2 text-right text-slate-500">${d.count}</td>
-                <td class="p-2 text-[10px] text-slate-400">${d.dates.slice(0,3).join(', ')}${d.dates.length>3?'...':''}</td>
-            </tr>`).join('');
-        note.textContent = `Seçili ay: ${getMonthKey()} — mevcut değerlere birikimli eklenecek`;
-    }
-
-    function csvImportConfirm(){
-        if(!_csvParsed.length) return;
-        const mV = getMonthKey();
-        if(!vcYakit[mV]) vcYakit[mV] = {};
-        const _yakImport=loadVcEntries('yakit');
-        if(!_yakImport[mV]) _yakImport[mV]=[];
-        _csvParsed.forEach(({plate,total})=>{
-            _yakImport[mV].push({plate:plate.toUpperCase(),date:mV+'-01',eur:total,id:Date.now()+Math.random()});
-        });
-        saveVcEntries('yakit',_yakImport);
-        csvImportCancel();
-        loadYakitRows();
-        renderVehicleCost();
-        showToast(`${_csvParsed.length} plaka için yakıt verisi aktarıldı ✓`,'success');
-        _csvParsed = [];
-    }
-
-    function csvImportCancel(){
-        const preview = document.getElementById('csvPreview');
-        if(preview) preview.classList.add('hidden');
-        _csvParsed = [];
-    }
-
-    function downloadCsvTemplate(){
-        const type = document.getElementById('csvImportType').value;
-        let header, example;
-        if(type==='dkv'){
-            header='Kart No;Araç Plakası;Tarih;Ürün;Miktar (L);Tutar;Para Birimi';
-            example='1234567;34NCH423;2026-05-15;Dizel;500;650,50;EUR\n1234567;34PGV555;2026-05-18;Dizel;450;590,00;EUR';
-        } else if(type==='uta'){
-            header='Vehicle Registration;Date;Product;Volume;Amount EUR';
-            example='34NCH423;2026-05-15;Diesel;500;650.50\n34PGV555;2026-05-18;Diesel;450;590.00';
-        } else if(type==='as24'){
-            header='Plaque;Date;Produit;Volume;Montant EUR';
-            example='34NCH423;2026-05-15;Diesel;500;650.50\n34PGV555;2026-05-18;Diesel;450;590.00';
-        } else {
-            header='Plaka,Tutar EUR,Tarih';
-            example='34NCH423,650.50,2026-05-15\n34PGV555,590.00,2026-05-18';
-        }
-        const csv = header+'\n'+example;
-        const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href=url; a.download=`sablon_${type}.csv`; a.click();
-        URL.revokeObjectURL(url);
-    }
 
     function renderVehicleCost(){
         const months=getMonthRange();

@@ -3102,46 +3102,60 @@
     }
 
     function exportVehicleCostExcel(){
-        const mV=document.getElementById('vcMonth').value;
-        if(!mV){showToast('Önce ay seçiniz!','error');return;}
         if(typeof XLSX==='undefined'){showToast('XLSX kütüphanesi yüklenmedi','error');return;}
+        const months=getMonthRange();
+        const mV=months[0]||document.getElementById('vcMonth').value;
+        if(!mV){showToast('Önce ay seçiniz!','error');return;}
         const [y,m]=mV.split('-');
         const mN=new Date(y,parseInt(m)-1,1).toLocaleString('tr-TR',{month:'long',year:'numeric'});
 
-        const mExp=expenses.filter(e=>e.status==='APPROVED'&&(e.date||'').startsWith(mV));
-        const mTrips=driverTrips.filter(t=>t.status==='COMPLETED'&&(t.endDate||'').startsWith(mV));
-        const plates=[...new Set([...mTrips.map(t=>t.plate),...mExp.filter(e=>e.plaka).map(e=>e.plaka.toUpperCase())])].filter(Boolean).sort();
+        const mExp=expenses.filter(e=>e.status==='APPROVED'&&months.some(mo=>(e.date||'').startsWith(mo)));
+        const mTrips=driverTrips.filter(t=>t.status==='COMPLETED'&&months.some(mo=>(t.endDate||'').startsWith(mo)));
+
+        const _hD=loadVcEntries('hgs');
+        const _yD=loadVcEntries('yakit');
+        const _sD=loadVcEntries('salary');
+
+        const plates=[...new Set([
+            ...mTrips.map(t=>t.plate),
+            ...mExp.filter(e=>e.plaka).map(e=>e.plaka.toUpperCase()),
+            ...months.flatMap(mo=>(_hD[mo]||[]).map(e=>e.plate)),
+            ...months.flatMap(mo=>(_yD[mo]||[]).map(e=>e.plate)),
+            ...months.flatMap(mo=>(_sD[mo]||[]).map(e=>e.plate))
+        ])].filter(Boolean).filter(p=>!/^\d{4}-\d{2}$/.test(p)).sort();
 
         if(!plates.length){showToast('Bu ay için veri yok.','error');return;}
         const wb=XLSX.utils.book_new();
 
         // Sayfa 1: Özet
-        const sumHeader=['Plaka','Sürücü','Toplam KM','Sefer Sayısı','HGS/Otoyol (€)','Yakıt (€)','Maaş (TRY)','Maaş (€)','Sefer Masrafı (€)','TOPLAM (€)','€/KM'];
+        const sumHeader=['Plaka','Sürücü','Toplam KM','Sefer Sayısı','HGS/Otoyol (€)','Yakıt (€)','Maaş (€)','Sefer Masrafı (€)','TOPLAM (€)','€/KM'];
         const sumData=[];
         plates.forEach(plate=>{
             const pt=mTrips.filter(t=>(t.plate||'').toUpperCase()===plate);
             const driver=pt.length>0?pt[pt.length-1].driver:'-';
             const totalKm=pt.reduce((s,t)=>s+(t.totalKm||0),0);
-            const _hD2=loadVcEntries('hgs'); const hgsM=months.reduce((s,m)=>s+(_hD2[m]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+e.eur,0),0); const hgsExpE=mExp.filter(e=>(e.plaka||'').toUpperCase()===plate&&e.category==='OTOYOL').reduce((s,e)=>s+toEur(e.amount,e.currency),0); const hgsEur=hgsM>0?hgsM:hgsExpE;
-            const _yD2=loadVcEntries('yakit'); const yakitM=months.reduce((s,m)=>s+(_yD2[m]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+e.eur,0),0); const yakitExpE=mExp.filter(e=>(e.plaka||'').toUpperCase()===plate&&e.category==='MAZOT').reduce((s,e)=>s+toEur(e.amount,e.currency),0); const yakitEur=yakitM>0?yakitM:yakitExpE;
-            const _sD2=loadVcEntries('salary'); const salaryEur=months.reduce((s,m)=>s+(_sD2[m]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+e.eur,0),0);
+            const hgsM=months.reduce((s,mo)=>s+(_hD[mo]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+e.eur,0),0);
+            const hgsExpE=mExp.filter(e=>(e.plaka||'').toUpperCase()===plate&&e.category==='OTOYOL').reduce((s,e)=>s+toEur(e.amount,e.currency),0);
+            const hgsEur=hgsM>0?hgsM:hgsExpE;
+            const yakitM=months.reduce((s,mo)=>s+(_yD[mo]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+e.eur,0),0);
+            const yakitExpE=mExp.filter(e=>(e.plaka||'').toUpperCase()===plate&&e.category==='MAZOT').reduce((s,e)=>s+toEur(e.amount,e.currency),0);
+            const yakitEur=yakitM>0?yakitM:yakitExpE;
+            const salaryEur=months.reduce((s,mo)=>s+(_sD[mo]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+e.eur,0),0);
             const tripNos=new Set(pt.map(t=>String(t.tripNo||'').trim()));
             const seferEur=mExp.filter(e=>{
-                const drv=e.driver===driver;
-                const tm=tripNos.size>0&&tripNos.has(String(e.tripId||'').trim());
+                const dm=e.driver===driver&&tripNos.size>0&&tripNos.has(String(e.tripId||'').trim());
                 const pm=(e.plaka||'').toUpperCase()===plate;
-                return ((drv&&tm)||pm)&&e.category!=='OTOYOL'&&e.category!=='MAZOT';
+                return (dm||pm)&&e.category!=='OTOYOL'&&e.category!=='MAZOT';
             }).reduce((s,e)=>s+toEur(e.amount,e.currency),0);
             const total=hgsEur+yakitEur+salaryEur+seferEur;
             const cpm=totalKm>0?total/totalKm:0;
             sumData.push([plate,driver,totalKm,pt.length,
                 parseFloat(hgsEur.toFixed(2)),parseFloat(yakitEur.toFixed(2)),
-                parseFloat(salaryEur.toFixed(2)),parseFloat(salaryEur.toFixed(2)),
-                parseFloat(seferEur.toFixed(2)),parseFloat(total.toFixed(2)),
-                parseFloat(cpm.toFixed(4))]);
+                parseFloat(salaryEur.toFixed(2)),parseFloat(seferEur.toFixed(2)),
+                parseFloat(total.toFixed(2)),parseFloat(cpm.toFixed(4))]);
         });
         const ws1=XLSX.utils.aoa_to_sheet([[mN+' — Araç Aylık Maliyet Özeti'],[],sumHeader,...sumData]);
-        ws1['!cols']=[{wch:12},{wch:16},{wch:10},{wch:10},{wch:14},{wch:12},{wch:12},{wch:10},{wch:14},{wch:12},{wch:10}];
+        ws1['!cols']=[{wch:12},{wch:16},{wch:10},{wch:10},{wch:14},{wch:12},{wch:12},{wch:14},{wch:12},{wch:10}];
         XLSX.utils.book_append_sheet(wb,ws1,'Maliyet Özeti');
 
         // Sayfa 2: Masraf detayı
@@ -3169,15 +3183,27 @@
     }
 
     async function exportVehicleCostPDF(){
-        const mV=document.getElementById('vcMonth').value;
+        const months=getMonthRange();
+        const mV=months[0]||document.getElementById('vcMonth').value;
         if(!mV){showToast('Önce ay seçiniz!','error');return;}
         showToast('PDF Hazırlanıyor...','success');
         const [y,m]=mV.split('-');
         const mN=new Date(y,parseInt(m)-1,1).toLocaleString('tr-TR',{month:'long',year:'numeric'});
 
-        const mExp=expenses.filter(e=>e.status==='APPROVED'&&(e.date||'').startsWith(mV));
-        const mTrips=driverTrips.filter(t=>t.status==='COMPLETED'&&(t.endDate||'').startsWith(mV));
-        const plates=[...new Set([...mTrips.map(t=>t.plate),...mExp.filter(e=>e.plaka).map(e=>e.plaka.toUpperCase())])].filter(Boolean).sort();
+        const mExp=expenses.filter(e=>e.status==='APPROVED'&&months.some(mo=>(e.date||'').startsWith(mo)));
+        const mTrips=driverTrips.filter(t=>t.status==='COMPLETED'&&months.some(mo=>(t.endDate||'').startsWith(mo)));
+
+        const _hD=loadVcEntries('hgs');
+        const _yD=loadVcEntries('yakit');
+        const _sD=loadVcEntries('salary');
+
+        const plates=[...new Set([
+            ...mTrips.map(t=>t.plate),
+            ...mExp.filter(e=>e.plaka).map(e=>e.plaka.toUpperCase()),
+            ...months.flatMap(mo=>(_hD[mo]||[]).map(e=>e.plate)),
+            ...months.flatMap(mo=>(_yD[mo]||[]).map(e=>e.plate)),
+            ...months.flatMap(mo=>(_sD[mo]||[]).map(e=>e.plate))
+        ])].filter(Boolean).filter(p=>!/^\d{4}-\d{2}$/.test(p)).sort();
         if(!plates.length){showToast('Bu ay için veri yok.','error');return;}
 
         async function svgToPng(svgStr,w,h){return new Promise(r=>{const i=new Image();const b=new Blob([svgStr],{type:'image/svg+xml'});const u=URL.createObjectURL(b);i.onload=()=>{const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(i,0,0,w,h);URL.revokeObjectURL(u);r(c.toDataURL('image/png'));};i.onerror=()=>{URL.revokeObjectURL(u);r(null);};i.src=u;});}
@@ -3189,13 +3215,12 @@
             const pt=mTrips.filter(t=>(t.plate||'').toUpperCase()===plate);
             const driver=pt.length>0?pt[pt.length-1].driver:'-';
             const km=pt.reduce((s,t)=>s+(t.totalKm||0),0);
-            const hgsManPdf=(vcHgs[mV]||{})[plate]||0; const hgsExpPdf=mExp.filter(e=>(e.plaka||'').toUpperCase()===plate&&e.category==='OTOYOL').reduce((s,e)=>s+toEur(e.amount,e.currency),0); const hgs=hgsManPdf>0?hgsManPdf:hgsExpPdf;
-            const yakManPdf=(vcYakit[mV]||{})[plate]||0; const yakExpPdf=mExp.filter(e=>(e.plaka||'').toUpperCase()===plate&&e.category==='MAZOT').reduce((s,e)=>s+toEur(e.amount,e.currency),0); const yak=yakManPdf>0?yakManPdf:yakExpPdf;
-            const sal=months.reduce((s,m)=>s+((typeof vcSalaries[m]==='object'?vcSalaries[m][plate]:0)||0),0);
+            const hgs=months.reduce((s,mo)=>s+(_hD[mo]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+e.eur,0),0)||mExp.filter(e=>(e.plaka||'').toUpperCase()===plate&&e.category==='OTOYOL').reduce((s,e)=>s+toEur(e.amount,e.currency),0);
+            const yak=months.reduce((s,mo)=>s+(_yD[mo]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+e.eur,0),0)||mExp.filter(e=>(e.plaka||'').toUpperCase()===plate&&e.category==='MAZOT').reduce((s,e)=>s+toEur(e.amount,e.currency),0);
+            const sal=months.reduce((s,mo)=>s+(_sD[mo]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+e.eur,0),0);
             const tripNos=new Set(pt.map(t=>String(t.tripNo||'').trim()));
             const sef=mExp.filter(e=>{const dm=e.driver===driver&&tripNos.has(String(e.tripId||'').trim());const pm=(e.plaka||'').toUpperCase()===plate;return(pm||dm)&&e.category!=='OTOYOL'&&e.category!=='MAZOT';}).reduce((s,e)=>s+toEur(e.amount,e.currency),0);
             const tot=hgs+yak+sal+sef;
-            const cpm=km>0?tot/km:0;
             totH+=hgs;totY+=yak;totM+=sal;totS+=sef;totT+=tot;totK+=km;
             rows.push([
                 {text:plate,style:'td',bold:true},

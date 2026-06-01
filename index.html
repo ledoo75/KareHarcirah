@@ -2465,15 +2465,19 @@
     // ── Plaka dropdown doldur ──────────────────────────────────
     function fillPlateSelects(){
         const plates=[...new Set([...driverTrips.map(t=>t.plate),...expenses.filter(e=>e.plaka).map(e=>e.plaka)])].filter(Boolean).sort();
-        const today=new Date().toISOString().split('T')[0];
+        const mV=getMonthKey();
+        // Seçili ayın ilk günü varsayılan tarih olarak set et
+        const defaultDate=mV+'-01';
         ['hgsPlate','yakitPlate','salaryPlate'].forEach(id=>{
             const sel=document.getElementById(id); if(!sel)return;
-            if(sel.options.length!==plates.length){
-                sel.innerHTML=plates.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
-            }
+            const cur=sel.value;
+            sel.innerHTML=plates.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
+            if(cur&&plates.includes(cur)) sel.value=cur;
         });
         ['hgsDate','yakitDate','salaryDate'].forEach(id=>{
-            const el=document.getElementById(id); if(el&&!el.value) el.value=today;
+            const el=document.getElementById(id); if(!el)return;
+            // Tarihi seçili aya zorla
+            if(!el.value||!el.value.startsWith(mV)) el.value=defaultDate;
         });
     }
 
@@ -2517,18 +2521,17 @@
     function loadHgsRows(){
         const list=document.getElementById('hgsRowList'); if(!list)return;
         fillPlateSelects();
-        const mV=getVcMonth();
+        const mV=getMonthKey();
         const data=loadVcEntries('hgs');
         const entries=(data[mV]||[]).sort((a,b)=>b.date.localeCompare(a.date));
         list.innerHTML='';
         if(!entries.length){
-            list.innerHTML='<div class="text-[10px] text-slate-400 text-center py-2 italic">Henüz kayıt yok.</div>';
+            list.innerHTML=`<div class="text-[10px] text-slate-400 text-center py-2 italic">${mV} için kayıt yok.</div>`;
             return;
         }
-        // Plaka bazında grupla, toplam göster
         const byPlate={};
         entries.forEach(e=>{ if(!byPlate[e.plate])byPlate[e.plate]=[]; byPlate[e.plate].push(e); });
-        Object.entries(byPlate).forEach(([plate,ents])=>{
+        Object.entries(byPlate).sort().forEach(([plate,ents])=>{
             const total=ents.reduce((s,e)=>s+e.eur,0);
             const wrap=document.createElement('div');
             wrap.className='bg-red-50 rounded-xl border border-red-100 p-2 mb-1';
@@ -2539,7 +2542,7 @@
             ents.forEach(e=>{
                 wrap.innerHTML+=`<div class="flex items-center gap-2 border-t border-red-100 py-0.5 text-xs">
                     <span class="text-slate-400 w-20 shrink-0">${e.date}</span>
-                    <span class="flex-1 text-slate-600">${e.eur.toLocaleString('tr-TR',{minimumFractionDigits:2})} €</span>
+                    <span class="flex-1 text-red-600 font-bold">${e.eur.toLocaleString('tr-TR',{minimumFractionDigits:2})} €</span>
                     <button onclick="hgsDeleteEntry('${mV}',${e.id})" class="text-rose-300 hover:text-rose-600"><i class="fa-solid fa-trash text-[10px]"></i></button>
                 </div>`;
             });
@@ -2575,17 +2578,17 @@
     function loadYakitRows(){
         const list=document.getElementById('yakitRowList'); if(!list)return;
         fillPlateSelects();
-        const mV=getVcMonth();
+        const mV=getMonthKey();
         const data=loadVcEntries('yakit');
         const entries=(data[mV]||[]).sort((a,b)=>b.date.localeCompare(a.date));
         list.innerHTML='';
         if(!entries.length){
-            list.innerHTML='<div class="text-[10px] text-slate-400 text-center py-2 italic">Henüz kayıt yok.</div>';
+            list.innerHTML=`<div class="text-[10px] text-slate-400 text-center py-2 italic">${mV} için kayıt yok.</div>`;
             return;
         }
         const byPlate={};
         entries.forEach(e=>{ if(!byPlate[e.plate])byPlate[e.plate]=[]; byPlate[e.plate].push(e); });
-        Object.entries(byPlate).forEach(([plate,ents])=>{
+        Object.entries(byPlate).sort().forEach(([plate,ents])=>{
             const total=ents.reduce((s,e)=>s+e.eur,0);
             const wrap=document.createElement('div');
             wrap.className='bg-amber-50 rounded-xl border border-amber-100 p-2 mb-1';
@@ -2596,7 +2599,7 @@
             ents.forEach(e=>{
                 wrap.innerHTML+=`<div class="flex items-center gap-2 border-t border-amber-100 py-0.5 text-xs">
                     <span class="text-slate-400 w-20 shrink-0">${e.date}</span>
-                    <span class="flex-1 text-slate-600">${e.eur.toLocaleString('tr-TR',{minimumFractionDigits:2})} €</span>
+                    <span class="flex-1 text-amber-600 font-bold">${e.eur.toLocaleString('tr-TR',{minimumFractionDigits:2})} €</span>
                     <button onclick="yakitDeleteEntry('${mV}',${e.id})" class="text-rose-300 hover:text-rose-600"><i class="fa-solid fa-trash text-[10px]"></i></button>
                 </div>`;
             });
@@ -2604,7 +2607,37 @@
         });
     }
 
-    // ── Maaş ──────────────────────────────────────────────────
+    function loadSalaryRows(){
+        const list=document.getElementById('salaryRowList'); if(!list)return;
+        fillPlateSelects();
+        const mV=getMonthKey();
+        const data=loadVcEntries('salary');
+        const entries=(data[mV]||[]).sort((a,b)=>b.date.localeCompare(a.date));
+        list.innerHTML='';
+        if(!entries.length){
+            list.innerHTML=`<div class="text-[10px] text-slate-400 text-center py-2 italic">${mV} için kayıt yok.</div>`;
+            return;
+        }
+        const byPlate={};
+        entries.forEach(e=>{ if(!byPlate[e.plate])byPlate[e.plate]=[]; byPlate[e.plate].push(e); });
+        Object.entries(byPlate).sort().forEach(([plate,ents])=>{
+            const total=ents.reduce((s,e)=>s+e.eur,0);
+            const wrap=document.createElement('div');
+            wrap.className='bg-violet-50 rounded-xl border border-violet-100 p-2 mb-1';
+            wrap.innerHTML=`<div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-black text-slate-700 uppercase">${esc(plate)}</span>
+                <span class="text-xs font-black text-violet-700">${total.toLocaleString('tr-TR',{minimumFractionDigits:2})} € toplam</span>
+            </div>`;
+            ents.forEach(e=>{
+                wrap.innerHTML+=`<div class="flex items-center gap-2 border-t border-violet-100 py-0.5 text-xs">
+                    <span class="text-slate-400 w-20 shrink-0">${e.date}</span>
+                    <span class="flex-1 text-violet-600 font-bold">${e.eur.toLocaleString('tr-TR',{minimumFractionDigits:2})} €</span>
+                    <button onclick="salaryDeleteEntry('${mV}',${e.id})" class="text-rose-300 hover:text-rose-600"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                </div>`;
+            });
+            list.appendChild(wrap);
+        });
+    }
     function salaryAddEntry(){
         const plate=document.getElementById('salaryPlate')?.value?.toUpperCase();
         const date=document.getElementById('salaryDate')?.value;

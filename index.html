@@ -2723,8 +2723,8 @@
             ...mExp.filter(e=>e.plaka).map(e=>e.plaka.toUpperCase()),
             ...Object.keys(vcHgs[mV]||{}),
             ...Object.keys(vcYakit[mV]||{}),
-            ...Object.keys(vcSalaries)
-        ])].filter(Boolean).sort();
+            ...months.flatMap(m=>Object.keys(typeof vcSalaries[m]==='object'?vcSalaries[m]:{}))
+        ])].filter(Boolean).filter(p=>!/^\d{4}-\d{2}$/.test(p)).sort();
 
         if(plates.length===0){
             if(empty)empty.style.display='block';
@@ -2760,8 +2760,7 @@
             const yakitEur=yakitManuel>0?yakitManuel:yakitExpEur;
 
             // Maaş (TRY → EUR)
-            const salaryTry=vcSalaries[plate]||0;
-            const salaryEur=salaryTry;
+            const salaryEur=months.reduce((s,m)=>s+((typeof vcSalaries[m]==='object'?vcSalaries[m][plate]:0)||0),0);
 
             // Sefer masrafları: o araçla yapılan seferlere ait TÜM onaylı masraflar
             // (sürücü + sefer no eşleşmesi)
@@ -2950,8 +2949,7 @@
             const totalKm=pt.reduce((s,t)=>s+(t.totalKm||0),0);
             const hgsM=(vcHgs[mV]||{})[plate]||0; const hgsExpE=mExp.filter(e=>(e.plaka||'').toUpperCase()===plate&&e.category==='OTOYOL').reduce((s,e)=>s+toEur(e.amount,e.currency),0); const hgsEur=hgsM>0?hgsM:hgsExpE;
             const yakitM=(vcYakit[mV]||{})[plate]||0; const yakitExpE=mExp.filter(e=>(e.plaka||'').toUpperCase()===plate&&e.category==='MAZOT').reduce((s,e)=>s+toEur(e.amount,e.currency),0); const yakitEur=yakitM>0?yakitM:yakitExpE;
-            const salaryTry=vcSalaries[plate]||0;
-            const salaryEur=salaryTry;
+            const salaryEur=months.reduce((s,m)=>s+((typeof vcSalaries[m]==='object'?vcSalaries[m][plate]:0)||0),0);
             const tripNos=new Set(pt.map(t=>String(t.tripNo||'').trim()));
             const seferEur=mExp.filter(e=>{
                 const drv=e.driver===driver;

@@ -2283,7 +2283,18 @@
     // ══════════════════════════════════════════════
 
     // Maaş verileri localStorage'da: {plate: tryAmount}
-    let vcSalaries = JSON.parse(localStorage.getItem('kk_vc_salaries')||'{}');
+    let vcSalaries = (()=>{
+        const raw=JSON.parse(localStorage.getItem('kk_vc_salaries')||'{}');
+        // Eski format {plate:number} → yeni format {YYYY-MM:{plate:number}} migrate et
+        const isOldFormat=Object.keys(raw).length>0&&Object.values(raw).every(v=>typeof v==='number');
+        if(isOldFormat){
+            const now=new Date().toISOString().slice(0,7);
+            const migrated={[now]:raw};
+            localStorage.setItem('kk_vc_salaries',JSON.stringify(migrated));
+            return migrated;
+        }
+        return raw;
+    })();
 
     function saveSalaries(){
         const mV=getMonthKey();
@@ -2413,8 +2424,18 @@
 
 
     // HGS verisi: {plate: {month: eurAmount}} — localStorage
-    let vcHgs   = JSON.parse(localStorage.getItem('kk_vc_hgs')||'{}');
-    let vcYakit = JSON.parse(localStorage.getItem('kk_vc_yakit')||'{}');
+    let vcHgs = (()=>{
+        const raw=JSON.parse(localStorage.getItem('kk_vc_hgs')||'{}');
+        const isOldFormat=Object.keys(raw).length>0&&Object.values(raw).every(v=>typeof v==='number');
+        if(isOldFormat){ const now=new Date().toISOString().slice(0,7); const m={[now]:raw}; localStorage.setItem('kk_vc_hgs',JSON.stringify(m)); return m; }
+        return raw;
+    })();
+    let vcYakit = (()=>{
+        const raw=JSON.parse(localStorage.getItem('kk_vc_yakit')||'{}');
+        const isOldFormat=Object.keys(raw).length>0&&Object.values(raw).every(v=>typeof v==='number');
+        if(isOldFormat){ const now=new Date().toISOString().slice(0,7); const m={[now]:raw}; localStorage.setItem('kk_vc_yakit',JSON.stringify(m)); return m; }
+        return raw;
+    })();
 
     function getMonthKey(){ const si=document.getElementById('vcStartMonth'); return (si&&si.value)?si.value:(document.getElementById('vcMonth').value || new Date().toISOString().slice(0,7)); }
 
@@ -3016,7 +3037,7 @@
             const km=pt.reduce((s,t)=>s+(t.totalKm||0),0);
             const hgsManPdf=(vcHgs[mV]||{})[plate]||0; const hgsExpPdf=mExp.filter(e=>(e.plaka||'').toUpperCase()===plate&&e.category==='OTOYOL').reduce((s,e)=>s+toEur(e.amount,e.currency),0); const hgs=hgsManPdf>0?hgsManPdf:hgsExpPdf;
             const yakManPdf=(vcYakit[mV]||{})[plate]||0; const yakExpPdf=mExp.filter(e=>(e.plaka||'').toUpperCase()===plate&&e.category==='MAZOT').reduce((s,e)=>s+toEur(e.amount,e.currency),0); const yak=yakManPdf>0?yakManPdf:yakExpPdf;
-            const sal=vcSalaries[plate]||0;
+            const sal=months.reduce((s,m)=>s+((typeof vcSalaries[m]==='object'?vcSalaries[m][plate]:0)||0),0);
             const tripNos=new Set(pt.map(t=>String(t.tripNo||'').trim()));
             const sef=mExp.filter(e=>{const dm=e.driver===driver&&tripNos.has(String(e.tripId||'').trim());const pm=(e.plaka||'').toUpperCase()===plate;return(pm||dm)&&e.category!=='OTOYOL'&&e.category!=='MAZOT';}).reduce((s,e)=>s+toEur(e.amount,e.currency),0);
             const tot=hgs+yak+sal+sef;

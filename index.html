@@ -2918,20 +2918,21 @@
             // Sefer masrafları: o araçla yapılan seferlere ait TÜM onaylı masraflar
             // (sürücü + sefer no eşleşmesi)
             const tripNos=new Set(pt.map(t=>String(t.tripNo||'').trim()));
-            const seferExp=mExp.filter(e=>{
+            // Sefer masrafları: ilgili ay + sürücü/plaka eşleşmesi
+            const allMonthExp=expenses.filter(e=>e.status==='APPROVED'&&months.some(m=>(e.date||'').startsWith(m)));
+            const seferExp=allMonthExp.filter(e=>{
                 const drv=e.driver===driver;
                 const tripMatch=tripNos.size>0&&tripNos.has(String(e.tripId||'').trim());
                 const plakaMatch=(e.plaka||'').toUpperCase()===plate;
                 return (drv&&tripMatch)||plakaMatch;
             });
-            // Çift sayımı önle: hgs ve yakıt zaten dahil, çıkar
             const seferOnlyExp=seferExp.filter(e=>e.category!=='OTOYOL'&&e.category!=='MAZOT');
             const seferEur=seferOnlyExp.reduce((s,e)=>s+toEur(e.amount,e.currency),0);
 
             const totalEur=hgsEur+yakitEur+salaryEur+seferEur;
             const cpm=totalKm>0?totalEur/totalKm:0;
 
-            rows.push({plate,driver,totalKm,hgsEur,yakitEur,salaryTry,salaryEur,seferEur,totalEur,cpm,
+            rows.push({plate,driver,totalKm,hgsEur,yakitEur,salaryEur,seferEur,totalEur,cpm,
                 hgsExp,yakitExp,seferOnlyExp,pt});
         });
 
@@ -2960,7 +2961,6 @@
             <div class="bg-violet-50 border border-violet-100 rounded-xl p-3">
                 <p class="text-[10px] font-bold text-violet-400 uppercase mb-1">💰 Maaş</p>
                 <p class="text-base font-black text-violet-700">${totMaas.toLocaleString('tr-TR',{minimumFractionDigits:2})} €</p>
-                <p class="text-[10px] text-violet-400 mt-1">${(totMaas/0.024).toLocaleString('tr-TR',{maximumFractionDigits:0})} ₺</p>
             </div>`;
 
         // Tablo satırları
@@ -3114,7 +3114,7 @@
             const cpm=totalKm>0?total/totalKm:0;
             sumData.push([plate,driver,totalKm,pt.length,
                 parseFloat(hgsEur.toFixed(2)),parseFloat(yakitEur.toFixed(2)),
-                salaryTry,parseFloat(salaryEur.toFixed(2)),
+                parseFloat(salaryEur.toFixed(2)),parseFloat(salaryEur.toFixed(2)),
                 parseFloat(seferEur.toFixed(2)),parseFloat(total.toFixed(2)),
                 parseFloat(cpm.toFixed(4))]);
         });

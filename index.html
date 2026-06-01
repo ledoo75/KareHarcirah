@@ -968,41 +968,44 @@
 
             <!-- HGS / Otoyol Manuel Giriş -->
             <div class="glass-card p-4 border-l-4 border-red-400">
-                <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center justify-between mb-2">
                     <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="fa-solid fa-road text-red-500"></i> HGS / Otoyol <span class="text-slate-400 font-normal text-xs">(EUR)</span></h3>
-                    <div class="flex gap-2">
-                        <button onclick="addHgsRow()" class="text-xs text-red-500 hover:underline font-bold flex items-center gap-1"><i class="fa-solid fa-plus"></i> Ekle</button>
-                        <button onclick="saveHgsData()" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button>
-                    </div>
                 </div>
-                <div id="hgsRowList" class="flex flex-col gap-2 max-h-52 overflow-y-auto pr-1"></div>
-                <p class="text-[10px] text-slate-400 mt-2"><i class="fa-solid fa-circle-info mr-1"></i>Plaka başına aylık HGS/otoyol geçiş toplamı girin.</p>
+                <div class="flex gap-1.5 mb-2 p-2 bg-red-50 rounded-xl border border-red-100">
+                    <select id="hgsPlate" class="input-style text-xs flex-1 font-bold uppercase"></select>
+                    <input type="date" id="hgsDate" class="input-style text-xs w-28"/>
+                    <input type="number" step="0.01" id="hgsEurInput" class="input-style text-xs w-20 font-bold text-red-700" placeholder="€"/>
+                    <button onclick="hgsAddEntry()" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-plus"></i></button>
+                </div>
+                <div id="hgsRowList" class="flex flex-col gap-1 max-h-44 overflow-y-auto pr-1"></div>
             </div>
 
             <!-- Yakıt Manuel Giriş -->
             <div class="glass-card p-4 border-l-4 border-amber-400">
-                <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center justify-between mb-2">
                     <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="fa-solid fa-gas-pump text-amber-500"></i> Yakıt / Mazot <span class="text-slate-400 font-normal text-xs">(EUR)</span></h3>
-                    <div class="flex gap-2">
-                        <button onclick="addYakitRow()" class="text-xs text-amber-600 hover:underline font-bold flex items-center gap-1"><i class="fa-solid fa-plus"></i> Ekle</button>
-                        <button onclick="saveYakitData()" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button>
-                    </div>
                 </div>
-                <div id="yakitRowList" class="flex flex-col gap-2 max-h-52 overflow-y-auto pr-1"></div>
-                <p class="text-[10px] text-slate-400 mt-2"><i class="fa-solid fa-circle-info mr-1"></i>Plaka başına aylık yakıt/mazot toplamı girin.</p>
+                <div class="flex gap-1.5 mb-2 p-2 bg-amber-50 rounded-xl border border-amber-100">
+                    <select id="yakitPlate" class="input-style text-xs flex-1 font-bold uppercase"></select>
+                    <input type="date" id="yakitDate" class="input-style text-xs w-28"/>
+                    <input type="number" step="0.01" id="yakitEurInput" class="input-style text-xs w-20 font-bold text-amber-700" placeholder="€"/>
+                    <button onclick="yakitAddEntry()" class="bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-plus"></i></button>
+                </div>
+                <div id="yakitRowList" class="flex flex-col gap-1 max-h-44 overflow-y-auto pr-1"></div>
             </div>
 
             <!-- Maaş Manuel Giriş -->
             <div class="glass-card p-4 border-l-4 border-violet-400">
-                <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center justify-between mb-2">
                     <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="fa-solid fa-sliders text-violet-500"></i> Sürücü Maaşları <span class="text-slate-400 font-normal text-xs">(EUR)</span></h3>
-                    <div class="flex gap-2">
-                        <button onclick="addSalaryRow()" class="text-xs text-violet-600 hover:underline font-bold flex items-center gap-1"><i class="fa-solid fa-plus"></i> Ekle</button>
-                        <button onclick="saveSalaries()" class="bg-violet-600 hover:bg-violet-700 text-white px-2 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button>
-                    </div>
                 </div>
-                <div id="salaryRowList" class="flex flex-col gap-2 max-h-52 overflow-y-auto pr-1"></div>
-                <p class="text-[10px] text-slate-400 mt-2"><i class="fa-solid fa-circle-info mr-1"></i>Maaş girilmeyen plakalar için 0 hesaplanır.</p>
+                <div class="flex gap-1.5 mb-2 p-2 bg-violet-50 rounded-xl border border-violet-100">
+                    <select id="salaryPlate" class="input-style text-xs flex-1 font-bold uppercase"></select>
+                    <input type="date" id="salaryDate" class="input-style text-xs w-28"/>
+                    <input type="number" step="0.01" id="salaryEurInput" class="input-style text-xs w-20 font-bold text-violet-700" placeholder="€"/>
+                    <button onclick="salaryAddEntry()" class="bg-violet-600 hover:bg-violet-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-plus"></i></button>
+                </div>
+                <div id="salaryRowList" class="flex flex-col gap-1 max-h-44 overflow-y-auto pr-1"></div>
             </div>
 
         </div>
@@ -2459,110 +2462,203 @@
         list.appendChild(row);
     }
 
-    function saveHgsData(){
-        const mV=getMonthKey();
-        if(!vcHgs[mV]) vcHgs[mV]={};
-        document.querySelectorAll('.hgs-row').forEach(r=>{
-            const p=r.dataset.plate;
-            const v=parseFloat(r.querySelector('.hr-eur').value)||0;
-            if(p){ if(v>0) vcHgs[mV][p]=v; else delete vcHgs[mV][p]; }
+    // ── Plaka dropdown doldur ──────────────────────────────────
+    function fillPlateSelects(){
+        const plates=[...new Set([...driverTrips.map(t=>t.plate),...expenses.filter(e=>e.plaka).map(e=>e.plaka)])].filter(Boolean).sort();
+        const today=new Date().toISOString().split('T')[0];
+        ['hgsPlate','yakitPlate','salaryPlate'].forEach(id=>{
+            const sel=document.getElementById(id); if(!sel)return;
+            if(sel.options.length!==plates.length){
+                sel.innerHTML=plates.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
+            }
         });
-        localStorage.setItem('kk_vc_hgs',JSON.stringify(vcHgs));
-        showToast('HGS kaydedildi ✓','success');
-        renderVehicleCost();
+        ['hgsDate','yakitDate','salaryDate'].forEach(id=>{
+            const el=document.getElementById(id); if(el&&!el.value) el.value=today;
+        });
     }
+
+    // ── Veri format: {YYYY-MM: [{plate,date,eur,id}]} ─────────
+    function vcKey(mV,type){ return 'kk_vc_'+type+'_v2'; }
+
+    function loadVcEntries(type){
+        const raw=JSON.parse(localStorage.getItem('kk_vc_'+type+'_v2')||'{}');
+        return raw;
+    }
+    function saveVcEntries(type,data){
+        localStorage.setItem('kk_vc_'+type+'_v2',JSON.stringify(data));
+    }
+    function getVcMonth(){ return getMonthKey(); }
+
+    // ── HGS ──────────────────────────────────────────────────
+    function hgsAddEntry(){
+        const plate=document.getElementById('hgsPlate')?.value?.toUpperCase();
+        const date=document.getElementById('hgsDate')?.value;
+        const eur=parseFloat(document.getElementById('hgsEurInput')?.value)||0;
+        if(!plate||!date||!eur){showToast('Plaka, tarih ve tutar giriniz!','error');return;}
+        const mV=date.slice(0,7);
+        const data=loadVcEntries('hgs');
+        if(!data[mV])data[mV]=[];
+        data[mV].push({plate,date,eur,id:Date.now()});
+        saveVcEntries('hgs',data);
+        document.getElementById('hgsEurInput').value='';
+        loadHgsRows(); renderVehicleCost();
+        showToast('HGS eklendi ✓','success');
+    }
+
+    function hgsDeleteEntry(mV,id){
+        const data=loadVcEntries('hgs');
+        if(data[mV]) data[mV]=data[mV].filter(e=>e.id!==id);
+        saveVcEntries('hgs',data); loadHgsRows(); renderVehicleCost();
+    }
+
+    function saveHgsData(){ loadHgsRows(); renderVehicleCost(); }
+    function addHgsRow(){}
 
     function loadHgsRows(){
         const list=document.getElementById('hgsRowList'); if(!list)return;
+        fillPlateSelects();
+        const mV=getVcMonth();
+        const data=loadVcEntries('hgs');
+        const entries=(data[mV]||[]).sort((a,b)=>b.date.localeCompare(a.date));
         list.innerHTML='';
-        const mV=getMonthKey();
-        const saved=vcHgs[mV]||{};
-        // Sistemdeki tüm plakalar
-        const plates=[...new Set([...driverTrips.map(t=>t.plate),...expenses.filter(e=>e.plaka).map(e=>e.plaka)])].filter(Boolean).sort();
-        // Kaydedilen plakaları da ekle (sistemde olmayan plakalar için)
-        const allPlates=[...new Set([...plates,...Object.keys(saved)])].sort();
-
-        if(!allPlates.length){
-            list.innerHTML='<div class="text-[10px] text-slate-400 text-center py-2">Kayıtlı araç yok.</div>';
+        if(!entries.length){
+            list.innerHTML='<div class="text-[10px] text-slate-400 text-center py-2 italic">Henüz kayıt yok.</div>';
             return;
         }
-        allPlates.forEach(p=>{
-            const val=parseFloat(saved[p.toUpperCase()]||saved[p])||0;
-            const row=document.createElement('div');
-            row.className='hgs-row flex gap-2 items-center py-1 border-b border-red-50 last:border-0';
-            row.dataset.plate=p.toUpperCase();
-            row.innerHTML=`
-                <span class="text-xs font-bold text-slate-700 flex-1 uppercase">${esc(p)}</span>
-                <input type="number" step="0.01" class="hr-eur input-style text-xs w-24 font-bold text-red-700 text-right" placeholder="0.00" value="${val||''}"/>
-                <span class="text-[10px] text-red-400 font-bold">€</span>`;
-            list.appendChild(row);
+        // Plaka bazında grupla, toplam göster
+        const byPlate={};
+        entries.forEach(e=>{ if(!byPlate[e.plate])byPlate[e.plate]=[]; byPlate[e.plate].push(e); });
+        Object.entries(byPlate).forEach(([plate,ents])=>{
+            const total=ents.reduce((s,e)=>s+e.eur,0);
+            const wrap=document.createElement('div');
+            wrap.className='bg-red-50 rounded-xl border border-red-100 p-2 mb-1';
+            wrap.innerHTML=`<div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-black text-slate-700 uppercase">${esc(plate)}</span>
+                <span class="text-xs font-black text-red-700">${total.toLocaleString('tr-TR',{minimumFractionDigits:2})} € toplam</span>
+            </div>`;
+            ents.forEach(e=>{
+                wrap.innerHTML+=`<div class="flex items-center gap-2 border-t border-red-100 py-0.5 text-xs">
+                    <span class="text-slate-400 w-20 shrink-0">${e.date}</span>
+                    <span class="flex-1 text-slate-600">${e.eur.toLocaleString('tr-TR',{minimumFractionDigits:2})} €</span>
+                    <button onclick="hgsDeleteEntry('${mV}',${e.id})" class="text-rose-300 hover:text-rose-600"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                </div>`;
+            });
+            list.appendChild(wrap);
         });
     }
-    function hgsSaveEdit(plate,val){ const mV=getMonthKey(); if(!vcHgs[mV])vcHgs[mV]={}; const v=parseFloat(val)||0; if(v>0)vcHgs[mV][plate]=v; else delete vcHgs[mV][plate]; localStorage.setItem('kk_vc_hgs',JSON.stringify(vcHgs)); renderVehicleCost(); }
-    function hgsDelete(plate){ const mV=getMonthKey(); if(vcHgs[mV])delete vcHgs[mV][plate]; localStorage.setItem('kk_vc_hgs',JSON.stringify(vcHgs)); loadHgsRows(); renderVehicleCost(); }
 
-    function addYakitRow(plate='', eur=''){
-        const list=document.getElementById('yakitRowList'); if(!list)return;
-        const row=document.createElement('div');
-        row.className='yakit-row flex gap-2 items-center';
-        row.innerHTML=`
-            <input list="yakitPlateSuggest" class="yr-plate input-style text-sm uppercase flex-1 text-xs" placeholder="Plaka" value="${plate}" oninput="this.value=this.value.toUpperCase()"/>
-            <datalist id="yakitPlateSuggest">${plateOptions()}</datalist>
-            <input type="number" step="0.01" class="yr-eur input-style text-sm w-28 font-bold text-amber-700 text-xs" placeholder="EUR" value="${eur}"/>
-            <button onclick="this.closest('.yakit-row').remove()" class="bg-rose-50 text-rose-400 hover:bg-rose-100 px-2 py-1.5 rounded-lg text-xs transition shrink-0"><i class="fa-solid fa-trash"></i></button>`;
-        list.appendChild(row);
+    // ── Yakıt ─────────────────────────────────────────────────
+    function yakitAddEntry(){
+        const plate=document.getElementById('yakitPlate')?.value?.toUpperCase();
+        const date=document.getElementById('yakitDate')?.value;
+        const eur=parseFloat(document.getElementById('yakitEurInput')?.value)||0;
+        if(!plate||!date||!eur){showToast('Plaka, tarih ve tutar giriniz!','error');return;}
+        const mV=date.slice(0,7);
+        const data=loadVcEntries('yakit');
+        if(!data[mV])data[mV]=[];
+        data[mV].push({plate,date,eur,id:Date.now()});
+        saveVcEntries('yakit',data);
+        document.getElementById('yakitEurInput').value='';
+        loadYakitRows(); renderVehicleCost();
+        showToast('Yakıt eklendi ✓','success');
     }
 
-    function saveYakitData(){
-        const mV=getMonthKey();
-        if(!vcYakit[mV]) vcYakit[mV]={};
-        document.querySelectorAll('.yakit-row').forEach(r=>{
-            const p=r.dataset.plate;
-            const v=parseFloat(r.querySelector('.yr-eur').value)||0;
-            if(p){ if(v>0) vcYakit[mV][p]=v; else delete vcYakit[mV][p]; }
-        });
-        localStorage.setItem('kk_vc_yakit',JSON.stringify(vcYakit));
-        showToast('Yakıt kaydedildi ✓','success'); renderVehicleCost();
+    function yakitDeleteEntry(mV,id){
+        const data=loadVcEntries('yakit');
+        if(data[mV]) data[mV]=data[mV].filter(e=>e.id!==id);
+        saveVcEntries('yakit',data); loadYakitRows(); renderVehicleCost();
     }
+
+    function saveYakitData(){ loadYakitRows(); renderVehicleCost(); }
+    function addYakitRow(){}
 
     function loadYakitRows(){
         const list=document.getElementById('yakitRowList'); if(!list)return;
+        fillPlateSelects();
+        const mV=getVcMonth();
+        const data=loadVcEntries('yakit');
+        const entries=(data[mV]||[]).sort((a,b)=>b.date.localeCompare(a.date));
         list.innerHTML='';
-        const mV=getMonthKey();
-        const saved=vcYakit[mV]||{};
-        const plates=[...new Set([...driverTrips.map(t=>t.plate),...expenses.filter(e=>e.plaka).map(e=>e.plaka)])].filter(Boolean).sort();
-        const allPlates=[...new Set([...plates,...Object.keys(saved)])].sort();
-
-        if(!allPlates.length){
-            list.innerHTML='<div class="text-[10px] text-slate-400 text-center py-2">Kayıtlı araç yok.</div>';
+        if(!entries.length){
+            list.innerHTML='<div class="text-[10px] text-slate-400 text-center py-2 italic">Henüz kayıt yok.</div>';
             return;
         }
-        allPlates.forEach(p=>{
-            const val=parseFloat(saved[p.toUpperCase()]||saved[p])||0;
-            const row=document.createElement('div');
-            row.className='yakit-row flex gap-2 items-center py-1 border-b border-amber-50 last:border-0';
-            row.dataset.plate=p.toUpperCase();
-            row.innerHTML=`
-                <span class="text-xs font-bold text-slate-700 flex-1 uppercase">${esc(p)}</span>
-                <input type="number" step="0.01" class="yr-eur input-style text-xs w-24 font-bold text-amber-700 text-right" placeholder="0.00" value="${val||''}"/>
-                <span class="text-[10px] text-amber-400 font-bold">€</span>`;
-            list.appendChild(row);
+        const byPlate={};
+        entries.forEach(e=>{ if(!byPlate[e.plate])byPlate[e.plate]=[]; byPlate[e.plate].push(e); });
+        Object.entries(byPlate).forEach(([plate,ents])=>{
+            const total=ents.reduce((s,e)=>s+e.eur,0);
+            const wrap=document.createElement('div');
+            wrap.className='bg-amber-50 rounded-xl border border-amber-100 p-2 mb-1';
+            wrap.innerHTML=`<div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-black text-slate-700 uppercase">${esc(plate)}</span>
+                <span class="text-xs font-black text-amber-700">${total.toLocaleString('tr-TR',{minimumFractionDigits:2})} € toplam</span>
+            </div>`;
+            ents.forEach(e=>{
+                wrap.innerHTML+=`<div class="flex items-center gap-2 border-t border-amber-100 py-0.5 text-xs">
+                    <span class="text-slate-400 w-20 shrink-0">${e.date}</span>
+                    <span class="flex-1 text-slate-600">${e.eur.toLocaleString('tr-TR',{minimumFractionDigits:2})} €</span>
+                    <button onclick="yakitDeleteEntry('${mV}',${e.id})" class="text-rose-300 hover:text-rose-600"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                </div>`;
+            });
+            list.appendChild(wrap);
         });
     }
-    function yakitSaveEdit(plate,val){ const mV=getMonthKey(); if(!vcYakit[mV])vcYakit[mV]={}; const v=parseFloat(val)||0; if(v>0)vcYakit[mV][plate]=v; else delete vcYakit[mV][plate]; localStorage.setItem('kk_vc_yakit',JSON.stringify(vcYakit)); renderVehicleCost(); }
-    function yakitDelete(plate){ const mV=getMonthKey(); if(vcYakit[mV])delete vcYakit[mV][plate]; localStorage.setItem('kk_vc_yakit',JSON.stringify(vcYakit)); loadYakitRows(); renderVehicleCost(); }
+
+    // ── Maaş ──────────────────────────────────────────────────
+    function salaryAddEntry(){
+        const plate=document.getElementById('salaryPlate')?.value?.toUpperCase();
+        const date=document.getElementById('salaryDate')?.value;
+        const eur=parseFloat(document.getElementById('salaryEurInput')?.value)||0;
+        if(!plate||!date||!eur){showToast('Plaka, tarih ve tutar giriniz!','error');return;}
+        const mV=date.slice(0,7);
+        const data=loadVcEntries('salary');
+        if(!data[mV])data[mV]=[];
+        data[mV].push({plate,date,eur,id:Date.now()});
+        saveVcEntries('salary',data);
+        document.getElementById('salaryEurInput').value='';
+        loadSalaryRows(); renderVehicleCost();
+        showToast('Maaş eklendi ✓','success');
+    }
+
+    function salaryDeleteEntry(mV,id){
+        const data=loadVcEntries('salary');
+        if(data[mV]) data[mV]=data[mV].filter(e=>e.id!==id);
+        saveVcEntries('salary',data); loadSalaryRows(); renderVehicleCost();
+    }
+
+    function saveSalaries(){ loadSalaryRows(); renderVehicleCost(); }
+    function addSalaryRow(p,s){}
 
     function loadSalaryRows(){
         const list=document.getElementById('salaryRowList'); if(!list)return;
+        fillPlateSelects();
+        const mV=getVcMonth();
+        const data=loadVcEntries('salary');
+        const entries=(data[mV]||[]).sort((a,b)=>b.date.localeCompare(a.date));
         list.innerHTML='';
-        const mV=getMonthKey();
-        const saved=vcSalaries[mV]||{};
-        const plates=[...new Set([...driverTrips.map(t=>t.plate),...expenses.filter(e=>e.plaka).map(e=>e.plaka)])].filter(Boolean).sort();
-        if(plates.length>0){
-            plates.forEach(p=>addSalaryRow(p, saved[p.toUpperCase()]||saved[p]||''));
-        } else if(Object.keys(saved).length>0){
-            Object.entries(saved).forEach(([p,s])=>addSalaryRow(p,s));
+        if(!entries.length){
+            list.innerHTML='<div class="text-[10px] text-slate-400 text-center py-2 italic">Henüz kayıt yok.</div>';
+            return;
         }
+        const byPlate={};
+        entries.forEach(e=>{ if(!byPlate[e.plate])byPlate[e.plate]=[]; byPlate[e.plate].push(e); });
+        Object.entries(byPlate).forEach(([plate,ents])=>{
+            const total=ents.reduce((s,e)=>s+e.eur,0);
+            const wrap=document.createElement('div');
+            wrap.className='bg-violet-50 rounded-xl border border-violet-100 p-2 mb-1';
+            wrap.innerHTML=`<div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-black text-slate-700 uppercase">${esc(plate)}</span>
+                <span class="text-xs font-black text-violet-700">${total.toLocaleString('tr-TR',{minimumFractionDigits:2})} € toplam</span>
+            </div>`;
+            ents.forEach(e=>{
+                wrap.innerHTML+=`<div class="flex items-center gap-2 border-t border-violet-100 py-0.5 text-xs">
+                    <span class="text-slate-400 w-20 shrink-0">${e.date}</span>
+                    <span class="flex-1 text-slate-600">${e.eur.toLocaleString('tr-TR',{minimumFractionDigits:2})} €</span>
+                    <button onclick="salaryDeleteEntry('${mV}',${e.id})" class="text-rose-300 hover:text-rose-600"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                </div>`;
+            });
+            list.appendChild(wrap);
+        });
     }
 
     function toEur(amount,currency){
@@ -2685,10 +2781,12 @@
         if(!_csvParsed.length) return;
         const mV = getMonthKey();
         if(!vcYakit[mV]) vcYakit[mV] = {};
+        const _yakImport=loadVcEntries('yakit');
+        if(!_yakImport[mV]) _yakImport[mV]=[];
         _csvParsed.forEach(({plate,total})=>{
-            vcYakit[mV][plate] = (parseFloat(vcYakit[mV][plate])||0) + total;
+            _yakImport[mV].push({plate:plate.toUpperCase(),date:mV+'-01',eur:total,id:Date.now()+Math.random()});
         });
-        localStorage.setItem('kk_vc_yakit', JSON.stringify(vcYakit));
+        saveVcEntries('yakit',_yakImport);
         csvImportCancel();
         loadYakitRows();
         renderVehicleCost();
@@ -2738,13 +2836,14 @@
         const mExp=expenses.filter(e=>e.status==='APPROVED'&&months.some(m=>(e.date||'').startsWith(m)));
         const mTrips=driverTrips.filter(t=>t.status==='COMPLETED'&&months.some(m=>(t.endDate||'').startsWith(m)));
 
-        // Tüm plakaları topla (sefer + masraf)
+        // Tüm plakaları topla (sefer + masraf + manuel girişler)
+        const _hD=loadVcEntries('hgs'); const _yD=loadVcEntries('yakit'); const _sD=loadVcEntries('salary');
         const plates=[...new Set([
             ...mTrips.map(t=>t.plate),
             ...mExp.filter(e=>e.plaka).map(e=>e.plaka.toUpperCase()),
-            ...Object.keys(vcHgs[mV]||{}),
-            ...Object.keys(vcYakit[mV]||{}),
-            ...months.flatMap(m=>Object.keys(typeof vcSalaries[m]==='object'?vcSalaries[m]:{}))
+            ...months.flatMap(m=>(_hD[m]||[]).map(e=>e.plate)),
+            ...months.flatMap(m=>(_yD[m]||[]).map(e=>e.plate)),
+            ...months.flatMap(m=>(_sD[m]||[]).map(e=>e.plate))
         ])].filter(Boolean).filter(p=>!/^\d{4}-\d{2}$/.test(p)).sort();
 
         if(plates.length===0){
@@ -2765,23 +2864,23 @@
             const driver=pt.length>0?pt[pt.length-1].driver:'-';
             const totalKm=pt.reduce((s,t)=>s+(t.totalKm||0),0);
 
-            // Plaka filtreleme: masraflarda plaka alanı veya sürücü bazlı sefer masrafları
-            // HGS/Otoyol: Manuel girilen + masraflardaki OTOYOL (büyüğü al veya topla)
-            const hgsManuel=(vcHgs[mV]||{})[plate]||0;
+            // HGS: entry bazlı ay toplam
+            const _hgsData=loadVcEntries('hgs');
+            const hgsManuel=months.reduce((s,m)=>s+(_hgsData[m]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+e.eur,0),0);
             const hgsExp=mExp.filter(e=>(e.plaka||'').toUpperCase()===plate&&e.category==='OTOYOL');
             const hgsExpEur=hgsExp.reduce((s,e)=>s+toEur(e.amount,e.currency),0);
-            // Manuel girilmişse onu kullan, yoksa masraflardan al
             const hgsEur=hgsManuel>0?hgsManuel:hgsExpEur;
 
-            // Yakıt: Manuel girilen + masraflardaki MAZOT
-            const yakitManuel=(vcYakit[mV]||{})[plate]||0;
+            // Yakıt: entry bazlı ay toplam
+            const _yakData=loadVcEntries('yakit');
+            const yakitManuel=months.reduce((s,m)=>s+(_yakData[m]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+e.eur,0),0);
             const yakitExp=mExp.filter(e=>(e.plaka||'').toUpperCase()===plate&&e.category==='MAZOT');
             const yakitExpEur=yakitExp.reduce((s,e)=>s+toEur(e.amount,e.currency),0);
-            // Manuel girilmişse onu kullan, yoksa masraflardan al
             const yakitEur=yakitManuel>0?yakitManuel:yakitExpEur;
 
-            // Maaş (TRY → EUR)
-            const salaryEur=months.reduce((s,m)=>s+((typeof vcSalaries[m]==='object'?vcSalaries[m][plate]:0)||0),0);
+            // Maaş: entry bazlı ay toplam
+            const _salData=loadVcEntries('salary');
+            const salaryEur=months.reduce((s,m)=>s+(_salData[m]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+e.eur,0),0);
 
             // Sefer masrafları: o araçla yapılan seferlere ait TÜM onaylı masraflar
             // (sürücü + sefer no eşleşmesi)
@@ -2968,9 +3067,9 @@
             const pt=mTrips.filter(t=>(t.plate||'').toUpperCase()===plate);
             const driver=pt.length>0?pt[pt.length-1].driver:'-';
             const totalKm=pt.reduce((s,t)=>s+(t.totalKm||0),0);
-            const hgsM=(vcHgs[mV]||{})[plate]||0; const hgsExpE=mExp.filter(e=>(e.plaka||'').toUpperCase()===plate&&e.category==='OTOYOL').reduce((s,e)=>s+toEur(e.amount,e.currency),0); const hgsEur=hgsM>0?hgsM:hgsExpE;
-            const yakitM=(vcYakit[mV]||{})[plate]||0; const yakitExpE=mExp.filter(e=>(e.plaka||'').toUpperCase()===plate&&e.category==='MAZOT').reduce((s,e)=>s+toEur(e.amount,e.currency),0); const yakitEur=yakitM>0?yakitM:yakitExpE;
-            const salaryEur=months.reduce((s,m)=>s+((typeof vcSalaries[m]==='object'?vcSalaries[m][plate]:0)||0),0);
+            const _hD2=loadVcEntries('hgs'); const hgsM=months.reduce((s,m)=>s+(_hD2[m]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+e.eur,0),0); const hgsExpE=mExp.filter(e=>(e.plaka||'').toUpperCase()===plate&&e.category==='OTOYOL').reduce((s,e)=>s+toEur(e.amount,e.currency),0); const hgsEur=hgsM>0?hgsM:hgsExpE;
+            const _yD2=loadVcEntries('yakit'); const yakitM=months.reduce((s,m)=>s+(_yD2[m]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+e.eur,0),0); const yakitExpE=mExp.filter(e=>(e.plaka||'').toUpperCase()===plate&&e.category==='MAZOT').reduce((s,e)=>s+toEur(e.amount,e.currency),0); const yakitEur=yakitM>0?yakitM:yakitExpE;
+            const _sD2=loadVcEntries('salary'); const salaryEur=months.reduce((s,m)=>s+(_sD2[m]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+e.eur,0),0);
             const tripNos=new Set(pt.map(t=>String(t.tripNo||'').trim()));
             const seferEur=mExp.filter(e=>{
                 const drv=e.driver===driver;

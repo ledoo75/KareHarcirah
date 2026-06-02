@@ -2015,28 +2015,28 @@
         const archiveDate=now.toISOString().split('T')[0];
         const archiveNote=document.getElementById('archivePeriodNote')?.value?.trim()||'';
         try{
-            // Bakiyeleri hesapla (silmeden önce)
+            // 1. Bakiyeleri hesapla (silmeden önce)
             const bals={};
             drivers.forEach(d=>{ bals[d]=getDriverBalance(d); });
 
-            // Silinecekler: onaylı masraflar + tüm avanslar
-            const selExp=expenses.filter(e=>e.status==='APPROVED');
+            // 2. Sadece AVANSLARI sil — masraflara dokunma
             const selAdv=advances.filter(a=>a);
-
-            // Batch ile sil
             const batchSize=400;
-            for(let i=0;i<selExp.length;i+=batchSize){
-                const b=db.batch();
-                selExp.slice(i,i+batchSize).forEach(e=>b.delete(cExpenses.doc(e.id)));
-                await b.commit();
-            }
             for(let i=0;i<selAdv.length;i+=batchSize){
                 const b=db.batch();
                 selAdv.slice(i,i+batchSize).forEach(a=>b.delete(cAdvances.doc(a.id)));
                 await b.commit();
             }
 
-            // Net bakiyeleri devir kaydı olarak aç
+            // 3. Onaylı masrafları da arşivle (sil) — sefer masrafları HARİÇ (tripId olanlar)
+            const selExp=expenses.filter(e=>e.status==='APPROVED' && !e.tripId);
+            for(let i=0;i<selExp.length;i+=batchSize){
+                const b=db.batch();
+                selExp.slice(i,i+batchSize).forEach(e=>b.delete(cExpenses.doc(e.id)));
+                await b.commit();
+            }
+
+            // 4. Net bakiyeleri devir kaydı olarak aç
             for(const drv of drivers){
                 const b=bals[drv];
                 if(b.e>0) await cAdvances.add({date:archiveDate,driver:drv,amount:b.e,currency:'EUR',note:`${archiveKey} devir`,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
@@ -2047,7 +2047,9 @@
                 else if(b.t<0) await cExpenses.add({date:archiveDate,driver:drv,category:'DIGER',tripName:`${archiveKey} Devir`,amount:Math.abs(b.t),currency:'TRY',status:'APPROVED',timestamp:firebase.firestore.FieldValue.serverTimestamp()});
             }
 
-            await cLogs.add({action:'AY_KAPANISI',user:currentUser,period:archiveKey,note:archiveNote,details:`${drivers.length} şoför, ${selExp.length} masraf, ${selAdv.length} avans silindi. Bakiyeler devredildi.`,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+            await cLogs.add({action:'AY_KAPANISI',user:currentUser,period:archiveKey,note:archiveNote,
+                details:`${drivers.length} şoför — ${selAdv.length} avans, ${selExp.length} masraf silindi. Sefer masrafları korundu.`,
+                timestamp:firebase.firestore.FieldValue.serverTimestamp()});
             showToast(`${archiveKey} devir tamamlandı ✓`,'success');
             loadArchiveSummary();
         }catch(err){

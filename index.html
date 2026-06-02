@@ -862,7 +862,9 @@
                 </form>
             </div>
             <div class="glass-card p-5 lg:col-span-2">
-                <h3 class="font-bold text-slate-800 text-lg mb-4">Son Eklenen Masraflar</h3>
+                <h3 class="font-bold text-slate-800 text-lg mb-3">Son Eklenen Masraflar</h3>
+                <!-- Aktif veya son sefer -->
+                <div id="driverTripCard" class="hidden mb-4"></div>
                 <div id="driverList" class="space-y-3 max-h-[50dvh] max-h-[500px] overflow-y-auto -webkit-overflow-scrolling-touch pr-2"></div>
             </div>
         </div>
@@ -2440,7 +2442,41 @@
     
     function renderAll(){
         if(!currentUser)return; const bal=getDriverBalance(currentUser); if(document.getElementById('driverNameTitle'))document.getElementById('driverNameTitle').innerText=currentUser;        if(document.getElementById('mySafeEUR'))document.getElementById('mySafeEUR').innerHTML=formatMoney(bal.e,'€'); if(document.getElementById('mySafeUSD'))document.getElementById('mySafeUSD').innerHTML=formatMoney(bal.u,'$'); if(document.getElementById('mySafeTRY'))document.getElementById('mySafeTRY').innerHTML=formatMoney(bal.t,'₺');
-        const dList=document.getElementById('driverList'); if(dList){dList.innerHTML=''; let mE=expenses.filter(e=>e.driver===currentUser).sort((a,b)=>(b.timestamp?.seconds||0)-(a.timestamp?.seconds||0)||(b.date||'').localeCompare(a.date||'')); mE.forEach(e=>{let bC=e.status==='APPROVED'?'bg-emerald-100 text-emerald-700':(e.status==='REJECTED'?'bg-rose-100 text-rose-700':'bg-amber-100 text-amber-700'); let sT=e.status==='PENDING_OP'?'Bekliyor':(e.status==='APPROVED'?'Onaylandı':'Red'); let tT=e.tripId?`<span class="text-[9px] font-bold text-indigo-400 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded mt-0.5 inline-block">${esc(e.tripId)}</span>`:''; const canEdit=canEditExpense(e); const canDel=canDeleteExpense(e); let editBtns=''; if(canEdit||canDel){editBtns=`<div class="flex gap-1 mt-1.5">${canEdit?`<button onclick="editExpense('${e.id}')" class="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg text-[10px] font-bold hover:bg-blue-100 transition"><i class="fa-solid fa-pen mr-1"></i>Düzenle</button>`:''}${canDel?`<button onclick="deleteExpense('${e.id}')" class="bg-rose-50 text-rose-600 px-2 py-1 rounded-lg text-[10px] font-bold hover:bg-rose-100 transition"><i class="fa-solid fa-trash mr-1"></i>Sil</button>`:''}</div>`;} else if(e.status==='APPROVED'){editBtns=`<div class="mt-1.5"><span class="text-[10px] text-slate-400"><i class="fa-solid fa-lock mr-1"></i>Onaylandı — düzenlenemez</span></div>`;} dList.innerHTML+=`<div class="p-4 bg-white border border-slate-100 rounded-xl shadow-sm flex justify-between items-start mb-2 hover:shadow-md transition"><div class="flex items-start gap-3"><div class="text-2xl bg-slate-50 w-10 h-10 flex items-center justify-center rounded-lg shrink-0">${catIcons[e.category]||'📝'}</div><div><div class="text-[10px] text-slate-400 font-bold">${e.date}</div><div class="text-sm font-bold text-slate-800">${esc(e.tripName)}</div>${tT}${editBtns}</div></div><div class="text-right flex flex-col items-end gap-1 ml-2"><div class="text-base text-slate-800 whitespace-nowrap">${formatMoney(e.amount,e.currency)}</div><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${bC}">${sT}</span></div></div>`;}); if(mE.length===0)dList.innerHTML=`<div class="text-center py-6 text-slate-400 text-sm">Masraf yok.</div>`;}
+        // Aktif veya son sefer kartı
+        const tripCard=document.getElementById('driverTripCard');
+        if(tripCard){
+            const activeTrip=driverTrips.find(t=>t.driver===currentUser&&t.status==='ACTIVE');
+            const lastTrip=driverTrips.filter(t=>t.driver===currentUser&&t.status==='COMPLETED').sort((a,b)=>(b.endDate||'').localeCompare(a.endDate||''))[0];
+            const showTrip=activeTrip||lastTrip;
+            if(showTrip){
+                tripCard.classList.remove('hidden');
+                const isActive=!!activeTrip;
+                const t=showTrip;
+                const bgCls=isActive?'bg-rose-50 border-rose-200':'bg-slate-50 border-slate-200';
+                const badgeCls=isActive?'bg-rose-500 text-white animate-pulse':'bg-slate-200 text-slate-600';
+                const badge=isActive?'🔴 Aktif Sefer':'Son Sefer';
+                const tripExp=expenses.filter(e=>e.driver===currentUser&&e.tripId===t.tripNo);
+                const tripTotal=tripExp.reduce((s,e)=>e.currency==='EUR'?s+e.amount:s,0);
+                tripCard.innerHTML=`<div class="border ${bgCls} rounded-xl p-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeCls}">${badge}</span>
+                            <span class="font-black text-slate-800 text-sm">${esc(t.tripNo)}</span>
+                            ${t.posNo?`<span class="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-1.5 py-0.5 rounded">${esc(t.posNo)}</span>`:''}
+                        </div>
+                        <span class="text-xs font-bold text-slate-500">${isActive?t.startKm+' km başlangıç':(t.totalKm||0).toLocaleString()+' km'}</span>
+                    </div>
+                    <div class="flex items-center gap-4 text-xs text-slate-600">
+                        <span><i class="fa-solid fa-route mr-1 text-slate-400"></i>${esc(t.route)}</span>
+                        <span><i class="fa-solid fa-truck mr-1 text-slate-400"></i>${esc(t.plate)}</span>
+                        ${tripExp.length>0?`<span class="ml-auto font-bold text-primary"><i class="fa-solid fa-receipt mr-1"></i>${tripExp.length} masraf · ${tripTotal.toFixed(2)} €</span>`:''}
+                    </div>
+                </div>`;
+            } else {
+                tripCard.classList.add('hidden');
+            }
+        }
+        const dList=document.getElementById('driverList'); if(dList){dList.innerHTML=''; let mE=expenses.filter(e=>e.driver===currentUser).sort((a,b)=>{const order={'PENDING_OP':0,'PENDING_ACC':1,'REJECTED':2,'APPROVED':3}; const oa=order[a.status]??4,ob=order[b.status]??4; if(oa!==ob)return oa-ob; return (b.timestamp?.seconds||0)-(a.timestamp?.seconds||0)||(b.date||'').localeCompare(a.date||'');}); mE.forEach(e=>{let bC=e.status==='APPROVED'?'bg-emerald-100 text-emerald-700':(e.status==='REJECTED'?'bg-rose-100 text-rose-700':'bg-amber-100 text-amber-700'); let sT=e.status==='PENDING_OP'?'Bekliyor':(e.status==='APPROVED'?'Onaylandı':'Red'); let tT=e.tripId?`<span class="text-[9px] font-bold text-indigo-400 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded mt-0.5 inline-block">${esc(e.tripId)}</span>`:''; const canEdit=canEditExpense(e); const canDel=canDeleteExpense(e); let editBtns=''; if(canEdit||canDel){editBtns=`<div class="flex gap-1 mt-1.5">${canEdit?`<button onclick="editExpense('${e.id}')" class="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg text-[10px] font-bold hover:bg-blue-100 transition"><i class="fa-solid fa-pen mr-1"></i>Düzenle</button>`:''}${canDel?`<button onclick="deleteExpense('${e.id}')" class="bg-rose-50 text-rose-600 px-2 py-1 rounded-lg text-[10px] font-bold hover:bg-rose-100 transition"><i class="fa-solid fa-trash mr-1"></i>Sil</button>`:''}</div>`;} else if(e.status==='APPROVED'){editBtns=`<div class="mt-1.5"><span class="text-[10px] text-slate-400"><i class="fa-solid fa-lock mr-1"></i>Onaylandı — düzenlenemez</span></div>`;} dList.innerHTML+=`<div class="p-4 bg-white border border-slate-100 rounded-xl shadow-sm flex justify-between items-start mb-2 hover:shadow-md transition"><div class="flex items-start gap-3"><div class="text-2xl bg-slate-50 w-10 h-10 flex items-center justify-center rounded-lg shrink-0">${catIcons[e.category]||'📝'}</div><div><div class="text-[10px] text-slate-400 font-bold">${e.date}</div><div class="text-sm font-bold text-slate-800">${esc(e.tripName)}</div>${tT}${editBtns}</div></div><div class="text-right flex flex-col items-end gap-1 ml-2"><div class="text-base text-slate-800 whitespace-nowrap">${formatMoney(e.amount,e.currency)}</div><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${bC}">${sT}</span></div></div>`;}); if(mE.length===0)dList.innerHTML=`<div class="text-center py-6 text-slate-400 text-sm">Masraf yok.</div>`;}
         const fP=document.getElementById('panel-FLEET'); if(fP&&fP.style.display!=='none')renderFleetPanel();
         if(['ADMIN','OPS','PATRON','OPS_MANAGER'].includes(currentRole)){
             renderOpsActiveTrips(); const opL=document.getElementById('operationsList'); if(opL){opL.innerHTML=''; expenses.filter(e=>e.status==='PENDING_OP').forEach(e=>{let tL=e.tripId?`<span class="bg-indigo-50 border border-indigo-200 text-indigo-700 font-black text-sm px-3 py-1 rounded-lg">${esc(e.tripId)}</span>`:`<span class="text-slate-300 text-xs">—</span>`; let aB=`<button onclick="opApprove('${e.id}')" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg shadow-sm"><i class="fa-solid fa-check"></i></button><button onclick="editExpense('${e.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-pen"></i></button><button onclick="opReject('${e.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-xmark"></i></button><button onclick="deleteExpense('${e.id}')" class="bg-red-100 text-red-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-trash"></i></button>`; opL.innerHTML+=`<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="p-4"><p class="font-bold">${esc(e.driver)}</p><p class="text-[10px] text-slate-500">${e.date}</p></td><td class="p-4"><p class="font-semibold text-sm">${catIcons[e.category]} ${e.category}</p><p class="text-xs text-slate-500">${esc(e.tripName)}</p></td><td class="p-4 text-primary text-base">${formatMoney(e.amount,e.currency)}</td><td class="p-4">${tL}</td><td class="p-4"><span class="text-slate-300 text-xs">—</span></td><td class="p-4 text-right flex justify-end gap-1">${aB}</td></tr>`;}); if(opL.innerHTML==='')opL.innerHTML=`<tr><td colspan="6" class="p-6 text-center text-slate-400 text-sm"><i class="fa-regular fa-circle-check text-2xl block mb-2 opacity-30"></i>Bekleyen masraf yok.</td></tr>`;}

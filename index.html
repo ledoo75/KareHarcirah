@@ -1196,58 +1196,63 @@
 
 <!-- Ay Kapanış Onay Modalı -->
 <div id="archiveConfirmModal" class="modal" style="display:none;">
-  <div class="modal-content" style="max-width:560px;">
+  <div class="modal-content" style="max-width:600px;">
     <span class="close-modal" onclick="closeArchiveModal()">&times;</span>
     <div class="flex items-center gap-3 mb-4 mt-2">
       <div class="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
         <i class="fa-solid fa-broom text-rose-600"></i>
       </div>
       <div>
-        <h3 class="font-bold text-slate-800 text-base">Ay Kapanışı Onayı</h3>
-        <p class="text-xs text-slate-500 mt-0.5">Aşağıdaki bakiyeler yeni aya devredilecek</p>
+        <h3 class="font-bold text-slate-800 text-base">Ay Kapanışı — Kısmi Devir</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Devredilecek şoförleri seçin</p>
       </div>
     </div>
 
-    <!-- Uyarı kutusu -->
-    <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 flex gap-2 text-xs text-amber-800">
-      <i class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5 shrink-0"></i>
-      <div>
-        <b>Bu işlem:</b>
-        <ul class="mt-1 space-y-0.5 list-disc ml-4">
-          <li>Masraf ve avanslar arşive alınır</li>
-          <li>Tüm fiş geçmişi <b>kare_archive</b> koleksiyonuna yedeklenir</li>
-          <li>Aşağıdaki net bakiyeler yeni aya devir kaydı olarak açılır</li>
-          <li>Audit log'a yazılır</li>
-        </ul>
+    <!-- Tümünü seç -->
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-xs font-bold text-slate-600">Şoför Seçimi</span>
+      <div class="flex gap-3">
+        <button onclick="archiveSelectAll(true)" class="text-xs text-indigo-600 font-bold hover:underline">Tümünü Seç</button>
+        <button onclick="archiveSelectAll(false)" class="text-xs text-slate-400 font-bold hover:underline">Temizle</button>
       </div>
     </div>
 
-    <!-- Firebase kullanım özeti -->
-    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4 text-xs text-slate-600 grid grid-cols-2 gap-2">
-        <div class="flex items-center gap-2"><i class="fa-solid fa-database text-slate-400"></i> <span>Arşivlenecek: <b id="archiveExpenseCount">0</b> masraf</span></div>
-        <div class="flex items-center gap-2"><i class="fa-solid fa-coins text-slate-400"></i> <span>Arşivlenecek: <b id="archiveAdvanceCount">0</b> avans</span></div>
-        <div class="flex items-center gap-2"><i class="fa-solid fa-box-archive text-indigo-400"></i> <span>Koleksiyon: <b>kare_archive</b></span></div>
-        <div class="flex items-center gap-2"><i class="fa-solid fa-shield text-emerald-400"></i> <span>Geri yüklenebilir ✓</span></div>
-    </div>
-    <div class="overflow-x-auto border border-slate-200 rounded-xl mb-5">
+    <!-- Şoför tablosu — checkbox ile -->
+    <div class="overflow-x-auto border border-slate-200 rounded-xl mb-4">
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-500 text-xs font-bold uppercase">
           <tr>
+            <th class="py-2 px-3 w-8"></th>
             <th class="py-2 px-3 text-left">Şoför</th>
             <th class="py-2 px-3 text-right">EUR</th>
             <th class="py-2 px-3 text-right">USD</th>
             <th class="py-2 px-3 text-right">TRY</th>
-            <th class="py-2 px-3 text-center">Durum</th>
+            <th class="py-2 px-3 text-center">Masraf</th>
+            <th class="py-2 px-3 text-center">Avans</th>
           </tr>
         </thead>
         <tbody id="archiveBalanceTable"></tbody>
       </table>
     </div>
 
+    <!-- Firebase özet -->
+    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4 text-xs text-slate-600 grid grid-cols-2 gap-2">
+        <div class="flex items-center gap-2"><i class="fa-solid fa-database text-slate-400"></i> <span>Arşivlenecek: <b id="archiveExpenseCount">0</b> masraf</span></div>
+        <div class="flex items-center gap-2"><i class="fa-solid fa-coins text-slate-400"></i> <span>Arşivlenecek: <b id="archiveAdvanceCount">0</b> avans</span></div>
+        <div class="flex items-center gap-2"><i class="fa-solid fa-box-archive text-indigo-400"></i> <span>Koleksiyon: <b>kare_archive</b></span></div>
+        <div class="flex items-center gap-2"><i class="fa-solid fa-shield text-emerald-400"></i> <span>Geri yüklenebilir ✓</span></div>
+    </div>
+
+    <!-- Uyarı -->
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 flex gap-2 text-xs text-amber-800">
+      <i class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5 shrink-0"></i>
+      <span>Seçili şoförlerin masraf ve avansları arşivlenir, bakiyeleri yeni aya devredilir. Seçilmeyenler değişmez.</span>
+    </div>
+
     <div class="flex gap-3">
       <button onclick="closeArchiveModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold transition">İptal</button>
       <button onclick="confirmArchive()" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-xl font-bold transition flex items-center justify-center gap-2">
-        <i class="fa-solid fa-check"></i> Onayla & Devret
+        <i class="fa-solid fa-check"></i> Seçilileri Devret
       </button>
     </div>
   </div>
@@ -1940,118 +1945,122 @@
     }
 
     // ── Ay Kapanışı Güvenli Modal ─────────────────────────────
-    function openArchiveModal(){
-        const drivers = getDrivers();
-        if(!drivers.length){ showToast('Aktif şoför bulunamadı.','error'); return; }
-
-        // Bakiyeleri hesapla
-        const rows = drivers.map(d => {
-            const b = getDriverBalance(d);
-            return `<tr class="border-b border-slate-100">
-                <td class="py-2 px-3 font-bold text-slate-700">${esc(d)}</td>
-                <td class="py-2 px-3 text-right font-bold ${b.e>0?'text-emerald-600':b.e<0?'text-rose-600':'text-slate-400'}">${b.e>0?'+':''}${b.e.toFixed(2)} €</td>
-                <td class="py-2 px-3 text-right font-bold ${b.u>0?'text-emerald-600':b.u<0?'text-rose-600':'text-slate-400'}">${b.u>0?'+':''}${b.u.toFixed(2)} $</td>
-                <td class="py-2 px-3 text-right font-bold ${b.t>0?'text-emerald-600':b.t<0?'text-rose-600':'text-slate-400'}">${b.t>0?'+':''}${b.t.toLocaleString('tr-TR')} ₺</td>
-                <td class="py-2 px-3 text-center text-xs ${b.e===0&&b.u===0&&b.t===0?'text-slate-400':'text-amber-600 font-bold'}">
-                    ${b.e===0&&b.u===0&&b.t===0?'Sıfır':'Devredilecek'}
-                </td>
-            </tr>`;
-        }).join('');
-
-        const modal = document.getElementById('archiveConfirmModal');
-        if(modal){
-            document.getElementById('archiveBalanceTable').innerHTML = rows;
-            document.getElementById('archiveExpenseCount').textContent = expenses.length;
-            document.getElementById('archiveAdvanceCount').textContent = advances.length;
-            modal.style.display = 'flex';
-        }
+    function archiveSelectAll(val){
+        document.querySelectorAll('.archive-drv-cb').forEach(cb=>cb.checked=val);
+        updateArchiveCounts();
     }
 
+    function updateArchiveCounts(){
+        const selected=getSelectedArchiveDrivers();
+        const selExp=expenses.filter(e=>selected.includes(e.driver)).length;
+        const selAdv=advances.filter(a=>selected.includes(a.driver)).length;
+        const ec=document.getElementById('archiveExpenseCount');
+        const ac=document.getElementById('archiveAdvanceCount');
+        if(ec) ec.textContent=selExp;
+        if(ac) ac.textContent=selAdv;
+    }
+
+    function getSelectedArchiveDrivers(){
+        return [...document.querySelectorAll('.archive-drv-cb:checked')].map(cb=>cb.value);
+    }
+
+    function openArchiveModal(){
+        const drivers=getDrivers();
+        if(!drivers.length){showToast('Aktif şoför bulunamadı.','error');return;}
+        const tbody=document.getElementById('archiveBalanceTable');
+        if(!tbody) return;
+        tbody.innerHTML='';
+        drivers.forEach(d=>{
+            const b=getDriverBalance(d);
+            const drvExp=expenses.filter(e=>e.driver===d).length;
+            const drvAdv=advances.filter(a=>a.driver===d).length;
+            const hasData=b.e!==0||b.u!==0||b.t!==0||drvExp>0;
+            const row=document.createElement('tr');
+            row.className='border-b border-slate-100 hover:bg-slate-50';
+            row.innerHTML=`
+                <td class="py-2 px-3">
+                    <input type="checkbox" class="archive-drv-cb w-4 h-4 accent-rose-500 cursor-pointer" value="${esc(d)}" ${hasData?'checked':''} onchange="updateArchiveCounts()"/>
+                </td>
+                <td class="py-2 px-3 font-bold text-slate-700">${esc(d)}</td>
+                <td class="py-2 px-3 text-right font-bold text-sm ${b.e>0?'text-emerald-600':b.e<0?'text-rose-600':'text-slate-300'}">${b.e!==0?(b.e>0?'+':'')+b.e.toFixed(2)+' €':'—'}</td>
+                <td class="py-2 px-3 text-right font-bold text-sm ${b.u>0?'text-emerald-600':b.u<0?'text-rose-600':'text-slate-300'}">${b.u!==0?(b.u>0?'+':'')+b.u.toFixed(2)+' $':'—'}</td>
+                <td class="py-2 px-3 text-right font-bold text-sm ${b.t>0?'text-emerald-600':b.t<0?'text-rose-600':'text-slate-300'}">${b.t!==0?(b.t>0?'+':'')+b.t.toLocaleString('tr-TR')+' ₺':'—'}</td>
+                <td class="py-2 px-3 text-center text-xs text-slate-500">${drvExp}</td>
+                <td class="py-2 px-3 text-center text-xs text-slate-500">${drvAdv}</td>`;
+            tbody.appendChild(row);
+        });
+        updateArchiveCounts();
+        document.getElementById('archiveConfirmModal').style.display='flex';
+    }
     function closeArchiveModal(){
-        const modal = document.getElementById('archiveConfirmModal');
-        if(modal) modal.style.display = 'none';
+        const modal=document.getElementById('archiveConfirmModal');
+        if(modal) modal.style.display='none';
     }
 
     async function confirmArchive(){
+        const selected=getSelectedArchiveDrivers();
+        if(!selected.length){showToast('En az bir şoför seçin!','error');return;}
         closeArchiveModal();
-        await archiveSystem();
+        await archiveSystem(selected);
     }
 
-    async function archiveSystem(){
-        // Adım 1: Bakiyeleri hesapla ve önizleme göster
-        const drivers=getDrivers();
-        if(!drivers.length){showToast('Aktif şoför bulunamadı.','error');return;}
-
-        let preview='';
-        const bals={};
-        drivers.forEach(d=>{
-            bals[d]=getDriverBalance(d);
-            const b=bals[d];
-            preview+=`• ${d}: EUR ${b.e>0?'+':''}${b.e.toFixed(2)} | USD ${b.u>0?'+':''}${b.u.toFixed(2)} | TRY ${b.t>0?'+':''}${b.t.toFixed(2)}\n`;
-        });
-
-        const confirmed=confirm(
-            `AY KAPANIŞ ONAY\n\n`+
-            `Bu işlem:\n`+
-            `✓ Tüm fiş ve avans geçmişi arşive alınır\n`+
-            `✓ Aşağıdaki net bakiyeler yeni aya devredilir\n`+
-            `✓ Eski kayıtlar silinir (arşivden erişilebilir)\n\n`+
-            `Şoför Net Bakiyeleri:\n${preview}\n`+
-            `Devam etmek istiyor musunuz?`
-        );
-        if(!confirmed) return;
-
+    async function archiveSystem(selectedDrivers){
+        if(!selectedDrivers||!selectedDrivers.length){showToast('Şoför seçilmedi.','error');return;}
         showToast('Arşiv başlatılıyor...','success');
         const now=new Date();
-        const archiveKey=now.toISOString().slice(0,7); // YYYY-MM
+        const archiveKey=now.toISOString().slice(0,7);
         const archiveDate=now.toISOString().split('T')[0];
 
         try{
-            // Adım 2: Arşive yedekle
-            // Arşiv: tam veri yerine özet + sadece önemli alanlar
+            // Seçili şoförlerin bakiyeleri
+            const bals={};
+            selectedDrivers.forEach(d=>{ bals[d]=getDriverBalance(d); });
+
+            // Seçili şoförlerin masraf ve avansları
+            const selExp=expenses.filter(e=>selectedDrivers.includes(e.driver));
+            const selAdv=advances.filter(a=>selectedDrivers.includes(a.driver));
+
+            // Adım 1: Arşive yedekle (mevcut arşive ekle, üzerine yazma)
+            const existingDoc=await db.collection('kare_archive').doc(archiveKey).get();
+            const existing=existingDoc.exists?existingDoc.data():{};
             const archiveDoc={
                 archivedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 archivedBy: currentUser,
                 period: archiveKey,
-                balances: bals,
-                // Sadece gerekli alanları sakla (boyutu küçült)
-                expenses: expenses.map(e=>({id:e.id,driver:e.driver,category:e.category,amount:e.amount,currency:e.currency,date:e.date,status:e.status,tripName:e.tripName||''})),
-                advances: advances.map(a=>({id:a.id,driver:a.driver,amount:a.amount,currency:a.currency,date:a.date,note:a.note||''})),
-                tripCount: driverTrips.filter(t=>t.status==='COMPLETED').length,
-                expenseCount: expenses.length,
-                advanceCount: advances.length
+                balances: {...(existing.balances||{}), ...bals},
+                expenses: [...(existing.expenses||[]), ...selExp.map(e=>({id:e.id,driver:e.driver,category:e.category,amount:e.amount,currency:e.currency,date:e.date,status:e.status,tripName:e.tripName||''}))],
+                advances: [...(existing.advances||[]), ...selAdv.map(a=>({id:a.id,driver:a.driver,amount:a.amount,currency:a.currency,date:a.date,note:a.note||''}))],
+                expenseCount: (existing.expenseCount||0)+selExp.length,
+                advanceCount: (existing.advanceCount||0)+selAdv.length
             };
             await db.collection('kare_archive').doc(archiveKey).set(archiveDoc);
             showToast('Arşiv yedeklendi ✓','success');
 
-            // Adım 3: Tüm kayıtları sil
-            for(const e of expenses) await cExpenses.doc(e.id).delete();
-            for(const a of advances) await cAdvances.doc(a.id).delete();
+            // Adım 2: Sadece seçili şoförlerin kayıtlarını sil
+            for(const e of selExp) await cExpenses.doc(e.id).delete();
+            for(const a of selAdv) await cAdvances.doc(a.id).delete();
 
-            // Adım 4: Devir kayıtları oluştur
-            for(const drv of drivers){
+            // Adım 3: Devir kayıtları
+            for(const drv of selectedDrivers){
                 const b=bals[drv];
-                // EUR devir
                 if(b.e>0) await cAdvances.add({date:archiveDate,driver:drv,amount:b.e,currency:'EUR',note:`${archiveKey} devir`,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
                 else if(b.e<0) await cExpenses.add({date:archiveDate,driver:drv,category:'DIGER',tripName:`${archiveKey} Devir Alacağı`,amount:Math.abs(b.e),currency:'EUR',status:'APPROVED',timestamp:firebase.firestore.FieldValue.serverTimestamp()});
-                // USD devir
                 if(b.u>0) await cAdvances.add({date:archiveDate,driver:drv,amount:b.u,currency:'USD',note:`${archiveKey} devir`,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
                 else if(b.u<0) await cExpenses.add({date:archiveDate,driver:drv,category:'DIGER',tripName:`${archiveKey} Devir`,amount:Math.abs(b.u),currency:'USD',status:'APPROVED',timestamp:firebase.firestore.FieldValue.serverTimestamp()});
-                // TRY devir
                 if(b.t>0) await cAdvances.add({date:archiveDate,driver:drv,amount:b.t,currency:'TRY',note:`${archiveKey} devir`,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
                 else if(b.t<0) await cExpenses.add({date:archiveDate,driver:drv,category:'DIGER',tripName:`${archiveKey} Devir`,amount:Math.abs(b.t),currency:'TRY',status:'APPROVED',timestamp:firebase.firestore.FieldValue.serverTimestamp()});
             }
 
-            // Adım 5: Audit log
+            // Adım 4: Audit log
             await cLogs.add({
                 action:'AY_KAPANISI',
                 user:currentUser,
                 period:archiveKey,
-                details:`${drivers.length} şoför, ${expenses.length} masraf, ${advances.length} avans arşivlendi.`,
+                details:`${selectedDrivers.length} şoför: ${selectedDrivers.join(', ')} — ${selExp.length} masraf, ${selAdv.length} avans arşivlendi.`,
                 timestamp:firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            showToast(`${archiveKey} ay kapanışı tamamlandı ✓`,'success');
+            showToast(`${archiveKey} — ${selectedDrivers.length} şoför devredildi ✓`,'success');
         }catch(err){
             console.error('Arşiv hatası:',err);
             showToast('Hata: '+err.message,'error');

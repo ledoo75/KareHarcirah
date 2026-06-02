@@ -1082,7 +1082,7 @@
                     <span>İşlem öncesi <b>arşiv otomatik alınır</b>. Arşivi aşağıdan görüntüleyebilirsiniz. Yine de PDF/Excel rapor almanız önerilir.</span>
                 </div>
                 <div class="flex gap-3 flex-wrap">
-                    <button onclick="archiveSystem()" class="flex-1 sm:flex-none px-6 bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-broom"></i> Ayı Kapat ve Bakiyeleri Devret</button>
+                    <button onclick="openArchiveModal()" class="flex-1 sm:flex-none px-6 bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-broom"></i> Ayı Kapat ve Bakiyeleri Devret</button>
                     <button onclick="loadArchiveList()" class="flex-1 sm:flex-none px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-clock-rotate-left"></i> Arşivleri Görüntüle</button>
                 </div>
                 <!-- Arşiv listesi -->
@@ -1171,7 +1171,7 @@
     </div>
 
     <div id="panel-AUDITLOG" class="panel-section hidden-panel">
-        <div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"><div><h2 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-shield-halved text-indigo-500 mr-2"></i>Sistem Audit Log</h2></div><button onclick="exportAuditCSV()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2"><i class="fa-solid fa-download"></i> CSV İndir</button></div>
+        <div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"><div><h2 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-shield-halved text-indigo-500 mr-2"></i>Sistem Audit Log</h2></div><div class="flex gap-2 flex-wrap"><button onclick="exportAuditCSV()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2"><i class="fa-solid fa-download"></i> CSV İndir</button><button onclick="clearAuditLogs()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2"><i class="fa-solid fa-trash"></i> Logları Temizle</button></div></div>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
             <div class="glass-card p-4 border-l-4 border-indigo-500"><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Toplam İşlem</p><p class="text-2xl font-black text-indigo-700" id="auditStatTotal">0</p></div>
             <div class="glass-card p-4 border-l-4 border-emerald-500"><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Bugün</p><p class="text-2xl font-black text-emerald-700" id="auditStatToday">0</p></div>
@@ -1193,6 +1193,59 @@
 
 <!-- MODALLAR -->
 <div id="driverStatementModal" class="modal flex" style="display:none;"><div class="modal-content modal-content-wide border-t-4 border-indigo-500 w-11/12 max-h-[90vh]"><span class="close-modal" onclick="closeDriverStatementModal()">&times;</span><h3 class="text-xl font-bold text-slate-800 mb-2 mt-2" id="statementModalTitle"></h3><div class="overflow-x-auto max-h-[60vh]"><table class="w-full text-left text-sm whitespace-nowrap min-w-[350px]"><tbody id="driverStatementList" class="divide-y divide-slate-100"></tbody></table></div></div></div>
+
+<!-- Ay Kapanış Onay Modalı -->
+<div id="archiveConfirmModal" class="modal" style="display:none;">
+  <div class="modal-content" style="max-width:560px;">
+    <span class="close-modal" onclick="closeArchiveModal()">&times;</span>
+    <div class="flex items-center gap-3 mb-4 mt-2">
+      <div class="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
+        <i class="fa-solid fa-broom text-rose-600"></i>
+      </div>
+      <div>
+        <h3 class="font-bold text-slate-800 text-base">Ay Kapanışı Onayı</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Aşağıdaki bakiyeler yeni aya devredilecek</p>
+      </div>
+    </div>
+
+    <!-- Uyarı kutusu -->
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 flex gap-2 text-xs text-amber-800">
+      <i class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5 shrink-0"></i>
+      <div>
+        <b>Bu işlem:</b>
+        <ul class="mt-1 space-y-0.5 list-disc ml-4">
+          <li><span id="archiveExpenseCount">0</span> masraf ve <span id="archiveAdvanceCount">0</span> avans arşive alınır</li>
+          <li>Tüm fiş geçmişi <b>kare_archive</b> koleksiyonuna yedeklenir</li>
+          <li>Aşağıdaki net bakiyeler yeni aya devir kaydı olarak açılır</li>
+          <li>Audit log'a yazılır</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Bakiye tablosu -->
+    <div class="overflow-x-auto border border-slate-200 rounded-xl mb-5">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-slate-500 text-xs font-bold uppercase">
+          <tr>
+            <th class="py-2 px-3 text-left">Şoför</th>
+            <th class="py-2 px-3 text-right">EUR</th>
+            <th class="py-2 px-3 text-right">USD</th>
+            <th class="py-2 px-3 text-right">TRY</th>
+            <th class="py-2 px-3 text-center">Durum</th>
+          </tr>
+        </thead>
+        <tbody id="archiveBalanceTable"></tbody>
+      </table>
+    </div>
+
+    <div class="flex gap-3">
+      <button onclick="closeArchiveModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold transition">İptal</button>
+      <button onclick="confirmArchive()" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-xl font-bold transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-check"></i> Onayla & Devret
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- Masraf Düzenleme Modalı -->
 <div id="editExpenseModal" class="modal" style="display:none;">
@@ -1829,6 +1882,77 @@
             await cLogs.add({action:'ARSİV_GERI_YUKLEME',user:currentUser,period,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
             showToast(`${period} arşivi geri yüklendi ✓`,'success');
         }catch(e){ showToast('Hata: '+e.message,'error'); }
+    }
+
+    // ── Audit Log Temizle ─────────────────────────────────────
+    async function clearAuditLogs(){
+        const confirmed = confirm(
+            'Audit Log Temizle\n\n' +
+            'Tüm sistem log kayıtları kalıcı olarak silinecek.\n' +
+            'Bu işlem GERİ ALINAMAZ.\n\n' +
+            'Devam etmek istiyor musunuz?'
+        );
+        if(!confirmed) return;
+        // İkinci onay
+        const confirmed2 = confirm('Son onay: Tüm loglar silinsin mi?');
+        if(!confirmed2) return;
+        try{
+            showToast('Loglar temizleniyor...','success');
+            const snap = await cLogs.get();
+            const batch = db.batch();
+            snap.docs.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            // Silme işlemini yeni log olarak kaydet
+            await cLogs.add({
+                action: 'LOG_TEMIZLEME',
+                user: currentUser,
+                details: `${snap.size} log kaydı temizlendi`,
+                category: 'system',
+                severity: 'critical',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            showToast(`${snap.size} log kaydı silindi ✓`, 'success');
+        }catch(e){
+            showToast('Hata: ' + e.message, 'error');
+        }
+    }
+
+    // ── Ay Kapanışı Güvenli Modal ─────────────────────────────
+    function openArchiveModal(){
+        const drivers = getDrivers();
+        if(!drivers.length){ showToast('Aktif şoför bulunamadı.','error'); return; }
+
+        // Bakiyeleri hesapla
+        const rows = drivers.map(d => {
+            const b = getDriverBalance(d);
+            return `<tr class="border-b border-slate-100">
+                <td class="py-2 px-3 font-bold text-slate-700">${esc(d)}</td>
+                <td class="py-2 px-3 text-right font-bold ${b.e>0?'text-emerald-600':b.e<0?'text-rose-600':'text-slate-400'}">${b.e>0?'+':''}${b.e.toFixed(2)} €</td>
+                <td class="py-2 px-3 text-right font-bold ${b.u>0?'text-emerald-600':b.u<0?'text-rose-600':'text-slate-400'}">${b.u>0?'+':''}${b.u.toFixed(2)} $</td>
+                <td class="py-2 px-3 text-right font-bold ${b.t>0?'text-emerald-600':b.t<0?'text-rose-600':'text-slate-400'}">${b.t>0?'+':''}${b.t.toLocaleString('tr-TR')} ₺</td>
+                <td class="py-2 px-3 text-center text-xs ${b.e===0&&b.u===0&&b.t===0?'text-slate-400':'text-amber-600 font-bold'}">
+                    ${b.e===0&&b.u===0&&b.t===0?'Sıfır':'Devredilecek'}
+                </td>
+            </tr>`;
+        }).join('');
+
+        const modal = document.getElementById('archiveConfirmModal');
+        if(modal){
+            document.getElementById('archiveBalanceTable').innerHTML = rows;
+            document.getElementById('archiveExpenseCount').textContent = expenses.length;
+            document.getElementById('archiveAdvanceCount').textContent = advances.length;
+            modal.style.display = 'flex';
+        }
+    }
+
+    function closeArchiveModal(){
+        const modal = document.getElementById('archiveConfirmModal');
+        if(modal) modal.style.display = 'none';
+    }
+
+    async function confirmArchive(){
+        closeArchiveModal();
+        await archiveSystem();
     }
 
     async function archiveSystem(){

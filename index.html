@@ -1961,7 +1961,7 @@
     }
 
     function getSelectedArchiveDrivers(){
-        return [...document.querySelectorAll('.archive-drv-cb:checked')].map(cb=>cb.value);
+        return [...document.querySelectorAll('.archive-drv-cb:checked')].map(cb=>cb.dataset.driver||cb.value);
     }
 
     function openArchiveModal(){
@@ -1976,10 +1976,11 @@
             const drvAdv=advances.filter(a=>a.driver===d).length;
             const hasData=b.e!==0||b.u!==0||b.t!==0||drvExp>0;
             const row=document.createElement('tr');
-            row.className='border-b border-slate-100 hover:bg-slate-50';
+            row.className='border-b border-slate-100 hover:bg-slate-50 cursor-pointer select-none';
+            row.onclick=function(e){ if(e.target.tagName!=='INPUT'){ const cb=this.querySelector('.archive-drv-cb'); cb.checked=!cb.checked; updateArchiveCounts(); } };
             row.innerHTML=`
                 <td class="py-2 px-3">
-                    <input type="checkbox" class="archive-drv-cb w-4 h-4 accent-rose-500 cursor-pointer" value="${esc(d)}" ${hasData?'checked':''} onchange="updateArchiveCounts()"/>
+                    <input type="checkbox" class="archive-drv-cb w-4 h-4 accent-rose-500 cursor-pointer" value="${esc(d)}" data-driver="${esc(d)}" ${hasData?'checked':''} onchange="updateArchiveCounts()"/>
                 </td>
                 <td class="py-2 px-3 font-bold text-slate-700">${esc(d)}</td>
                 <td class="py-2 px-3 text-right font-bold text-sm ${b.e>0?'text-emerald-600':b.e<0?'text-rose-600':'text-slate-300'}">${b.e!==0?(b.e>0?'+':'')+b.e.toFixed(2)+' €':'—'}</td>

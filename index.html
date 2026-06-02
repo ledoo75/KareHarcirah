@@ -1095,7 +1095,8 @@
                 <p class="text-xs text-rose-600 mb-4">Tüm personelin net kasa bakiyesi hesaplanır ve yeni aya devredilir. Mevcut kayıtlar korunur.</p>
 
                 <div class="flex gap-3 flex-wrap">
-                    <button onclick="openArchiveModal()" class="flex-1 sm:flex-none px-6 bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-broom"></i> Ayı Kapat ve Bakiyeleri Devret</button>
+                    <button onclick="openArchiveModal()" class="flex-1 sm:flex-none px-6 bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-box-archive"></i> Yıllık Devir ve Arşivle</button>
+                    <button onclick="openYearlyArchiveViewer()" class="flex-1 sm:flex-none px-4 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-magnifying-glass-chart"></i> Arşiv Görüntüle</button>
                 </div>
             </div>
         </div>
@@ -1206,26 +1207,28 @@
 
 <!-- Ay Kapanış Onay Modalı -->
 <div id="archiveConfirmModal" class="modal" style="display:none;">
-  <div class="modal-content" style="max-width:520px;">
+  <div class="modal-content" style="max-width:560px;">
     <span class="close-modal" onclick="closeArchiveModal()">&times;</span>
-    <div class="flex items-center gap-3 mb-5 mt-2">
+    <div class="flex items-center gap-3 mb-4 mt-2">
       <div class="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
-        <i class="fa-solid fa-broom text-rose-600"></i>
+        <i class="fa-solid fa-calendar-check text-rose-600"></i>
       </div>
       <div>
-        <h3 class="font-bold text-slate-800 text-base">Ayı Kapat ve Bakiyeleri Devret</h3>
-        <p class="text-xs text-slate-500 mt-0.5">Avanslar ve bağımsız masraflar silinir, net bakiye yeni aya devredilir</p>
+        <h3 class="font-bold text-slate-800 text-base">Yıllık Devir ve Arşivleme</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Tüm veriler yıllık arşive kaydedilir, net bakiyeler devredilir</p>
       </div>
     </div>
-
-    <!-- Dönem notu -->
-    <div class="mb-4">
-      <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-1">Dönem Notu (İsteğe Bağlı)</label>
-      <input type="text" id="archivePeriodNote" class="input-style text-sm" placeholder="örn: Mayıs 2026 — Kur: 38.5 TRY/EUR"/>
+    <div class="flex gap-3 mb-4">
+      <div class="flex-1">
+        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-1">Arşiv Yılı</label>
+        <select id="archiveYearSelect" class="input-style text-sm font-bold"></select>
+      </div>
+      <div class="flex-1">
+        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-1">Not</label>
+        <input type="text" id="archivePeriodNote" class="input-style text-sm" placeholder="örn: Kur 38.5 TRY/EUR"/>
+      </div>
     </div>
-
-    <!-- Bakiye tablosu -->
-    <div class="overflow-x-auto border border-slate-200 rounded-xl mb-5">
+    <div class="overflow-x-auto border border-slate-200 rounded-xl mb-4">
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-500 text-xs font-bold uppercase">
           <tr>
@@ -1238,16 +1241,40 @@
         <tbody id="archiveBalanceTable"></tbody>
       </table>
     </div>
-
+    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4 text-xs text-slate-600 grid grid-cols-3 gap-2">
+        <div class="flex items-center gap-1.5"><i class="fa-solid fa-file-invoice text-slate-400"></i><span>Masraf: <b id="archiveExpCount">0</b></span></div>
+        <div class="flex items-center gap-1.5"><i class="fa-solid fa-coins text-slate-400"></i><span>Avans: <b id="archiveAdvCount">0</b></span></div>
+        <div class="flex items-center gap-1.5"><i class="fa-solid fa-truck text-slate-400"></i><span>Sefer: <b id="archiveTripCount">0</b></span></div>
+    </div>
     <div class="flex gap-3">
       <button onclick="closeArchiveModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold transition">İptal</button>
       <button onclick="confirmArchive()" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-xl font-bold transition flex items-center justify-center gap-2">
-        <i class="fa-solid fa-check"></i> Onayla ve Devret
+        <i class="fa-solid fa-box-archive"></i> Arşivle ve Devret
       </button>
     </div>
   </div>
 </div>
 
+
+
+<!-- Yıllık Arşiv Görüntüleyici Modalı -->
+<div id="yearlyArchiveModal" class="modal" style="display:none;">
+  <div class="modal-content modal-content-wide" style="max-width:700px;max-height:90vh;overflow-y:auto;">
+    <span class="close-modal" onclick="document.getElementById('yearlyArchiveModal').style.display='none'">&times;</span>
+    <div class="flex items-center gap-3 mb-4 mt-2">
+      <div class="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0">
+        <i class="fa-solid fa-magnifying-glass-chart text-indigo-600"></i>
+      </div>
+      <div class="flex-1">
+        <h3 class="font-bold text-slate-800 text-base">Yıllık Arşiv</h3>
+      </div>
+      <select id="archiveViewYear" onchange="loadYearlyArchiveData()" class="input-style text-sm font-bold w-36"></select>
+    </div>
+    <div id="yearlyArchiveContent">
+      <div class="text-xs text-slate-400 text-center py-6">Yıl seçin...</div>
+    </div>
+  </div>
+</div>
 
 <!-- Masraf Düzenleme Modalı -->
 <div id="editExpenseModal" class="modal" style="display:none;">
@@ -1850,6 +1877,126 @@
     function deleteAdvance(id){if(confirm("Silinsin mi?")){cAdvances.doc(id).delete(); showToast('Silindi','success');}}
     
     function getDriverBalance(drv){let e=0,u=0,t=0; advances.filter(a=>a.driver===drv&&!a.archived).forEach(a=>{if(a.currency==='EUR')e+=a.amount;else if(a.currency==='USD')u+=a.amount;else t+=a.amount;}); expenses.filter(x=>x.driver===drv&&x.status==='APPROVED').forEach(x=>{if(x.currency==='EUR')e-=x.amount;else if(x.currency==='USD')u-=x.amount;else t-=x.amount;}); return{e:e,u:u,t:t};}
+    // ── Yıllık Arşiv Görüntüleyici ────────────────────────────
+    async function openYearlyArchiveViewer(){
+        const modal=document.getElementById('yearlyArchiveModal');
+        const sel=document.getElementById('archiveViewYear');
+        if(!modal||!sel) return;
+
+        // Mevcut arşivleri listele
+        try{
+            const snap=await db.collection('kare_archive').orderBy('archivedAt','desc').limit(10).get();
+            sel.innerHTML='<option value="">— Yıl seçin —</option>';
+            snap.docs.forEach(doc=>{
+                const opt=document.createElement('option');
+                opt.value=doc.id; opt.textContent=doc.id+' Yılı';
+                sel.appendChild(opt);
+            });
+            if(snap.empty) sel.innerHTML='<option value="">Arşiv yok</option>';
+        }catch(e){ sel.innerHTML='<option value="">Hata</option>'; }
+
+        modal.style.display='flex';
+    }
+
+    async function loadYearlyArchiveData(){
+        const year=document.getElementById('archiveViewYear')?.value;
+        const content=document.getElementById('yearlyArchiveContent');
+        if(!year||!content){ if(content) content.innerHTML='<div class="text-xs text-slate-400 text-center py-6">Yıl seçin...</div>'; return; }
+
+        content.innerHTML='<div class="text-xs text-slate-400 text-center py-6">Yükleniyor...</div>';
+        try{
+            const doc=await db.collection('kare_archive').doc(year).get();
+            if(!doc.exists){ content.innerHTML='<div class="text-xs text-rose-500 text-center py-6">Bu yıla ait arşiv bulunamadı.</div>'; return; }
+            const d=doc.data();
+            const note=d.note?`<span class="text-slate-400 ml-2">— ${esc(d.note)}</span>`:'';
+            const archivedDate=d.archivedAt?.toDate?.()?.toLocaleDateString('tr-TR')||'';
+
+            let html=`<div class="text-xs text-slate-400 mb-4">${year} yılı arşivi · ${archivedDate} · ${esc(d.archivedBy||'')}${note}</div>`;
+
+            // KPI Kartları
+            html+=`<div class="grid grid-cols-3 gap-3 mb-5">
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
+                    <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Masraf</p>
+                    <p class="text-xl font-black text-slate-700">${d.expenseCount||0}</p>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
+                    <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Avans</p>
+                    <p class="text-xl font-black text-slate-700">${d.advanceCount||0}</p>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
+                    <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Sefer</p>
+                    <p class="text-xl font-black text-slate-700">${d.tripCount||0} · ${((d.tripSummary?.totalKm||0)/1000).toFixed(0)}K km</p>
+                </div>
+            </div>`;
+
+            // Şoför Cari Ekstreleri
+            if(d.driverExtracts && Object.keys(d.driverExtracts).length){
+                html+=`<h4 class="font-bold text-slate-700 text-sm mb-2 flex items-center gap-2"><i class="fa-solid fa-users text-indigo-500"></i> Personel Cari Ekstresi</h4>`;
+                html+=`<div class="overflow-x-auto border border-slate-200 rounded-xl mb-5"><table class="w-full text-xs"><thead class="bg-slate-50 text-slate-500 font-bold uppercase"><tr>
+                    <th class="py-2 px-3 text-left">Şoför</th>
+                    <th class="py-2 px-3 text-right">Toplam Avans</th>
+                    <th class="py-2 px-3 text-right">Toplam Masraf</th>
+                    <th class="py-2 px-3 text-right">Net Bakiye</th>
+                    <th class="py-2 px-3 text-center">Sefer</th>
+                </tr></thead><tbody>`;
+                Object.entries(d.driverExtracts).forEach(([drv,ext])=>{
+                    const totAdv=ext.advances.reduce((s,a)=>a.currency==='EUR'?s+a.amount:s,0);
+                    const totExp=ext.expenses.reduce((s,e)=>e.currency==='EUR'?s+e.amount:s,0);
+                    const bal=ext.balance||{e:0};
+                    const trips=d.tripSummary?.byDriver?.[drv];
+                    html+=`<tr class="border-t border-slate-100 hover:bg-slate-50">
+                        <td class="py-2 px-3 font-bold">${esc(drv)}</td>
+                        <td class="py-2 px-3 text-right text-emerald-600 font-bold">${totAdv.toFixed(2)} €</td>
+                        <td class="py-2 px-3 text-right text-rose-600 font-bold">${totExp.toFixed(2)} €</td>
+                        <td class="py-2 px-3 text-right font-black ${(bal.e||0)>=0?'text-emerald-700':'text-rose-700'}">${(bal.e||0)>0?'+':''}${(bal.e||0).toFixed(2)} €</td>
+                        <td class="py-2 px-3 text-center text-slate-500">${trips?trips.count+' sefer · '+(trips.km/1000).toFixed(0)+'K km':'—'}</td>
+                    </tr>`;
+                });
+                html+=`</tbody></table></div>`;
+            }
+
+            // Araç Maliyeti Özeti
+            if(d.vehicleCosts && Object.keys(d.vehicleCosts).length){
+                html+=`<h4 class="font-bold text-slate-700 text-sm mb-2 flex items-center gap-2"><i class="fa-solid fa-truck text-amber-500"></i> Araç Maliyeti (${year})</h4>`;
+                html+=`<div class="overflow-x-auto border border-slate-200 rounded-xl mb-5"><table class="w-full text-xs"><thead class="bg-slate-50 text-slate-500 font-bold uppercase"><tr>
+                    <th class="py-2 px-3 text-left">Plaka</th>
+                    <th class="py-2 px-3 text-right">HGS</th>
+                    <th class="py-2 px-3 text-right">Yakıt</th>
+                    <th class="py-2 px-3 text-right">Maaş</th>
+                    <th class="py-2 px-3 text-right">Toplam</th>
+                </tr></thead><tbody>`;
+                Object.entries(d.vehicleCosts).forEach(([plate,vc])=>{
+                    html+=`<tr class="border-t border-slate-100 hover:bg-slate-50">
+                        <td class="py-2 px-3 font-bold uppercase"><span class="bg-slate-800 text-white px-2 py-0.5 rounded text-[10px]">${esc(plate)}</span></td>
+                        <td class="py-2 px-3 text-right text-red-600">${(vc.hgs||0).toFixed(2)} €</td>
+                        <td class="py-2 px-3 text-right text-amber-600">${(vc.yak||0).toFixed(2)} €</td>
+                        <td class="py-2 px-3 text-right text-violet-600">${(vc.sal||0).toFixed(2)} €</td>
+                        <td class="py-2 px-3 text-right font-black text-slate-800">${(vc.total||0).toFixed(2)} €</td>
+                    </tr>`;
+                });
+                html+=`</tbody></table></div>`;
+            }
+
+            // Masraf Kategori Dağılımı
+            if(d.categoryBreakdown && Object.keys(d.categoryBreakdown).length){
+                html+=`<h4 class="font-bold text-slate-700 text-sm mb-2 flex items-center gap-2"><i class="fa-solid fa-chart-pie text-rose-500"></i> Masraf Kategorileri</h4>`;
+                html+=`<div class="grid grid-cols-2 gap-2 mb-4">`;
+                const cats={'HARCIRAH':'💵','MAZOT':'⛽','OTOYOL':'🛣️','OTOPARK':'🅿️','GUMRUK':'🛂','YEMEK':'🍔','BAKIM':'🔧','TELEFON':'📱','DIGER':'📝'};
+                Object.entries(d.categoryBreakdown).sort((a,b)=>b[1].eur-a[1].eur).forEach(([cat,info])=>{
+                    html+=`<div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                        <span class="text-xs font-bold text-slate-700">${cats[cat]||'📝'} ${cat}</span>
+                        <span class="text-xs font-bold text-slate-800">${(info.eur||0).toFixed(2)} € <span class="text-slate-400">(${info.count})</span></span>
+                    </div>`;
+                });
+                html+=`</div>`;
+            }
+
+            content.innerHTML=html;
+        }catch(e){
+            content.innerHTML=`<div class="text-xs text-rose-500 text-center py-6">Hata: ${e.message}</div>`;
+        }
+    }
+
     // ── Devir Özet Kartı & Hatırlatıcı ───────────────────────
     async function loadArchiveSummary(){
         try{
@@ -1975,23 +2122,42 @@
     }
 
     // ── Ay Kapanışı ──────────────────────────────────────────
+    // ── Yıllık Arşiv ─────────────────────────────────────────
     function openArchiveModal(){
         const drivers=getDrivers();
         if(!drivers.length){showToast('Aktif şoför bulunamadı.','error');return;}
+        const yearSel=document.getElementById('archiveYearSelect');
+        if(yearSel){
+            const curYear=new Date().getFullYear();
+            yearSel.innerHTML='';
+            for(let y=curYear;y>=curYear-3;y--){
+                const opt=document.createElement('option');
+                opt.value=y; opt.textContent=y+' Yılı';
+                if(y===curYear) opt.selected=true;
+                yearSel.appendChild(opt);
+            }
+        }
         const tbody=document.getElementById('archiveBalanceTable');
-        if(!tbody) return;
-        tbody.innerHTML='';
-        drivers.forEach(d=>{
-            const b=getDriverBalance(d);
-            const row=document.createElement('tr');
-            row.className='border-b border-slate-100';
-            row.innerHTML=`
-                <td class="py-3 px-3 font-bold text-slate-700">${esc(d)}</td>
-                <td class="py-3 px-3 text-right font-bold text-sm ${b.e>0?'text-emerald-600':b.e<0?'text-rose-600':'text-slate-300'}">${b.e!==0?(b.e>0?'+':'')+b.e.toFixed(2)+' €':'—'}</td>
-                <td class="py-3 px-3 text-right font-bold text-sm ${b.u>0?'text-emerald-600':b.u<0?'text-rose-600':'text-slate-300'}">${b.u!==0?(b.u>0?'+':'')+b.u.toFixed(2)+' $':'—'}</td>
-                <td class="py-3 px-3 text-right font-bold text-sm ${b.t>0?'text-emerald-600':b.t<0?'text-rose-600':'text-slate-300'}">${b.t!==0?(b.t>0?'+':'')+b.t.toLocaleString('tr-TR')+' ₺':'—'}</td>`;
-            tbody.appendChild(row);
-        });
+        if(tbody){
+            tbody.innerHTML='';
+            drivers.forEach(d=>{
+                const b=getDriverBalance(d);
+                const row=document.createElement('tr');
+                row.className='border-b border-slate-100';
+                row.innerHTML=`
+                    <td class="py-2.5 px-3 font-bold text-slate-700">${esc(d)}</td>
+                    <td class="py-2.5 px-3 text-right font-bold text-sm ${b.e>0?'text-emerald-600':b.e<0?'text-rose-600':'text-slate-300'}">${b.e!==0?(b.e>0?'+':'')+b.e.toFixed(2)+' €':'—'}</td>
+                    <td class="py-2.5 px-3 text-right font-bold text-sm ${b.u>0?'text-emerald-600':b.u<0?'text-rose-600':'text-slate-300'}">${b.u!==0?(b.u>0?'+':'')+b.u.toFixed(2)+' $':'—'}</td>
+                    <td class="py-2.5 px-3 text-right font-bold text-sm ${b.t>0?'text-emerald-600':b.t<0?'text-rose-600':'text-slate-300'}">${b.t!==0?(b.t>0?'+':'')+b.t.toLocaleString('tr-TR')+' ₺':'—'}</td>`;
+                tbody.appendChild(row);
+            });
+        }
+        const ec=document.getElementById('archiveExpCount');
+        const ac=document.getElementById('archiveAdvCount');
+        const tc=document.getElementById('archiveTripCount');
+        if(ec) ec.textContent=expenses.length;
+        if(ac) ac.textContent=advances.length;
+        if(tc) tc.textContent=driverTrips.filter(t=>t.status==='COMPLETED').length;
         document.getElementById('archiveConfirmModal').style.display='flex';
     }
 
@@ -2007,47 +2173,100 @@
     async function archiveSystem(){
         const drivers=getDrivers();
         if(!drivers.length){showToast('Şoför bulunamadı.','error');return;}
-        showToast('Devir başlatılıyor...','success');
-        const now=new Date();
-        const archiveKey=now.toISOString().slice(0,7);
-        const archiveDate=now.toISOString().split('T')[0];
+        const year=document.getElementById('archiveYearSelect')?.value||new Date().getFullYear().toString();
         const archiveNote=document.getElementById('archivePeriodNote')?.value?.trim()||'';
+        const archiveDate=new Date().toISOString().split('T')[0];
+        showToast(`${year} arşivi hazırlanıyor...`,'success');
         try{
-            // 1. Bakiyeleri hesapla (silmeden önce)
+            // 1. Bakiyeleri hesapla
             const bals={};
             drivers.forEach(d=>{ bals[d]=getDriverBalance(d); });
 
-            // 2. Tüm avansları sil
-            const selAdv=advances.filter(a=>a);
-            // 3. Tüm onaylı masrafları sil (sefer masrafları dahil)
-            const selExp=expenses.filter(e=>e.status==='APPROVED');
-            for(let i=0;i<selExp.length;i+=batchSize){
-                const b=db.batch();
-                selExp.slice(i,i+batchSize).forEach(e=>b.delete(cExpenses.doc(e.id)));
-                await b.commit();
+            // 2. Araç maliyeti yıllık özeti
+            const hgsData=loadVcEntries('hgs');
+            const yakitData=loadVcEntries('yakit');
+            const salaryData=loadVcEntries('salary');
+            const vcYearMonths=Object.keys({...hgsData,...yakitData,...salaryData}).filter(m=>m.startsWith(year));
+            const allPlates=[...new Set([
+                ...Object.values(hgsData).flat().map(e=>e?.plate),
+                ...Object.values(yakitData).flat().map(e=>e?.plate),
+            ])].filter(Boolean);
+            const vcSummary={};
+            allPlates.forEach(plate=>{
+                const hgs=vcYearMonths.reduce((s,m)=>(hgsData[m]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+(e.eur||0),s),0);
+                const yak=vcYearMonths.reduce((s,m)=>(yakitData[m]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+(e.eur||0),s),0);
+                const sal=vcYearMonths.reduce((s,m)=>(salaryData[m]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+(e.eur||0),s),0);
+                if(hgs||yak||sal) vcSummary[plate]={hgs,yak,sal,total:hgs+yak+sal};
+            });
+
+            // 3. Şoför cari ekstreleri
+            const driverExtracts={};
+            drivers.forEach(d=>{
+                driverExtracts[d]={
+                    advances:advances.filter(a=>a.driver===d).map(a=>({date:a.date,amount:a.amount,currency:a.currency,note:a.note||''})),
+                    expenses:expenses.filter(e=>e.driver===d&&e.status==='APPROVED').map(e=>({date:e.date,category:e.category,amount:e.amount,currency:e.currency,tripName:e.tripName||'',tripId:e.tripId||''})),
+                    balance:bals[d]
+                };
+            });
+
+            // 4. Sefer özeti
+            const completedTrips=driverTrips.filter(t=>t.status==='COMPLETED');
+            const tripSummary={total:completedTrips.length,totalKm:completedTrips.reduce((s,t)=>s+(t.totalKm||0),0),byDriver:{}};
+            completedTrips.forEach(t=>{
+                if(!tripSummary.byDriver[t.driver]) tripSummary.byDriver[t.driver]={count:0,km:0};
+                tripSummary.byDriver[t.driver].count++;
+                tripSummary.byDriver[t.driver].km+=(t.totalKm||0);
+            });
+
+            // 5. Masraf kategorileri özeti
+            const catSummary={};
+            expenses.filter(e=>e.status==='APPROVED').forEach(e=>{
+                if(!catSummary[e.category]) catSummary[e.category]={count:0,eur:0};
+                catSummary[e.category].count++;
+                catSummary[e.category].eur+=toEur(e.amount,e.currency);
+            });
+
+            // 6. Firebase'e yaz
+            await db.collection('kare_archive').doc(year).set({
+                year, archivedAt:firebase.firestore.FieldValue.serverTimestamp(),
+                archivedBy:currentUser, note:archiveNote,
+                balances:bals, driverExtracts, vehicleCosts:vcSummary,
+                tripSummary, categoryBreakdown:catSummary,
+                expenseCount:expenses.length, advanceCount:advances.length, tripCount:completedTrips.length
+            });
+            showToast(`${year} arşivi Firebase'e kaydedildi ✓`,'success');
+
+            // 7. Tüm verileri sil
+            const batchSize=400;
+            for(let i=0;i<expenses.length;i+=batchSize){
+                const b=db.batch(); expenses.slice(i,i+batchSize).forEach(e=>b.delete(cExpenses.doc(e.id))); await b.commit();
+            }
+            for(let i=0;i<advances.length;i+=batchSize){
+                const b=db.batch(); advances.slice(i,i+batchSize).forEach(a=>b.delete(cAdvances.doc(a.id))); await b.commit();
             }
 
-            // 4. Net bakiyeleri devir kaydı olarak aç
+            // 8. Devir kayıtları
             for(const drv of drivers){
                 const b=bals[drv];
-                if(b.e>0) await cAdvances.add({date:archiveDate,driver:drv,amount:b.e,currency:'EUR',note:`${archiveKey} devir`,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
-                else if(b.e<0) await cExpenses.add({date:archiveDate,driver:drv,category:'DIGER',tripName:`${archiveKey} Devir Alacağı`,amount:Math.abs(b.e),currency:'EUR',status:'APPROVED',timestamp:firebase.firestore.FieldValue.serverTimestamp()});
-                if(b.u>0) await cAdvances.add({date:archiveDate,driver:drv,amount:b.u,currency:'USD',note:`${archiveKey} devir`,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
-                else if(b.u<0) await cExpenses.add({date:archiveDate,driver:drv,category:'DIGER',tripName:`${archiveKey} Devir`,amount:Math.abs(b.u),currency:'USD',status:'APPROVED',timestamp:firebase.firestore.FieldValue.serverTimestamp()});
-                if(b.t>0) await cAdvances.add({date:archiveDate,driver:drv,amount:b.t,currency:'TRY',note:`${archiveKey} devir`,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
-                else if(b.t<0) await cExpenses.add({date:archiveDate,driver:drv,category:'DIGER',tripName:`${archiveKey} Devir`,amount:Math.abs(b.t),currency:'TRY',status:'APPROVED',timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+                if(b.e>0) await cAdvances.add({date:archiveDate,driver:drv,amount:b.e,currency:'EUR',note:`${year} devir`,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+                else if(b.e<0) await cExpenses.add({date:archiveDate,driver:drv,category:'DIGER',tripName:`${year} Devir Alacağı`,amount:Math.abs(b.e),currency:'EUR',status:'APPROVED',timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+                if(b.u>0) await cAdvances.add({date:archiveDate,driver:drv,amount:b.u,currency:'USD',note:`${year} devir`,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+                else if(b.u<0) await cExpenses.add({date:archiveDate,driver:drv,category:'DIGER',tripName:`${year} Devir`,amount:Math.abs(b.u),currency:'USD',status:'APPROVED',timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+                if(b.t>0) await cAdvances.add({date:archiveDate,driver:drv,amount:b.t,currency:'TRY',note:`${year} devir`,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+                else if(b.t<0) await cExpenses.add({date:archiveDate,driver:drv,category:'DIGER',tripName:`${year} Devir`,amount:Math.abs(b.t),currency:'TRY',status:'APPROVED',timestamp:firebase.firestore.FieldValue.serverTimestamp()});
             }
 
-            await cLogs.add({action:'AY_KAPANISI',user:currentUser,period:archiveKey,note:archiveNote,
-                details:`${drivers.length} şoför — ${selAdv.length} avans, ${selExp.length} masraf silindi. Sefer masrafları korundu.`,
+            await cLogs.add({action:'YILLIK_ARSIV',user:currentUser,period:year,note:archiveNote,
+                details:`${year} yılı arşivlendi. ${expenses.length} masraf, ${advances.length} avans, ${completedTrips.length} sefer.`,
                 timestamp:firebase.firestore.FieldValue.serverTimestamp()});
-            showToast(`${archiveKey} devir tamamlandı ✓`,'success');
+            showToast(`${year} yılı arşivlendi ve devredildi ✓`,'success');
             loadArchiveSummary();
         }catch(err){
             console.error('Arşiv hatası:',err);
             showToast('Hata: '+err.message,'error');
         }
     }
+
 
     
     function updatePatronDashboard(){let tE=0,tU=0,tT=0,rC=0; const aTrips=driverTrips.filter(t=>t.status==='ACTIVE').length; const dL=document.getElementById('patronDriverRiskList'); dL.innerHTML=''; getDrivers().forEach(drv=>{const b=getDriverBalance(drv); tE+=b.e; tU+=b.u; tT+=b.t; if(b.e>0||b.u>0||b.t>0){let isR=(b.e>1000||b.u>1100||b.t>35000); if(isR)rC++; let det=''; if(b.e>0)det+=`<span class="text-blue-700 font-bold mr-2">${formatPdfMoney(b.e,'€')}</span>`; if(b.u>0)det+=`<span class="text-emerald-700 font-bold mr-2">${formatPdfMoney(b.u,'$')}</span>`; if(b.t>0)det+=`<span class="text-indigo-700 font-bold">${formatPdfMoney(b.t,'₺')}</span>`; let bdg=isR?`<span class="bg-red-500 text-white px-2 py-1 rounded text-[10px] font-bold">RİSK</span>`:`<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded text-[10px] font-bold">NORMAL</span>`; dL.innerHTML+=`<tr class="border-b border-slate-100 ${isR?'risk-row':'hover:bg-slate-50'}"><td class="p-3 font-bold">${esc(drv)}</td><td class="p-3 text-right">${det}</td><td class="p-3 text-center">${bdg}</td></tr>`;}}); if(dL.innerHTML==='')dL.innerHTML=`<tr><td colspan="3" class="p-4 text-center text-slate-500">Riskli personel yok.</td></tr>`; document.getElementById('patSafeEUR').innerText=formatPdfMoney(tE,'€'); document.getElementById('patSafeUSD').innerText=formatPdfMoney(tU,'$'); document.getElementById('patSafeTRY').innerText=formatPdfMoney(tT,'₺'); document.getElementById('patActiveTripsCount').innerText=aTrips; document.getElementById('patRiskyDriversCount').innerText=rC; let cM=new Date().toISOString().slice(0,7); let mE=0,mU=0,mT=0; expenses.filter(e=>e.status==='APPROVED'&&e.date&&e.date.startsWith(cM)).forEach(e=>{if(e.currency==='EUR')mE+=e.amount;else if(e.currency==='USD')mU+=e.amount;else mT+=e.amount;}); document.getElementById('patExpThisMonthEUR').innerText=formatPdfMoney(mE,'€'); document.getElementById('patExpThisMonthUSD').innerText=formatPdfMoney(mU,'$'); document.getElementById('patExpThisMonthTRY').innerText=formatPdfMoney(mT,'₺'); let vD={}; driverTrips.filter(t=>t.status==='COMPLETED').forEach(t=>{if(!vD[t.plate])vD[t.plate]={km:0,c:0}; vD[t.plate].km+=t.totalKm;}); expenses.filter(e=>e.status==='APPROVED'&&e.plaka&&(e.category==='MAZOT'||e.category==='BAKIM'||e.category==='OTOYOL')).forEach(e=>{let p=e.plaka.toUpperCase(); if(!vD[p])vD[p]={km:0,c:0}; let a=e.amount; if(e.currency==='USD')a*=0.9;else if(e.currency==='TRY')a*=0.028; vD[p].c+=a;}); const pV=document.getElementById('patronVehicleList'); pV.innerHTML=''; for(const[p,d] of Object.entries(vD)){if(d.km===0)continue; let cpm=d.c/d.km; let cC=cpm>0.4?'text-rose-600 font-bold bg-rose-50':'text-emerald-600 font-bold bg-emerald-50'; pV.innerHTML+=`<tr class="border-b border-slate-100"><td class="p-3 font-bold uppercase"><span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs">${esc(p)}</span></td><td class="p-3 text-right">${d.km.toLocaleString()} KM</td><td class="p-3 text-right">~${formatPdfMoney(d.c,'€')}</td><td class="p-3 text-right ${cC} rounded-lg">${formatPdfMoney(cpm,'€')} / KM</td></tr>`;} if(pV.innerHTML==='')pV.innerHTML=`<tr><td colspan="4" class="p-4 text-center">Veri yok.</td></tr>`; renderPatronCharts();}

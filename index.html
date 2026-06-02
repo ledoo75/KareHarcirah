@@ -1269,7 +1269,6 @@
         <h3 class="font-bold text-slate-800 text-base">Yıllık Arşiv</h3>
       </div>
       <select id="archiveViewYear" onchange="loadYearlyArchiveData()" class="input-style text-sm font-bold w-36"></select>
-      <button onclick="deleteArchiveYear()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-rose-200"><i class="fa-solid fa-trash"></i> Sil</button>
       <button onclick="exportArchivePDF()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-file-pdf"></i> PDF</button>
     </div>
     <div id="yearlyArchiveContent">
@@ -1879,25 +1878,6 @@
     function deleteAdvance(id){if(confirm("Silinsin mi?")){cAdvances.doc(id).delete(); showToast('Silindi','success');}}
     
     function getDriverBalance(drv){let e=0,u=0,t=0; advances.filter(a=>a.driver===drv&&!a.archived).forEach(a=>{if(a.currency==='EUR')e+=a.amount;else if(a.currency==='USD')u+=a.amount;else t+=a.amount;}); expenses.filter(x=>x.driver===drv&&x.status==='APPROVED').forEach(x=>{if(x.currency==='EUR')e-=x.amount;else if(x.currency==='USD')u-=x.amount;else t-=x.amount;}); return{e:e,u:u,t:t};}
-    async function deleteArchiveYear(){
-        const year=document.getElementById('archiveViewYear')?.value;
-        if(!year){showToast('Önce yıl seçin','error');return;}
-        if(!confirm(`${year} yılı arşivi kalıcı olarak silinecek.\nBu işlem GERİ ALINAMAZ.\n\nDevam edilsin mi?`)) return;
-        if(!confirm(`Son onay: ${year} arşivi silinsin mi?`)) return;
-        try{
-            await db.collection('kare_archive').doc(year).delete();
-            await cLogs.add({action:'ARŞİV_SİLME',user:currentUser,period:year,
-                details:`${year} yılı arşivi silindi.`,
-                timestamp:firebase.firestore.FieldValue.serverTimestamp()});
-            showToast(`${year} arşivi silindi ✓`,'success');
-            // Listeyi yenile
-            await openYearlyArchiveViewer();
-            document.getElementById('yearlyArchiveContent').innerHTML='<div class="text-xs text-slate-400 text-center py-6">Arşiv silindi. Başka bir yıl seçin.</div>';
-        }catch(e){
-            showToast('Hata: '+e.message,'error');
-        }
-    }
-
     async function exportArchivePDF(){
         const year=document.getElementById('archiveViewYear')?.value;
         if(!year){showToast('Önce yıl seçin','error');return;}

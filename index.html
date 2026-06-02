@@ -1076,10 +1076,29 @@
             </div>
             <div class="glass-card p-5 lg:col-span-2 bg-gradient-to-br from-white to-rose-50 border-rose-100">
                 <h3 class="font-bold text-rose-800 text-lg mb-2"><i class="fa-solid fa-box-archive mr-2"></i>Ay Sonu Devir ve Arşivleme</h3>
+
+                <!-- Son devir özet kartı -->
+                <div id="lastArchiveCard" class="hidden mb-4 bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-600 flex items-center gap-3">
+                    <i class="fa-solid fa-circle-check text-emerald-500 text-lg shrink-0"></i>
+                    <div id="lastArchiveInfo" class="flex-1"></div>
+                    <button onclick="undoLastArchive()" class="shrink-0 bg-amber-50 hover:bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-bold border border-amber-200 text-xs transition">
+                        <i class="fa-solid fa-rotate-left mr-1"></i>Geri Al
+                    </button>
+                </div>
+
+                <!-- Ay sonu hatırlatıcı -->
+                <div id="archiveReminderCard" class="hidden mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 flex items-center gap-2">
+                    <i class="fa-solid fa-bell text-amber-500 animate-pulse shrink-0"></i>
+                    <span id="archiveReminderText"></span>
+                </div>
+
                 <p class="text-xs text-rose-600 mb-4">Tüm personelin net kasa bakiyesi hesaplanır ve yeni aya devredilir. Mevcut kayıtlar korunur.</p>
+
                 <div class="flex gap-3 flex-wrap">
                     <button onclick="openArchiveModal()" class="flex-1 sm:flex-none px-6 bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-broom"></i> Ayı Kapat ve Bakiyeleri Devret</button>
+                    <button onclick="showArchiveHistory()" class="flex-1 sm:flex-none px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-clock-rotate-left"></i> Devir Geçmişi</button>
                 </div>
+                <div id="archiveHistoryList" class="hidden mt-4 space-y-2 max-h-64 overflow-y-auto"></div>
             </div>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
@@ -1199,6 +1218,12 @@
         <h3 class="font-bold text-slate-800 text-base">Ayı Kapat ve Bakiyeleri Devret</h3>
         <p class="text-xs text-slate-500 mt-0.5">Net bakiyeler yeni aya devredilir, veriler korunur</p>
       </div>
+    </div>
+
+    <!-- Dönem notu -->
+    <div class="mb-4">
+      <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-1">Dönem Notu (İsteğe Bağlı)</label>
+      <input type="text" id="archivePeriodNote" class="input-style text-sm" placeholder="örn: Mayıs 2026 — Kur: 38.5 TRY/EUR"/>
     </div>
 
     <!-- Bakiye tablosu -->
@@ -1558,7 +1583,7 @@
     
     function updateDriverDropdowns(){const uSel=document.getElementById('activeUser'); const aSel=document.getElementById('advDriver'); const si=document.getElementById('driverSearchInput'); uSel.innerHTML=''; if(aSel)aSel.innerHTML=''; if(currentRole==='DRIVER'){uSel.innerHTML=`<option value="${esc(loggedInUser.username)}">${esc(loggedInUser.username)}</option>`; uSel.disabled=true; if(si){si.value=loggedInUser.username; si.disabled=true; si.classList.add('opacity-60');}}else{uSel.disabled=false; if(si){si.disabled=false; si.classList.remove('opacity-60');} let drvs=getDrivers(); if(drvs.length===0){uSel.innerHTML=`<option value="">Şoför Yok</option>`;} drvs.forEach(d=>{uSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`; if(aSel)aSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`;}); uSel.value=currentUser; if(si)si.value=currentUser;} if(currentRole!=='DRIVER'&&getDrivers().length>0&&!getDrivers().includes(currentUser)){currentUser=getDrivers()[0]; uSel.value=currentUser; if(si)si.value=currentUser;}}
     function updateTabVisibility(){const defaultPerms={ADMIN:['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],PATRON:['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],OPS:['DRIVER','OPERATIONS','DASHBOARD','ANALYTICS'],OPS_MANAGER:['DRIVER','OPERATIONS','FLEET','DASHBOARD','ANALYTICS','VEHICLE_COST'],ACCOUNTING:['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],FLEET:['DRIVER','FLEET','DASHBOARD','VEHICLE_COST'],DRIVER:['DRIVER']}; let myTabs=loggedInUser.allowedTabs||defaultPerms[currentRole]||['DRIVER']; if(currentRole==='ADMIN')myTabs=defaultPerms['ADMIN'];['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'].forEach(tab=>{const el=document.getElementById(`tab-${tab}`); if(el)el.style.display=myTabs.includes(tab)?'flex':'none';});}
-    function switchTab(tabId){document.querySelectorAll('.role-btn').forEach(b=>{b.classList.remove('bg-slate-800','text-white','shadow-md'); b.classList.add('bg-transparent','text-slate-500');}); const activeBtn=document.getElementById(`tab-${tabId}`); if(activeBtn){activeBtn.classList.remove('bg-transparent','text-slate-500'); activeBtn.classList.add('bg-slate-800','text-white','shadow-md');} document.querySelectorAll('.panel-section').forEach(p=>p.style.display='none'); document.getElementById(`panel-${tabId}`).style.display='block'; localStorage.setItem('kare_last_tab',tabId); renderAll(); if(tabId==='PATRON'&&['ADMIN','PATRON'].includes(currentRole))updatePatronDashboard(); if(tabId==='DRIVER')checkActiveTrip(); if(tabId==='DASHBOARD')renderDashboard(); if(tabId==='FLEET')renderFleetPanel(); if(tabId==='ANALYTICS')renderAnalyticsTab(); if(tabId==='AUDITLOG'){auditPage=50; renderAuditLog();} if(tabId==='ACCOUNTING'){refreshArchivePreview();} if(tabId==='VEHICLE_COST'){ loadAllVcFromFirebase();const now=new Date().toISOString().slice(0,7); const si=document.getElementById('vcStartMonth'); const ei=document.getElementById('vcEndMonth'); const vm=document.getElementById('vcMonth'); if(si&&!si.value){si.value=now;} if(ei&&!ei.value){ei.value=now;} if(vm&&!vm.value){vm.value=now;} const b0=document.getElementById('vcBtn0'); if(b0){clearVcBtns(); b0.className='vc-month-btn bg-orange-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition';} updateVcMonthLabel(); loadSalaryRows(); loadHgsRows(); loadYakitRows(); renderVehicleCost();}}
+    function switchTab(tabId){document.querySelectorAll('.role-btn').forEach(b=>{b.classList.remove('bg-slate-800','text-white','shadow-md'); b.classList.add('bg-transparent','text-slate-500');}); const activeBtn=document.getElementById(`tab-${tabId}`); if(activeBtn){activeBtn.classList.remove('bg-transparent','text-slate-500'); activeBtn.classList.add('bg-slate-800','text-white','shadow-md');} document.querySelectorAll('.panel-section').forEach(p=>p.style.display='none'); document.getElementById(`panel-${tabId}`).style.display='block'; localStorage.setItem('kare_last_tab',tabId); renderAll(); if(tabId==='PATRON'&&['ADMIN','PATRON'].includes(currentRole))updatePatronDashboard(); if(tabId==='DRIVER')checkActiveTrip(); if(tabId==='DASHBOARD')renderDashboard(); if(tabId==='FLEET')renderFleetPanel(); if(tabId==='ANALYTICS')renderAnalyticsTab(); if(tabId==='AUDITLOG'){auditPage=50; renderAuditLog();} if(tabId==='ACCOUNTING'){refreshArchivePreview(); loadArchiveSummary();} if(tabId==='VEHICLE_COST'){ loadAllVcFromFirebase();const now=new Date().toISOString().slice(0,7); const si=document.getElementById('vcStartMonth'); const ei=document.getElementById('vcEndMonth'); const vm=document.getElementById('vcMonth'); if(si&&!si.value){si.value=now;} if(ei&&!ei.value){ei.value=now;} if(vm&&!vm.value){vm.value=now;} const b0=document.getElementById('vcBtn0'); if(b0){clearVcBtns(); b0.className='vc-month-btn bg-orange-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition';} updateVcMonthLabel(); loadSalaryRows(); loadHgsRows(); loadYakitRows(); renderVehicleCost();}}
     function changeUser(){currentUser=document.getElementById('activeUser').value; renderAll(); if(currentRole!=='DRIVER')checkActiveTrip();}
     function filterCari(){let input=document.getElementById('searchCariInput').value.toLowerCase(); document.querySelectorAll('.cari-row').forEach(row=>{row.style.display=row.getAttribute('data-driver').toLowerCase().includes(input)?'':'none';});}
     
@@ -1827,6 +1852,130 @@
     function deleteAdvance(id){if(confirm("Silinsin mi?")){cAdvances.doc(id).delete(); showToast('Silindi','success');}}
     
     function getDriverBalance(drv){let e=0,u=0,t=0; advances.filter(a=>a.driver===drv&&!a.archived).forEach(a=>{if(a.currency==='EUR')e+=a.amount;else if(a.currency==='USD')u+=a.amount;else t+=a.amount;}); expenses.filter(x=>x.driver===drv&&x.status==='APPROVED'&&!x.archived).forEach(x=>{if(x.currency==='EUR')e-=x.amount;else if(x.currency==='USD')u-=x.amount;else t-=x.amount;}); return{e:e,u:u,t:t};}
+    // ── Devir Özet Kartı & Hatırlatıcı ───────────────────────
+    async function loadArchiveSummary(){
+        try{
+            // Son devir kaydını audit log'dan bul
+            const snap=await cLogs.where('action','==','AY_KAPANISI').orderBy('timestamp','desc').limit(1).get();
+            const card=document.getElementById('lastArchiveCard');
+            const info=document.getElementById('lastArchiveInfo');
+            const reminder=document.getElementById('archiveReminderCard');
+            const reminderText=document.getElementById('archiveReminderText');
+
+            if(!snap.empty){
+                const last=snap.docs[0].data();
+                const lastDate=last.timestamp?.toDate?.()?.toLocaleDateString('tr-TR')||last.period||'';
+                const note=last.note?` — ${last.note}`:'';
+                if(card&&info){
+                    info.innerHTML=`<span class="font-bold text-slate-700">Son devir: ${esc(last.period||'')}${note}</span>
+                        <span class="text-slate-400 ml-2">${lastDate}</span>
+                        <span class="text-slate-400 ml-2">${esc(last.details||'')}`;
+                    card.classList.remove('hidden');
+                }
+
+                // Hatırlatıcı: bu ay devir yapılmadıysa uyar
+                const thisMonth=new Date().toISOString().slice(0,7);
+                if(last.period!==thisMonth&&reminder&&reminderText){
+                    const daysLeft=new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate()-new Date().getDate();
+                    reminderText.textContent=`Bu ay (${thisMonth}) henüz devir yapılmadı. Ay sonuna ${daysLeft} gün kaldı.`;
+                    reminder.classList.remove('hidden');
+                }
+            } else {
+                // Hiç devir yapılmamış
+                if(reminder&&reminderText){
+                    reminderText.textContent='Henüz hiç devir yapılmamış.';
+                    reminder.classList.remove('hidden');
+                }
+            }
+        }catch(e){ console.warn('Archive summary:',e); }
+    }
+
+    // ── Devir Geçmişi ─────────────────────────────────────────
+    async function showArchiveHistory(){
+        const div=document.getElementById('archiveHistoryList');
+        if(!div) return;
+        if(!div.classList.contains('hidden')){ div.classList.add('hidden'); return; }
+        div.classList.remove('hidden');
+        div.innerHTML='<div class="text-xs text-slate-400 text-center py-3">Yükleniyor...</div>';
+        try{
+            const snap=await cLogs.where('action','==','AY_KAPANISI').orderBy('timestamp','desc').limit(24).get();
+            if(snap.empty){ div.innerHTML='<div class="text-xs text-slate-400 text-center py-3">Devir geçmişi yok.</div>'; return; }
+            div.innerHTML='';
+            snap.docs.forEach(doc=>{
+                const d=doc.data();
+                const date=d.timestamp?.toDate?.()?.toLocaleDateString('tr-TR')||'';
+                const note=d.note?`<span class="text-slate-400 ml-1">— ${esc(d.note)}</span>`:'';
+                const row=document.createElement('div');
+                row.className='flex items-center justify-between bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs gap-2';
+                row.innerHTML=`
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                        <span class="font-bold text-slate-700">${esc(d.period||'')}</span>${note}
+                        <span class="text-slate-400">${date}</span>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="text-slate-400 text-[10px]">${esc(d.user||'')}</span>
+                        <button onclick="undoArchivePeriod('${esc(d.period||'')}','${doc.id}')" class="bg-amber-50 hover:bg-amber-100 text-amber-700 px-2 py-1 rounded-lg font-bold border border-amber-200 text-[10px] transition">
+                            <i class="fa-solid fa-rotate-left mr-1"></i>Geri Al
+                        </button>
+                    </div>`;
+                div.appendChild(row);
+            });
+        }catch(e){ div.innerHTML=`<div class="text-xs text-rose-500 text-center py-3">Hata: ${e.message}</div>`; }
+    }
+
+    // ── Devri Geri Al ─────────────────────────────────────────
+    async function undoLastArchive(){
+        const snap=await cLogs.where('action','==','AY_KAPANISI').orderBy('timestamp','desc').limit(1).get();
+        if(snap.empty){ showToast('Geri alınacak devir yok.','error'); return; }
+        const last=snap.docs[0].data();
+        await undoArchivePeriod(last.period, snap.docs[0].id);
+    }
+
+    async function undoArchivePeriod(period, logId){
+        if(!period){ showToast('Dönem bulunamadı.','error'); return; }
+        if(!confirm(`${period} devri geri alınacak.\nO döneme ait arşivlenmiş kayıtlar yeniden aktif olacak.\n\nDevam edilsin mi?`)) return;
+        try{
+            showToast('Geri alınıyor...','success');
+
+            // O döneme ait archived kayıtları bul ve geri aç
+            const expSnap=await cExpenses.where('archivedPeriod','==',period).get();
+            const advSnap=await cAdvances.where('archivedPeriod','==',period).get();
+
+            const batch=db.batch();
+            expSnap.docs.forEach(d=>batch.update(d.ref,{archived:false,archivedAt:null,archivedPeriod:null}));
+            advSnap.docs.forEach(d=>batch.update(d.ref,{archived:false,archivedAt:null,archivedPeriod:null}));
+
+            // O döneme ait devir kayıtlarını sil
+            const devirExpSnap=await cExpenses.where('archivedPeriod','==',null).where('tripName','>=',period).where('tripName','<=',period+'z').get();
+            // Not ile açılan avans devir kayıtlarını sil
+            const devirAdvSnap=await cAdvances.where('note','==',`${period} devir`).get();
+            const devirAlacakSnap=await cExpenses.where('tripName','==',`${period} Devir Alacağı`).get();
+            const devirSnap2=await cExpenses.where('tripName','==',`${period} Devir`).get();
+
+            devirAdvSnap.docs.forEach(d=>batch.delete(d.ref));
+            devirAlacakSnap.docs.forEach(d=>batch.delete(d.ref));
+            devirSnap2.docs.forEach(d=>batch.delete(d.ref));
+
+            // Log kaydını güncelle
+            if(logId) batch.update(cLogs.doc(logId),{undone:true,undoneAt:firebase.firestore.FieldValue.serverTimestamp(),undoneBy:currentUser});
+
+            await batch.commit();
+
+            await cLogs.add({
+                action:'DEVİR_GERİ_ALMA',user:currentUser,period,
+                details:`${period} devri geri alındı. ${expSnap.size} masraf, ${advSnap.size} avans yeniden aktif.`,
+                timestamp:firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            showToast(`${period} devri geri alındı ✓`,'success');
+            loadArchiveSummary();
+        }catch(e){
+            console.error('Undo error:',e);
+            showToast('Hata: '+e.message,'error');
+        }
+    }
+
     // ── Ay Kapanışı ──────────────────────────────────────────
     function openArchiveModal(){
         const drivers=getDrivers();
@@ -1864,6 +2013,7 @@
         const now=new Date();
         const archiveKey=now.toISOString().slice(0,7);
         const archiveDate=now.toISOString().split('T')[0];
+        const archiveNote=document.getElementById('archivePeriodNote')?.value?.trim()||'';
         try{
             // Bakiyeleri hesapla
             const bals={};
@@ -1887,8 +2037,9 @@
                 if(b.t>0) await cAdvances.add({date:archiveDate,driver:drv,amount:b.t,currency:'TRY',note:`${archiveKey} devir`,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
                 else if(b.t<0) await cExpenses.add({date:archiveDate,driver:drv,category:'DIGER',tripName:`${archiveKey} Devir`,amount:Math.abs(b.t),currency:'TRY',status:'APPROVED',timestamp:firebase.firestore.FieldValue.serverTimestamp()});
             }
-            await cLogs.add({action:'AY_KAPANISI',user:currentUser,period:archiveKey,details:`${drivers.length} şoför, ${selExp.length} masraf, ${selAdv.length} avans arşivlendi.`,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+            await cLogs.add({action:'AY_KAPANISI',user:currentUser,period:archiveKey,note:archiveNote,details:`${drivers.length} şoför, ${selExp.length} masraf, ${selAdv.length} avans arşivlendi.`,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
             showToast(`${archiveKey} devir tamamlandı ✓`,'success');
+            loadArchiveSummary();
         }catch(err){
             console.error('Arşiv hatası:',err);
             showToast('Hata: '+err.message,'error');

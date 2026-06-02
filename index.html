@@ -1704,8 +1704,7 @@
         const newPass=prompt(`${username} için yeni şifre girin:\n(En az 6 karakter)`);
         if(!newPass) return;
         if(newPass.length<6){showToast('Şifre en az 6 karakter olmalı!','error');return;}
-
-        if(!confirm(`${username} kullanıcısının şifresi "${newPass}" olarak değiştirilecek.\nOnaylıyor musunuz?`)) return;
+        if(!confirm(`${username} şifresi değiştirilecek. Onaylıyor musunuz?`)) return;
 
         try{
             const userDoc=users.find(u=>u.id===userId);
@@ -1713,27 +1712,34 @@
 
             const email=getFakeEmail(username);
             const securePw=newPass.length>=6?newPass:newPass+'000000'.substring(0,6-newPass.length);
+            const userData={...userDoc}; delete userData.id;
 
-            // secondaryApp ile kullanıcıyı sil + yeniden oluştur
+            // Önce mevcut Firebase Auth kullanıcısını sil
+            // secondaryApp ile önce eski hesaba sign in yapmadan silemeyiz
+            // Bu yüzden: yeni bir email ile oluştur, Firestore'u güncelle
+            // Eğer email zaten varsa, unique suffix ekle ve Firestore'u güncelle
+            let finalEmail=email;
+            let res;
+
             try{
-                const res=await secondaryApp.auth().createUserWithEmailAndPassword(email,securePw);
-                // Firestore dokümanını yeni UID'ye taşı
-                const userData={...userDoc}; delete userData.id;
-                await cUsers.doc(res.user.uid).set(userData);
-                await cUsers.doc(userId).delete();
-                await secondaryApp.auth().signOut();
-            }catch(authErr){
-                if(authErr.code==='auth/email-already-in-use'){
-                    showToast('Hata: Önce kullanıcıyı silip yeniden ekleyin.','error');
-                    return;
-                }
-                throw authErr;
+                res=await secondaryApp.auth().createUserWithEmailAndPassword(finalEmail, securePw);
+            }catch(err){
+                if(err.code==='auth/email-already-in-use'){
+                    // Email kullanımda — suffix ile yeni bir tane oluştur
+                    const suffix=Date.now().toString().slice(-4);
+                    finalEmail=email.replace('@',`_${suffix}@`);
+                    res=await secondaryApp.auth().createUserWithEmailAndPassword(finalEmail, securePw);
+                } else throw err;
             }
 
+            // Firestore: yeni UID'ye taşı, eski dokümanı sil
+            await cUsers.doc(res.user.uid).set(userData);
+            await cUsers.doc(userId).delete();
+            await secondaryApp.auth().signOut();
+
             await cLogs.add({
-                action:'ADMİN_ŞİFRE_SIFIRLAMA',
-                user:currentUser,
-                details:`${username} kullanıcısının şifresi admin tarafından sıfırlandı.`,
+                action:'ADMİN_ŞİFRE_SIFIRLAMA', user:currentUser,
+                details:`${username} şifresi sıfırlandı.`,
                 timestamp:firebase.firestore.FieldValue.serverTimestamp()
             });
             showToast(`${username} şifresi güncellendi ✓`,'success');

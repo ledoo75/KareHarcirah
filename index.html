@@ -726,36 +726,18 @@
 
             </form>
 
-            <!-- Şifre Sıfırlama Formu (gizli) -->
-            <div id="forgotPasswordForm" style="display:none;">
-                <p style="text-align:center;font-size:0.82rem;color:#94A3B8;margin:0 0 1.25rem;line-height:1.5;">Kullanıcı adınızı ve yeni şifrenizi girin.<br><span style="color:#64748B;font-size:0.75rem;">Admin onayından sonra aktif olacak.</span></p>
-
-                <div style="position:relative;margin-bottom:0.75rem;">
-                    <div style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#475569;pointer-events:none;"><i class="fa-solid fa-user" style="font-size:14px;"></i></div>
-                    <input type="text" id="resetUsername" placeholder="Kullanıcı Adı"
-                        style="width:100%;background:rgba(15,23,42,0.8);border:1.5px solid rgba(74,164,246,0.2);border-radius:14px;padding:14px 14px 14px 42px;font-size:15px;color:#f1f5f9;outline:none;box-sizing:border-box;"
-                        onfocus="this.style.borderColor='#4AA4F6'" onblur="this.style.borderColor='rgba(74,164,246,0.2)'"/>
-                </div>
-                <div style="position:relative;margin-bottom:0.75rem;">
-                    <div style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#475569;pointer-events:none;"><i class="fa-solid fa-lock" style="font-size:14px;"></i></div>
-                    <input type="password" id="resetNewPass" placeholder="Yeni Şifre (en az 6 karakter)"
-                        style="width:100%;background:rgba(15,23,42,0.8);border:1.5px solid rgba(74,164,246,0.2);border-radius:14px;padding:14px 14px 14px 42px;font-size:15px;color:#f1f5f9;outline:none;box-sizing:border-box;"
-                        onfocus="this.style.borderColor='#4AA4F6'" onblur="this.style.borderColor='rgba(74,164,246,0.2)'"/>
-                </div>
-                <div style="position:relative;margin-bottom:1rem;">
-                    <div style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#475569;pointer-events:none;"><i class="fa-solid fa-lock" style="font-size:14px;"></i></div>
-                    <input type="password" id="resetNewPass2" placeholder="Yeni Şifre (Tekrar)"
-                        style="width:100%;background:rgba(15,23,42,0.8);border:1.5px solid rgba(74,164,246,0.2);border-radius:14px;padding:14px 14px 14px 42px;font-size:15px;color:#f1f5f9;outline:none;box-sizing:border-box;"
-                        onfocus="this.style.borderColor='#4AA4F6'" onblur="this.style.borderColor='rgba(74,164,246,0.2)'"/>
-                </div>
-
-                <button onclick="sendPasswordResetRequest()" style="width:100%;background:linear-gradient(135deg,#4AA4F6,#2563EB);color:white;border:none;padding:14px;border-radius:14px;font-size:0.95rem;font-weight:800;cursor:pointer;margin-bottom:0.75rem;">
-                    <i class="fa-solid fa-paper-plane" style="margin-right:8px;"></i>Şifre Sıfırlama Talebi Gönder
+            <!-- Şifre Sıfırlama (gizli) -->
+            <div id="forgotPasswordForm" style="display:none;text-align:center;padding:0.5rem 0;">
+                <div style="font-size:2rem;margin-bottom:0.75rem;">🔑</div>
+                <p style="color:#94A3B8;font-weight:700;font-size:0.95rem;margin-bottom:0.5rem;">Şifrenizi mi unuttunuz?</p>
+                <p style="color:#64748B;font-size:0.82rem;line-height:1.6;margin-bottom:1.25rem;">
+                    Yöneticinizle iletişime geçin.<br>
+                    <span style="color:#4AA4F6;font-weight:600;">Ayarlar → Kullanıcılar</span> bölümünden<br>
+                    şifreniz sıfırlanacaktır.
+                </p>
+                <button type="button" onclick="closeForgotPassword()" style="background:linear-gradient(135deg,#4AA4F6,#2563EB);color:white;border:none;padding:12px 28px;border-radius:12px;font-size:0.9rem;font-weight:700;cursor:pointer;">
+                    ← Giriş ekranına dön
                 </button>
-                <div style="text-align:center;">
-                    <button type="button" onclick="closeForgotPassword()" style="background:none;border:none;color:#64748B;font-size:0.8rem;cursor:pointer;text-decoration:underline;">← Giriş ekranına dön</button>
-                </div>
-                <div id="resetMsg" style="display:none;text-align:center;padding:1rem 0;"></div>
             </div>
         </div>
 
@@ -770,45 +752,10 @@
         function openForgotPassword(){
             document.getElementById('loginForm').style.display='none';
             document.getElementById('forgotPasswordForm').style.display='block';
-            const user=document.getElementById('loginUser')?.value?.trim();
-            if(user) document.getElementById('resetUsername').value=user;
         }
         function closeForgotPassword(){
             document.getElementById('forgotPasswordForm').style.display='none';
             document.getElementById('loginForm').style.display='block';
-            const msg=document.getElementById('resetMsg');
-            if(msg) msg.style.display='none';
-        }
-        async function sendPasswordResetRequest(){
-            const username=document.getElementById('resetUsername')?.value?.trim();
-            const pass=document.getElementById('resetNewPass')?.value;
-            const pass2=document.getElementById('resetNewPass2')?.value;
-            const msg=document.getElementById('resetMsg');
-
-            if(!username){alert('Kullanıcı adı zorunludur.');return;}
-            if(!pass||pass.length<6){alert('Şifre en az 6 karakter olmalıdır.');return;}
-            if(pass!==pass2){alert('Şifreler eşleşmiyor.');return;}
-
-            try{
-                // Firebase'e şifre sıfırlama talebi yaz
-                await firebase.firestore().collection('kare_password_resets').add({
-                    username, requestedAt:firebase.firestore.FieldValue.serverTimestamp(),
-                    status:'pending', newPass:pass
-                });
-                if(msg){
-                    msg.style.display='block';
-                    msg.innerHTML=`<div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:12px;padding:1rem;">
-                        <div style="font-size:1.5rem;margin-bottom:0.5rem;">✅</div>
-                        <p style="color:#34D399;font-weight:700;margin-bottom:0.25rem;">Talep Gönderildi!</p>
-                        <p style="color:#94A3B8;font-size:0.78rem;">Yönetici onayından sonra yeni şifrenizle giriş yapabilirsiniz.</p>
-                    </div>`;
-                }
-                document.getElementById('resetUsername').value='';
-                document.getElementById('resetNewPass').value='';
-                document.getElementById('resetNewPass2').value='';
-            }catch(e){
-                alert('Hata: '+e.message);
-            }
         }
         function togglePassVis() {
             const inp = document.getElementById('loginPass');

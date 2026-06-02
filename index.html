@@ -1269,6 +1269,7 @@
         <h3 class="font-bold text-slate-800 text-base">Yıllık Arşiv</h3>
       </div>
       <select id="archiveViewYear" onchange="loadYearlyArchiveData()" class="input-style text-sm font-bold w-36"></select>
+      <button onclick="deleteArchiveYear()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-rose-200"><i class="fa-solid fa-trash"></i> Sil</button>
       <button onclick="exportArchivePDF()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-file-pdf"></i> PDF</button>
     </div>
     <div id="yearlyArchiveContent">
@@ -2002,110 +2003,134 @@
         modal.style.display='flex';
     }
 
+    async function deleteArchiveYear(){
+        const year=document.getElementById('archiveViewYear')?.value;
+        if(!year){showToast('Önce yıl seçin','error');return;}
+        if(!confirm(`${year} yılı arşivi kalıcı olarak silinecek.\nBu işlem GERİ ALINAMAZ.\n\nDevam edilsin mi?`)) return;
+        if(!confirm(`Son onay: ${year} arşivi silinsin mi?`)) return;
+        try{
+            await db.collection('kare_archive').doc(year).delete();
+            await cLogs.add({action:'ARŞİV_SİLME',user:currentUser,period:year,
+                details:`${year} yılı arşivi silindi.`,
+                timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+            showToast(`${year} arşivi silindi ✓`,'success');
+            await openYearlyArchiveViewer();
+            document.getElementById('yearlyArchiveContent').innerHTML='<div class="text-xs text-slate-400 text-center py-6">Arşiv silindi.</div>';
+        }catch(e){ showToast('Hata: '+e.message,'error'); }
+    }
+
     async function loadYearlyArchiveData(){
         const year=document.getElementById('archiveViewYear')?.value;
         const content=document.getElementById('yearlyArchiveContent');
         if(!year||!content){ if(content) content.innerHTML='<div class="text-xs text-slate-400 text-center py-6">Yıl seçin...</div>'; return; }
-
         content.innerHTML='<div class="text-xs text-slate-400 text-center py-6">Yükleniyor...</div>';
         try{
             const doc=await db.collection('kare_archive').doc(year).get();
             if(!doc.exists){ content.innerHTML='<div class="text-xs text-rose-500 text-center py-6">Bu yıla ait arşiv bulunamadı.</div>'; return; }
             const d=doc.data();
-            const note=d.note?`<span class="text-slate-400 ml-2">— ${esc(d.note)}</span>`:'';
             const archivedDate=d.archivedAt?.toDate?.()?.toLocaleDateString('tr-TR')||'';
+            const cats={'HARCIRAH':'💵','MAZOT':'⛽','OTOYOL':'🛣️','OTOPARK':'🅿️','GUMRUK':'🛂','YEMEK':'🍔','BAKIM':'🔧','TELEFON':'📱','DIGER':'📝'};
 
-            let html=`<div class="text-xs text-slate-400 mb-4">${year} yılı arşivi · ${archivedDate} · ${esc(d.archivedBy||'')}${note}</div>`;
+            let html=`<p class="text-[10px] text-slate-400 mb-4">${year} · ${archivedDate} · ${esc(d.archivedBy||'')}${d.note?` — ${esc(d.note)}`:''}</p>`;
 
             // KPI Kartları
-            html+=`<div class="grid grid-cols-3 gap-3 mb-5">
+            html+=`<div class="grid grid-cols-4 gap-3 mb-5">
                 <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
-                    <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Masraf</p>
-                    <p class="text-xl font-black text-slate-700">${d.expenseCount||0}</p>
+                    <p class="text-[9px] text-slate-400 uppercase font-bold mb-1">Masraf</p>
+                    <p class="text-lg font-black text-slate-700">${d.expenseCount||0}</p>
                 </div>
                 <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
-                    <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Avans</p>
-                    <p class="text-xl font-black text-slate-700">${d.advanceCount||0}</p>
+                    <p class="text-[9px] text-slate-400 uppercase font-bold mb-1">Avans</p>
+                    <p class="text-lg font-black text-slate-700">${d.advanceCount||0}</p>
                 </div>
                 <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
-                    <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Sefer</p>
-                    <p class="text-xl font-black text-slate-700">${d.tripCount||0} · ${((d.tripSummary?.totalKm||0)/1000).toFixed(0)}K km</p>
+                    <p class="text-[9px] text-slate-400 uppercase font-bold mb-1">Sefer</p>
+                    <p class="text-lg font-black text-slate-700">${d.tripCount||0}</p>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
+                    <p class="text-[9px] text-slate-400 uppercase font-bold mb-1">Toplam KM</p>
+                    <p class="text-lg font-black text-slate-700">${((d.tripSummary?.totalKm||0)/1000).toFixed(0)}K</p>
                 </div>
             </div>`;
 
-            // Şoför Cari Ekstreleri
-            if(d.driverExtracts && Object.keys(d.driverExtracts).length){
-                html+=`<h4 class="font-bold text-slate-700 text-sm mb-2 flex items-center gap-2"><i class="fa-solid fa-users text-indigo-500"></i> Personel Cari Ekstresi</h4>`;
-                html+=`<div class="overflow-x-auto border border-slate-200 rounded-xl mb-5"><table class="w-full text-xs"><thead class="bg-slate-50 text-slate-500 font-bold uppercase"><tr>
-                    <th class="py-2 px-3 text-left">Şoför</th>
-                    <th class="py-2 px-3 text-right">Toplam Avans</th>
-                    <th class="py-2 px-3 text-right">Toplam Masraf</th>
-                    <th class="py-2 px-3 text-right">Net Bakiye</th>
-                    <th class="py-2 px-3 text-center">Sefer</th>
-                </tr></thead><tbody>`;
+            // Personel Cari Kartları
+            if(d.driverExtracts&&Object.keys(d.driverExtracts).length){
+                html+=`<h4 class="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2"><i class="fa-solid fa-users text-indigo-500"></i> Personel Cari Ekstresi</h4>`;
+                html+=`<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">`;
                 Object.entries(d.driverExtracts).forEach(([drv,ext])=>{
                     const totAdv=ext.advances.reduce((s,a)=>a.currency==='EUR'?s+a.amount:s,0);
                     const totExp=ext.expenses.reduce((s,e)=>e.currency==='EUR'?s+e.amount:s,0);
-                    const bal=ext.balance||{e:0};
+                    const bal=ext.balance?.e||0;
                     const trips=d.tripSummary?.byDriver?.[drv];
-                    html+=`<tr class="border-t border-slate-100 hover:bg-slate-50">
-                        <td class="py-2 px-3 font-bold">${esc(drv)}</td>
-                        <td class="py-2 px-3 text-right text-emerald-600 font-bold">${totAdv.toFixed(2)} €</td>
-                        <td class="py-2 px-3 text-right text-rose-600 font-bold">${totExp.toFixed(2)} €</td>
-                        <td class="py-2 px-3 text-right font-black ${(bal.e||0)>=0?'text-emerald-700':'text-rose-700'}">${(bal.e||0)>0?'+':''}${(bal.e||0).toFixed(2)} €</td>
-                        <td class="py-2 px-3 text-center text-slate-500">${trips?trips.count+' sefer · '+(trips.km/1000).toFixed(0)+'K km':'—'}</td>
-                    </tr>`;
+                    const balColor=bal>=0?'text-emerald-600 bg-emerald-50 border-emerald-200':'text-rose-600 bg-rose-50 border-rose-200';
+                    html+=`<div class="border border-slate-200 rounded-xl overflow-hidden">
+                        <div class="bg-slate-800 px-3 py-2 flex items-center justify-between">
+                            <span class="text-white font-bold text-sm">${esc(drv)}</span>
+                            <span class="text-slate-400 text-[10px]">${trips?trips.count+' sefer · '+(trips.km/1000).toFixed(0)+'K km':''}</span>
+                        </div>
+                        <div class="grid grid-cols-3 divide-x divide-slate-100">
+                            <div class="p-3 text-center">
+                                <p class="text-[9px] text-slate-400 uppercase font-bold mb-1">Avans</p>
+                                <p class="text-sm font-black text-emerald-600">+${totAdv.toFixed(2)} €</p>
+                            </div>
+                            <div class="p-3 text-center">
+                                <p class="text-[9px] text-slate-400 uppercase font-bold mb-1">Masraf</p>
+                                <p class="text-sm font-black text-rose-600">-${totExp.toFixed(2)} €</p>
+                            </div>
+                            <div class="p-3 text-center border ${balColor} rounded-br-xl rounded-tr-xl">
+                                <p class="text-[9px] uppercase font-bold mb-1">Net</p>
+                                <p class="text-sm font-black">${bal>0?'+':''}${bal.toFixed(2)} €</p>
+                            </div>
+                        </div>
+                    </div>`;
                 });
-                html+=`</tbody></table></div>`;
+                html+=`</div>`;
             }
 
-            // Araç Maliyeti Özeti
-            if(d.vehicleCosts && Object.keys(d.vehicleCosts).length){
-                html+=`<h4 class="font-bold text-slate-700 text-sm mb-2 flex items-center gap-2"><i class="fa-solid fa-truck text-amber-500"></i> Araç Maliyeti (${year})</h4>`;
-                html+=`<div class="overflow-x-auto border border-slate-200 rounded-xl mb-5"><table class="w-full text-xs"><thead class="bg-slate-50 text-slate-500 font-bold uppercase"><tr>
-                    <th class="py-2 px-3 text-left">Plaka</th>
-                    <th class="py-2 px-3 text-right">HGS</th>
-                    <th class="py-2 px-3 text-right">Yakıt</th>
-                    <th class="py-2 px-3 text-right">Maaş</th>
-                    <th class="py-2 px-3 text-right">Sefer Masrafı</th>
-                    <th class="py-2 px-3 text-right">KM</th>
-                    <th class="py-2 px-3 text-right">Toplam</th>
-                </tr></thead><tbody>`;
-                let totHgs=0,totYak=0,totSal=0,totSef=0,totKm=0,totAll=0;
+            // Araç Maliyeti Kartları
+            if(d.vehicleCosts&&Object.keys(d.vehicleCosts).length){
+                let totH=0,totY=0,totS=0,totSf=0,totT=0;
+                Object.values(d.vehicleCosts).forEach(vc=>{ totH+=(vc.hgs||0);totY+=(vc.yak||0);totS+=(vc.sal||0);totSf+=(vc.sef||0);totT+=(vc.total||0); });
+
+                html+=`<h4 class="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2"><i class="fa-solid fa-truck text-amber-500"></i> Araç Maliyeti (${year})</h4>`;
+
+                // Toplam KPI
+                html+=`<div class="grid grid-cols-5 gap-2 mb-3">
+                    <div class="bg-red-50 border border-red-100 rounded-xl p-2 text-center"><p class="text-[9px] text-red-400 font-bold uppercase mb-1">HGS</p><p class="text-sm font-black text-red-700">${totH.toFixed(2)} €</p></div>
+                    <div class="bg-amber-50 border border-amber-100 rounded-xl p-2 text-center"><p class="text-[9px] text-amber-500 font-bold uppercase mb-1">Yakıt</p><p class="text-sm font-black text-amber-700">${totY.toFixed(2)} €</p></div>
+                    <div class="bg-violet-50 border border-violet-100 rounded-xl p-2 text-center"><p class="text-[9px] text-violet-400 font-bold uppercase mb-1">Maaş</p><p class="text-sm font-black text-violet-700">${totS.toFixed(2)} €</p></div>
+                    <div class="bg-blue-50 border border-blue-100 rounded-xl p-2 text-center"><p class="text-[9px] text-blue-400 font-bold uppercase mb-1">Sefer Masrafı</p><p class="text-sm font-black text-blue-700">${totSf.toFixed(2)} €</p></div>
+                    <div class="bg-orange-50 border border-orange-100 rounded-xl p-2 text-center"><p class="text-[9px] text-orange-400 font-bold uppercase mb-1">Toplam</p><p class="text-sm font-black text-orange-700">${totT.toFixed(2)} €</p></div>
+                </div>`;
+
+                // Araç kartları
+                html+=`<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">`;
                 Object.entries(d.vehicleCosts).forEach(([plate,vc])=>{
-                    totHgs+=(vc.hgs||0); totYak+=(vc.yak||0); totSal+=(vc.sal||0);
-                    totSef+=(vc.sef||0); totKm+=(vc.km||0); totAll+=(vc.total||0);
-                    html+=`<tr class="border-t border-slate-100 hover:bg-slate-50">
-                        <td class="py-2 px-3 font-bold uppercase"><span class="bg-slate-800 text-white px-2 py-0.5 rounded text-[10px]">${esc(plate)}</span></td>
-                        <td class="py-2 px-3 text-right text-red-600">${(vc.hgs||0).toFixed(2)} €</td>
-                        <td class="py-2 px-3 text-right text-amber-600">${(vc.yak||0).toFixed(2)} €</td>
-                        <td class="py-2 px-3 text-right text-violet-600">${(vc.sal||0).toFixed(2)} €</td>
-                        <td class="py-2 px-3 text-right text-blue-600">${(vc.sef||0).toFixed(2)} €</td>
-                        <td class="py-2 px-3 text-right text-slate-400">${(vc.km||0).toLocaleString()}</td>
-                        <td class="py-2 px-3 text-right font-black text-slate-800">${(vc.total||0).toFixed(2)} €</td>
-                    </tr>`;
+                    html+=`<div class="border border-slate-200 rounded-xl overflow-hidden">
+                        <div class="bg-slate-800 px-3 py-2 flex items-center justify-between">
+                            <span class="text-white font-bold text-sm uppercase">${esc(plate)}</span>
+                            <span class="text-orange-300 font-black text-sm">${(vc.total||0).toFixed(2)} €</span>
+                        </div>
+                        <div class="grid grid-cols-4 divide-x divide-slate-100 text-center">
+                            <div class="p-2"><p class="text-[9px] text-red-400 font-bold uppercase mb-1">HGS</p><p class="text-xs font-bold text-red-600">${(vc.hgs||0).toFixed(2)} €</p></div>
+                            <div class="p-2"><p class="text-[9px] text-amber-500 font-bold uppercase mb-1">Yakıt</p><p class="text-xs font-bold text-amber-600">${(vc.yak||0).toFixed(2)} €</p></div>
+                            <div class="p-2"><p class="text-[9px] text-violet-400 font-bold uppercase mb-1">Maaş</p><p class="text-xs font-bold text-violet-600">${(vc.sal||0).toFixed(2)} €</p></div>
+                            <div class="p-2"><p class="text-[9px] text-blue-400 font-bold uppercase mb-1">Sefer</p><p class="text-xs font-bold text-blue-600">${(vc.sef||0).toFixed(2)} €</p></div>
+                        </div>
+                        ${vc.km?`<div class="px-3 py-1.5 bg-slate-50 text-[10px] text-slate-400 border-t border-slate-100">${vc.km.toLocaleString()} km</div>`:''}
+                    </div>`;
                 });
-                html+=`<tr class="bg-slate-800 text-white font-black text-xs">
-                    <td class="py-2 px-3">TOPLAM</td>
-                    <td class="py-2 px-3 text-right">${totHgs.toFixed(2)} €</td>
-                    <td class="py-2 px-3 text-right">${totYak.toFixed(2)} €</td>
-                    <td class="py-2 px-3 text-right">${totSal.toFixed(2)} €</td>
-                    <td class="py-2 px-3 text-right">${totSef.toFixed(2)} €</td>
-                    <td class="py-2 px-3 text-right">${totKm.toLocaleString()}</td>
-                    <td class="py-2 px-3 text-right text-orange-300">${totAll.toFixed(2)} €</td>
-                </tr>`;
-                html+=`</tbody></table></div>`;
+                html+=`</div>`;
             }
 
-            // Masraf Kategori Dağılımı
-            if(d.categoryBreakdown && Object.keys(d.categoryBreakdown).length){
-                html+=`<h4 class="font-bold text-slate-700 text-sm mb-2 flex items-center gap-2"><i class="fa-solid fa-chart-pie text-rose-500"></i> Masraf Kategorileri</h4>`;
-                html+=`<div class="grid grid-cols-2 gap-2 mb-4">`;
-                const cats={'HARCIRAH':'💵','MAZOT':'⛽','OTOYOL':'🛣️','OTOPARK':'🅿️','GUMRUK':'🛂','YEMEK':'🍔','BAKIM':'🔧','TELEFON':'📱','DIGER':'📝'};
+            // Masraf Kategorileri
+            if(d.categoryBreakdown&&Object.keys(d.categoryBreakdown).length){
+                html+=`<h4 class="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2"><i class="fa-solid fa-chart-pie text-rose-500"></i> Masraf Kategorileri</h4>`;
+                html+=`<div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">`;
                 Object.entries(d.categoryBreakdown).sort((a,b)=>b[1].eur-a[1].eur).forEach(([cat,info])=>{
                     html+=`<div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
                         <span class="text-xs font-bold text-slate-700">${cats[cat]||'📝'} ${cat}</span>
-                        <span class="text-xs font-bold text-slate-800">${(info.eur||0).toFixed(2)} € <span class="text-slate-400">(${info.count})</span></span>
+                        <span class="text-xs font-bold text-slate-800">${(info.eur||0).toFixed(2)} €</span>
                     </div>`;
                 });
                 html+=`</div>`;

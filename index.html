@@ -2003,7 +2003,94 @@
         document.getElementById('pdfDateRangeModal').style.display = 'none';
         if(_pdfTargetDriver) downloadPDF(_pdfTargetDriver, sD, eD);
     }
-    function openDriverStatementModal(targetDriver=null){const drv=targetDriver||currentUser; if(!drv)return; const titleEl=document.getElementById('statementModalTitle'); if(titleEl)titleEl.innerHTML=`<i class="fa-solid fa-list-check text-primary mr-2"></i>${esc(drv)} - Kasa Hesap Dökümü`; const tbody=document.getElementById('driverStatementList'); tbody.innerHTML=''; let txs=[]; advances.filter(a=>a.driver===drv).forEach(a=>{txs.push({date:a.date,type:'AVANS',desc:'Merkezden Nakit Avans',amount:a.amount,cur:a.currency,sign:1});}); expenses.filter(e=>e.driver===drv&&e.status==='APPROVED').forEach(e=>{txs.push({date:e.date,type:'MASRAF',desc:e.tripName||e.category,amount:e.amount,cur:e.currency,sign:-1});}); txs.sort((a,b)=>new Date(b.date)-new Date(a.date)); if(txs.length===0){tbody.innerHTML='<tr><td colspan="3" class="text-center p-4 text-slate-500">Hiç hesap hareketiniz bulunmuyor.</td></tr>';}else{txs.forEach(t=>{let cC=t.sign===1?'text-emerald-600 bg-emerald-50':'text-rose-600 bg-rose-50'; let ic=t.sign===1?'<i class="fa-solid fa-arrow-down mr-1"></i>':'<i class="fa-solid fa-arrow-up mr-1"></i>'; let tB=t.sign===1?'<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold">AVANS</span>':'<span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-[10px] font-bold">MASRAF</span>'; tbody.innerHTML+=`<tr class="border-b border-slate-100 hover:bg-slate-50"><td class="p-3 text-xs font-bold text-slate-500">${t.date}</td><td class="p-3">${tB}<br><span class="text-sm font-bold text-slate-700">${esc(t.desc)}</span></td><td class="p-3 text-right font-bold ${cC} rounded-r-lg">${ic} ${formatMoney(t.amount,t.cur)}</td></tr>`;});} document.getElementById('driverStatementModal').style.display='flex';}
+    function openDriverStatementModal(targetDriver=null){
+        const drv=targetDriver||currentUser; if(!drv)return;
+        const titleEl=document.getElementById('statementModalTitle');
+        if(titleEl)titleEl.innerHTML=`<i class="fa-solid fa-list-check text-primary mr-2"></i>${esc(drv)} — Cari Hesap`;
+        const tbody=document.getElementById('driverStatementList');
+        tbody.innerHTML='';
+
+        // Tüm hareketleri topla (archived dahil — geçmiş görünsün)
+        let txs=[];
+        advances.filter(a=>a.driver===drv).forEach(a=>{
+            txs.push({date:a.date||'',type:'AVANS',desc:a.note||'Avans',amount:a.amount,cur:a.currency,sign:1,archived:!!a.archived,period:a.archivedPeriod||''});
+        });
+        expenses.filter(e=>e.driver===drv&&e.status==='APPROVED').forEach(e=>{
+            txs.push({date:e.date||'',type:'MASRAF',desc:e.tripName||e.category,amount:e.amount,cur:e.currency,sign:-1,archived:!!e.archived,period:e.archivedPeriod||''});
+        });
+        txs.sort((a,b)=>a.date.localeCompare(b.date));
+
+        if(!txs.length){
+            tbody.innerHTML='<tr><td colspan="5" class="text-center p-4 text-slate-400">Hareket yok.</td></tr>';
+            document.getElementById('driverStatementModal').style.display='flex';
+            return;
+        }
+
+        // Başlık satırı
+        tbody.innerHTML=`<tr class="bg-slate-800 text-white text-xs font-bold uppercase">
+            <td class="p-2 px-3">Tarih</td>
+            <td class="p-2 px-3">Dönem</td>
+            <td class="p-2 px-3">Açıklama</td>
+            <td class="p-2 px-3 text-right">Tutar</td>
+            <td class="p-2 px-3 text-right">Bakiye</td>
+        </tr>`;
+
+        // Kümülatif bakiye (sadece EUR, ana para birimi)
+        let balE=0, balU=0, balT=0;
+        let lastPeriod='';
+
+        txs.forEach(t=>{
+            // Dönem değişince ayraç satırı
+            const period=t.period||(t.date?t.date.slice(0,7):'');
+            if(period && period!==lastPeriod && lastPeriod!==''){
+                tbody.innerHTML+=`<tr class="bg-slate-100">
+                    <td colspan="5" class="py-1.5 px-3 text-[10px] font-black text-slate-500 uppercase tracking-wide">
+                        ↩ ${lastPeriod} dönemi kapandı — Devredilen bakiye: 
+                        <span class="${balE>=0?'text-emerald-700':'text-rose-700'}">${balE>0?'+':''}${balE.toFixed(2)} €</span>
+                    </td>
+                </tr>`;
+            }
+            lastPeriod=period;
+
+            // Bakiyeye ekle/çıkar
+            if(t.cur==='EUR') balE+=t.amount*t.sign;
+            else if(t.cur==='USD') balU+=t.amount*t.sign;
+            else balT+=t.amount*t.sign;
+
+            const amtColor=t.sign===1?'text-emerald-600':'text-rose-600';
+            const amtIcon=t.sign===1?'↓':'↑';
+            const typeBadge=t.sign===1
+                ?'<span class="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-[9px] font-bold">AVANS</span>'
+                :'<span class="bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded text-[9px] font-bold">MASRAF</span>';
+            const archivedBadge=t.archived?'<span class="bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded text-[9px] ml-1">arşiv</span>':'';
+            const balColor=balE>=0?'text-emerald-700 font-black':'text-rose-700 font-black';
+
+            tbody.innerHTML+=`<tr class="border-b border-slate-100 hover:bg-slate-50 ${t.archived?'opacity-60':''}">
+                <td class="p-2 px-3 text-xs text-slate-500 whitespace-nowrap">${t.date}</td>
+                <td class="p-2 px-3 text-[10px] text-slate-400">${period||'—'}</td>
+                <td class="p-2 px-3">
+                    ${typeBadge}${archivedBadge}
+                    <span class="text-xs font-bold text-slate-700 ml-1">${esc(t.desc)}</span>
+                </td>
+                <td class="p-2 px-3 text-right text-xs font-bold ${amtColor}">${amtIcon} ${formatMoney(t.amount,t.cur)}</td>
+                <td class="p-2 px-3 text-right text-xs ${balColor}">${balE.toFixed(2)} €${balU!==0?`<div class="text-[10px]">${balU.toFixed(2)} $</div>`:''}${balT!==0?`<div class="text-[10px]">${balT.toLocaleString('tr-TR')} ₺</div>`:''}</td>
+            </tr>`;
+        });
+
+        // Son satır: güncel bakiye
+        const finalColor=balE>=0?'bg-emerald-600':'bg-rose-600';
+        tbody.innerHTML+=`<tr class="${finalColor} text-white font-black">
+            <td class="p-3 px-3 text-xs" colspan="4">Net Bakiye (Güncel)</td>
+            <td class="p-3 px-3 text-right text-sm">
+                ${balE!==0?`${balE>0?'+':''}${balE.toFixed(2)} €`:''}
+                ${balU!==0?`<div class="text-xs">${balU>0?'+':''}${balU.toFixed(2)} $</div>`:''}
+                ${balT!==0?`<div class="text-xs">${balT>0?'+':''}${balT.toLocaleString('tr-TR')} ₺</div>`:''}
+                ${balE===0&&balU===0&&balT===0?'Sıfır Bakiye':''}
+            </td>
+        </tr>`;
+
+        document.getElementById('driverStatementModal').style.display='flex';
+    }
     function closeDriverStatementModal(){document.getElementById('driverStatementModal').style.display='none';}
     
     async function downloadPDF(drv, filterStart=null, filterEnd=null){

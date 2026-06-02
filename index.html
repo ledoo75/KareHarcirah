@@ -1214,7 +1214,7 @@
       <div>
         <b>Bu işlem:</b>
         <ul class="mt-1 space-y-0.5 list-disc ml-4">
-          <li><span id="archiveExpenseCount">0</span> masraf ve <span id="archiveAdvanceCount">0</span> avans arşive alınır</li>
+          <li>Masraf ve avanslar arşive alınır</li>
           <li>Tüm fiş geçmişi <b>kare_archive</b> koleksiyonuna yedeklenir</li>
           <li>Aşağıdaki net bakiyeler yeni aya devir kaydı olarak açılır</li>
           <li>Audit log'a yazılır</li>
@@ -1222,7 +1222,13 @@
       </div>
     </div>
 
-    <!-- Bakiye tablosu -->
+    <!-- Firebase kullanım özeti -->
+    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4 text-xs text-slate-600 grid grid-cols-2 gap-2">
+        <div class="flex items-center gap-2"><i class="fa-solid fa-database text-slate-400"></i> <span>Arşivlenecek: <b id="archiveExpenseCount">0</b> masraf</span></div>
+        <div class="flex items-center gap-2"><i class="fa-solid fa-coins text-slate-400"></i> <span>Arşivlenecek: <b id="archiveAdvanceCount">0</b> avans</span></div>
+        <div class="flex items-center gap-2"><i class="fa-solid fa-box-archive text-indigo-400"></i> <span>Koleksiyon: <b>kare_archive</b></span></div>
+        <div class="flex items-center gap-2"><i class="fa-solid fa-shield text-emerald-400"></i> <span>Geri yüklenebilir ✓</span></div>
+    </div>
     <div class="overflow-x-auto border border-slate-200 rounded-xl mb-5">
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-500 text-xs font-bold uppercase">
@@ -1743,7 +1749,23 @@
     
     const AUDIT_SEVERITY={LOW:'low',MEDIUM:'medium',HIGH:'high',CRITICAL:'critical'}; const AUDIT_CATEGORY_META={auth:{icon:'🔐',label:'Giriş',color:'bg-blue-100 text-blue-700'},expense:{icon:'💳',label:'Masraf',color:'bg-amber-100 text-amber-700'},advance:{icon:'💰',label:'Avans',color:'bg-emerald-100 text-emerald-700'},trip:{icon:'🚛',label:'Sefer',color:'bg-indigo-100 text-indigo-700'},user:{icon:'👤',label:'Kullanıcı',color:'bg-purple-100 text-purple-700'},system:{icon:'⚙️',label:'Sistem',color:'bg-slate-100 text-slate-700'},critical:{icon:'🚨',label:'Kritik',color:'bg-rose-100 text-rose-700'}}; const SEVERITY_META={low:{label:'Düşük',color:'bg-slate-100 text-slate-500'},medium:{label:'Orta',color:'bg-amber-100 text-amber-700'},high:{label:'Yüksek',color:'bg-orange-100 text-orange-700'},critical:{label:'KRİTİK',color:'bg-rose-100 text-rose-700 font-black'}}; let auditLogs=[]; let auditPage=50;
     function addLog(action,driver,amount,currency,status,opts={}){const now=new Date(); cLogs.add({date:now.toLocaleString('tr-TR'),action,driver,amount:amount||0,currency:currency||'',status,timestamp:firebase.firestore.FieldValue.serverTimestamp(),actor:loggedInUser?loggedInUser.username:currentUser,actorRole:currentRole||'',category:opts.category||status||'system',severity:opts.severity||AUDIT_SEVERITY.MEDIUM,detail:opts.detail||action,affected:opts.affected||driver||'',isoDate:now.toISOString().split('T')[0],isoTime:now.toTimeString().slice(0,8)});}
-    function setupAuditLogListener(){if(currentRole!=='ADMIN'&&currentRole!=='PATRON')return; listeners.push(cLogs.orderBy('timestamp','desc').limit(500).onSnapshot(snap=>{auditLogs=snap.docs.map(d=>({id:d.id,...d.data()})); if(document.getElementById('panel-AUDITLOG').style.display!=='none')renderAuditLog(); updateAuditStats();}));}
+    async function autoCleanOldLogs(){
+        try{
+            const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-90);
+            const old=await cLogs.where('timestamp','<',cutoff).limit(100).get();
+            if(old.size>0){
+                const batch=db.batch();
+                old.docs.forEach(d=>batch.delete(d.ref));
+                await batch.commit();
+                console.log(`Auto-cleaned ${old.size} old logs`);
+            }
+        }catch(e){ console.warn('Log cleanup:',e); }
+    }
+
+    function setupAuditLogListener(){if(currentRole!=='ADMIN'&&currentRole!=='PATRON')return;
+        // 90 günden eski logları otomatik temizle
+        autoCleanOldLogs();
+        listeners.push(cLogs.orderBy('timestamp','desc').limit(200).onSnapshot(snap=>{auditLogs=snap.docs.map(d=>({id:d.id,...d.data()})); if(document.getElementById('panel-AUDITLOG').style.display!=='none')renderAuditLog(); updateAuditStats();}));}
     function updateAuditStats(){const t=new Date().toISOString().split('T')[0]; const m=new Date().toISOString().slice(0,7); document.getElementById('auditStatTotal').innerText=auditLogs.length; document.getElementById('auditStatToday').innerText=auditLogs.filter(l=>l.isoDate===t).length; document.getElementById('auditStatMonth').innerText=auditLogs.filter(l=>l.isoDate&&l.isoDate.startsWith(m)).length; document.getElementById('auditStatCritical').innerText=auditLogs.filter(l=>l.severity==='critical').length;}
     function renderAuditLog(){const fU=document.getElementById('auditFilterUser')?.value||''; const fC=document.getElementById('auditFilterCategory')?.value||''; const fS=document.getElementById('auditFilterStart')?.value||''; const fE=document.getElementById('auditFilterEnd')?.value||''; const fQ=(document.getElementById('auditFilterSearch')?.value||'').toLowerCase(); const uSel=document.getElementById('auditFilterUser'); if(uSel){const cur=uSel.value; const acts=[...new Set(auditLogs.map(l=>l.actor).filter(Boolean))].sort(); uSel.innerHTML='<option value="">Tümü</option>'+acts.map(a=>`<option value="${esc(a)}" ${a===cur?'selected':''}>${esc(a)}</option>`).join('');} let filtered=auditLogs.filter(l=>{if(fU&&l.actor!==fU)return false; if(fC&&l.category!==fC)return false; if(fS&&l.isoDate&&l.isoDate<fS)return false; if(fE&&l.isoDate&&l.isoDate>fE)return false; if(fQ){const h=[l.actor,l.action,l.detail,l.affected,l.driver,l.status].join(' ').toLowerCase(); if(!h.includes(fQ))return false;} return true;}); const shown=filtered.slice(0,auditPage); const tbody=document.getElementById('auditLogTable'); tbody.innerHTML=''; if(shown.length===0){tbody.innerHTML=`<tr><td colspan="7" class="p-8 text-center text-slate-400">Kayıt yok.</td></tr>`;}else{shown.forEach(l=>{const cM=AUDIT_CATEGORY_META[l.category]||AUDIT_CATEGORY_META.system; const sM=SEVERITY_META[l.severity]||SEVERITY_META.medium; const amt=l.amount?`<span class="font-bold">${parseFloat(l.amount).toLocaleString('tr-TR')}</span> ${l.currency||''}`:'-'; const bg=l.severity==='critical'?'bg-rose-50':''; const ts=l.isoDate?`${l.isoDate} ${l.isoTime||''}`:l.date; tbody.innerHTML+=`<tr class="${bg} border-b border-slate-100"><td class="p-3 text-xs">${ts}</td><td class="p-3 font-bold">${esc(l.actor||'-')}</td><td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${cM.color}">${cM.label}</span></td><td class="p-3 text-sm">${esc(l.detail||l.action)}</td><td class="p-3 text-xs">${esc(l.affected||'-')}</td><td class="p-3 text-right">${amt}</td><td class="p-3 text-center"><span class="px-2 py-0.5 rounded text-[10px] ${sM.color}">${sM.label}</span></td></tr>`;});} document.getElementById('auditLogCount').innerText=`${shown.length} / ${filtered.length}`; document.getElementById('auditLoadMore').classList.toggle('hidden',shown.length>=filtered.length);}
     function loadMoreAuditLogs(){auditPage+=50; renderAuditLog();}
@@ -1986,13 +2008,15 @@
 
         try{
             // Adım 2: Arşive yedekle
+            // Arşiv: tam veri yerine özet + sadece önemli alanlar
             const archiveDoc={
                 archivedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 archivedBy: currentUser,
                 period: archiveKey,
                 balances: bals,
-                expenses: expenses.map(e=>({...e})),
-                advances: advances.map(a=>({...a})),
+                // Sadece gerekli alanları sakla (boyutu küçült)
+                expenses: expenses.map(e=>({id:e.id,driver:e.driver,category:e.category,amount:e.amount,currency:e.currency,date:e.date,status:e.status,tripName:e.tripName||''})),
+                advances: advances.map(a=>({id:a.id,driver:a.driver,amount:a.amount,currency:a.currency,date:a.date,note:a.note||''})),
                 tripCount: driverTrips.filter(t=>t.status==='COMPLETED').length,
                 expenseCount: expenses.length,
                 advanceCount: advances.length

@@ -1076,8 +1076,17 @@
             </div>
             <div class="glass-card p-5 lg:col-span-2 bg-gradient-to-br from-white to-rose-50 border-rose-100">
                 <h3 class="font-bold text-rose-800 text-lg mb-2"><i class="fa-solid fa-box-archive mr-2"></i>Ay Sonu Devir ve Arşivleme</h3>
-                <p class="text-xs text-rose-600 mb-4">Bu işlem, tüm personelin mevcut onaylı masraflarını ve avanslarını temizler, aradaki "Net Kasa Bakiyesini" yeni aya <br><b>DEVİR AVANSI</b> veya <b>DEVİR ALACAĞI</b> olarak aktarır.</p>
-                <button onclick="archiveSystem()" class="w-full sm:w-auto px-6 bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-broom"></i> Ayı Kapat ve Bakiyeleri Devret</button>
+                <p class="text-xs text-rose-600 mb-3">Tüm personelin net kasa bakiyesi hesaplanır, fiş geçmişi <b>kare_archive</b> koleksiyonuna yedeklenir, ardından yeni aya devredilir.</p>
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-xs text-amber-800 flex gap-2">
+                    <i class="fa-solid fa-triangle-exclamation mt-0.5 text-amber-500 shrink-0"></i>
+                    <span>İşlem öncesi <b>arşiv otomatik alınır</b>. Arşivi aşağıdan görüntüleyebilirsiniz. Yine de PDF/Excel rapor almanız önerilir.</span>
+                </div>
+                <div class="flex gap-3 flex-wrap">
+                    <button onclick="archiveSystem()" class="flex-1 sm:flex-none px-6 bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-broom"></i> Ayı Kapat ve Bakiyeleri Devret</button>
+                    <button onclick="loadArchiveList()" class="flex-1 sm:flex-none px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-clock-rotate-left"></i> Arşivleri Görüntüle</button>
+                </div>
+                <!-- Arşiv listesi -->
+                <div id="archiveList" class="hidden mt-4 space-y-2"></div>
             </div>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
@@ -1770,7 +1779,136 @@
     function deleteAdvance(id){if(confirm("Silinsin mi?")){cAdvances.doc(id).delete(); showToast('Silindi','success');}}
     
     function getDriverBalance(drv){let e=0,u=0,t=0; advances.filter(a=>a.driver===drv).forEach(a=>{if(a.currency==='EUR')e+=a.amount;else if(a.currency==='USD')u+=a.amount;else t+=a.amount;}); expenses.filter(x=>x.driver===drv&&x.status==='APPROVED').forEach(x=>{if(x.currency==='EUR')e-=x.amount;else if(x.currency==='USD')u-=x.amount;else t-=x.amount;}); return{e:e,u:u,t:t};}
-    async function archiveSystem(){if(!confirm("Tüm şoförlerin net kasası hesaplanıp geçmiş fişler silinecek. Emin misiniz?"))return; showToast("Arşiv başlatılıyor...","success"); let bals={}; getDrivers().forEach(d=>{bals[d]=getDriverBalance(d);}); for(const e of expenses)await cExpenses.doc(e.id).delete(); for(const a of advances)await cAdvances.doc(a.id).delete(); let d=new Date().toISOString().split('T')[0]; for(const drv of getDrivers()){let b=bals[drv]; if(b.e>0)await cAdvances.add({date:d,driver:drv,amount:b.e,currency:'EUR',timestamp:firebase.firestore.FieldValue.serverTimestamp()});else if(b.e<0)await cExpenses.add({date:d,driver:drv,category:'DIGER',tripName:'Devir Alacağı',amount:Math.abs(b.e),currency:'EUR',status:'APPROVED',timestamp:firebase.firestore.FieldValue.serverTimestamp()}); if(b.u>0)await cAdvances.add({date:d,driver:drv,amount:b.u,currency:'USD',timestamp:firebase.firestore.FieldValue.serverTimestamp()});else if(b.u<0)await cExpenses.add({date:d,driver:drv,category:'DIGER',tripName:'Devir',amount:Math.abs(b.u),currency:'USD',status:'APPROVED',timestamp:firebase.firestore.FieldValue.serverTimestamp()}); if(b.t>0)await cAdvances.add({date:d,driver:drv,amount:b.t,currency:'TRY',timestamp:firebase.firestore.FieldValue.serverTimestamp()});else if(b.t<0)await cExpenses.add({date:d,driver:drv,category:'DIGER',tripName:'Devir',amount:Math.abs(b.t),currency:'TRY',status:'APPROVED',timestamp:firebase.firestore.FieldValue.serverTimestamp()});} showToast("Ay devri tamamlandı!","success");}
+    async function loadArchiveList(){
+        const div=document.getElementById('archiveList');
+        if(!div) return;
+        if(!div.classList.contains('hidden')){ div.classList.add('hidden'); return; }
+        div.classList.remove('hidden');
+        div.innerHTML='<div class="text-xs text-slate-400 text-center py-3">Yükleniyor...</div>';
+        try{
+            const snap=await db.collection('kare_archive').orderBy('archivedAt','desc').limit(12).get();
+            if(snap.empty){ div.innerHTML='<div class="text-xs text-slate-400 text-center py-3">Henüz arşiv yok.</div>'; return; }
+            div.innerHTML='';
+            snap.docs.forEach(doc=>{
+                const d=doc.data();
+                const bals=d.balances||{};
+                const balText=Object.entries(bals).map(([drv,b])=>`${drv}: €${b.e?.toFixed(2)||0}`).join(' | ');
+                const row=document.createElement('div');
+                row.className='flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs gap-3';
+                row.innerHTML=`
+                    <div>
+                        <span class="font-black text-slate-800 text-sm">${doc.id}</span>
+                        <span class="ml-2 text-slate-400">${d.expenseCount||0} masraf · ${d.advanceCount||0} avans · ${d.archivedBy||''}</span>
+                        <div class="text-[10px] text-slate-400 mt-0.5 truncate max-w-xs">${balText}</div>
+                    </div>
+                    <button onclick="restoreArchive('${doc.id}')" class="shrink-0 bg-amber-50 hover:bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-bold border border-amber-200 transition">
+                        <i class="fa-solid fa-rotate-left mr-1"></i>Geri Yükle
+                    </button>`;
+                div.appendChild(row);
+            });
+        }catch(e){ div.innerHTML=`<div class="text-xs text-rose-500 text-center py-3">Hata: ${e.message}</div>`; }
+    }
+
+    async function restoreArchive(period){
+        if(!confirm(`${period} arşivini geri yüklemek istediğinizden emin misiniz?\nMevcut masraf ve avanslar silinecek!`)) return;
+        try{
+            const doc=await db.collection('kare_archive').doc(period).get();
+            if(!doc.exists){ showToast('Arşiv bulunamadı','error'); return; }
+            const data=doc.data();
+            showToast('Geri yükleniyor...','success');
+            for(const e of expenses) await cExpenses.doc(e.id).delete();
+            for(const a of advances) await cAdvances.doc(a.id).delete();
+            for(const e of (data.expenses||[])){
+                const {id,...rest}=e;
+                await cExpenses.add({...rest, timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+            }
+            for(const a of (data.advances||[])){
+                const {id,...rest}=a;
+                await cAdvances.add({...rest, timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+            }
+            await cLogs.add({action:'ARSİV_GERI_YUKLEME',user:currentUser,period,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+            showToast(`${period} arşivi geri yüklendi ✓`,'success');
+        }catch(e){ showToast('Hata: '+e.message,'error'); }
+    }
+
+    async function archiveSystem(){
+        // Adım 1: Bakiyeleri hesapla ve önizleme göster
+        const drivers=getDrivers();
+        if(!drivers.length){showToast('Aktif şoför bulunamadı.','error');return;}
+
+        let preview='';
+        const bals={};
+        drivers.forEach(d=>{
+            bals[d]=getDriverBalance(d);
+            const b=bals[d];
+            preview+=`• ${d}: EUR ${b.e>0?'+':''}${b.e.toFixed(2)} | USD ${b.u>0?'+':''}${b.u.toFixed(2)} | TRY ${b.t>0?'+':''}${b.t.toFixed(2)}\n`;
+        });
+
+        const confirmed=confirm(
+            `AY KAPANIŞ ONAY\n\n`+
+            `Bu işlem:\n`+
+            `✓ Tüm fiş ve avans geçmişi arşive alınır\n`+
+            `✓ Aşağıdaki net bakiyeler yeni aya devredilir\n`+
+            `✓ Eski kayıtlar silinir (arşivden erişilebilir)\n\n`+
+            `Şoför Net Bakiyeleri:\n${preview}\n`+
+            `Devam etmek istiyor musunuz?`
+        );
+        if(!confirmed) return;
+
+        showToast('Arşiv başlatılıyor...','success');
+        const now=new Date();
+        const archiveKey=now.toISOString().slice(0,7); // YYYY-MM
+        const archiveDate=now.toISOString().split('T')[0];
+
+        try{
+            // Adım 2: Arşive yedekle
+            const archiveDoc={
+                archivedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                archivedBy: currentUser,
+                period: archiveKey,
+                balances: bals,
+                expenses: expenses.map(e=>({...e})),
+                advances: advances.map(a=>({...a})),
+                tripCount: driverTrips.filter(t=>t.status==='COMPLETED').length,
+                expenseCount: expenses.length,
+                advanceCount: advances.length
+            };
+            await db.collection('kare_archive').doc(archiveKey).set(archiveDoc);
+            showToast('Arşiv yedeklendi ✓','success');
+
+            // Adım 3: Tüm kayıtları sil
+            for(const e of expenses) await cExpenses.doc(e.id).delete();
+            for(const a of advances) await cAdvances.doc(a.id).delete();
+
+            // Adım 4: Devir kayıtları oluştur
+            for(const drv of drivers){
+                const b=bals[drv];
+                // EUR devir
+                if(b.e>0) await cAdvances.add({date:archiveDate,driver:drv,amount:b.e,currency:'EUR',note:`${archiveKey} devir`,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+                else if(b.e<0) await cExpenses.add({date:archiveDate,driver:drv,category:'DIGER',tripName:`${archiveKey} Devir Alacağı`,amount:Math.abs(b.e),currency:'EUR',status:'APPROVED',timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+                // USD devir
+                if(b.u>0) await cAdvances.add({date:archiveDate,driver:drv,amount:b.u,currency:'USD',note:`${archiveKey} devir`,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+                else if(b.u<0) await cExpenses.add({date:archiveDate,driver:drv,category:'DIGER',tripName:`${archiveKey} Devir`,amount:Math.abs(b.u),currency:'USD',status:'APPROVED',timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+                // TRY devir
+                if(b.t>0) await cAdvances.add({date:archiveDate,driver:drv,amount:b.t,currency:'TRY',note:`${archiveKey} devir`,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+                else if(b.t<0) await cExpenses.add({date:archiveDate,driver:drv,category:'DIGER',tripName:`${archiveKey} Devir`,amount:Math.abs(b.t),currency:'TRY',status:'APPROVED',timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+            }
+
+            // Adım 5: Audit log
+            await cLogs.add({
+                action:'AY_KAPANISI',
+                user:currentUser,
+                period:archiveKey,
+                details:`${drivers.length} şoför, ${expenses.length} masraf, ${advances.length} avans arşivlendi.`,
+                timestamp:firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            showToast(`${archiveKey} ay kapanışı tamamlandı ✓`,'success');
+        }catch(err){
+            console.error('Arşiv hatası:',err);
+            showToast('Hata: '+err.message,'error');
+        }
+    }
     
     function updatePatronDashboard(){let tE=0,tU=0,tT=0,rC=0; const aTrips=driverTrips.filter(t=>t.status==='ACTIVE').length; const dL=document.getElementById('patronDriverRiskList'); dL.innerHTML=''; getDrivers().forEach(drv=>{const b=getDriverBalance(drv); tE+=b.e; tU+=b.u; tT+=b.t; if(b.e>0||b.u>0||b.t>0){let isR=(b.e>1000||b.u>1100||b.t>35000); if(isR)rC++; let det=''; if(b.e>0)det+=`<span class="text-blue-700 font-bold mr-2">${formatPdfMoney(b.e,'€')}</span>`; if(b.u>0)det+=`<span class="text-emerald-700 font-bold mr-2">${formatPdfMoney(b.u,'$')}</span>`; if(b.t>0)det+=`<span class="text-indigo-700 font-bold">${formatPdfMoney(b.t,'₺')}</span>`; let bdg=isR?`<span class="bg-red-500 text-white px-2 py-1 rounded text-[10px] font-bold">RİSK</span>`:`<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded text-[10px] font-bold">NORMAL</span>`; dL.innerHTML+=`<tr class="border-b border-slate-100 ${isR?'risk-row':'hover:bg-slate-50'}"><td class="p-3 font-bold">${esc(drv)}</td><td class="p-3 text-right">${det}</td><td class="p-3 text-center">${bdg}</td></tr>`;}}); if(dL.innerHTML==='')dL.innerHTML=`<tr><td colspan="3" class="p-4 text-center text-slate-500">Riskli personel yok.</td></tr>`; document.getElementById('patSafeEUR').innerText=formatPdfMoney(tE,'€'); document.getElementById('patSafeUSD').innerText=formatPdfMoney(tU,'$'); document.getElementById('patSafeTRY').innerText=formatPdfMoney(tT,'₺'); document.getElementById('patActiveTripsCount').innerText=aTrips; document.getElementById('patRiskyDriversCount').innerText=rC; let cM=new Date().toISOString().slice(0,7); let mE=0,mU=0,mT=0; expenses.filter(e=>e.status==='APPROVED'&&e.date&&e.date.startsWith(cM)).forEach(e=>{if(e.currency==='EUR')mE+=e.amount;else if(e.currency==='USD')mU+=e.amount;else mT+=e.amount;}); document.getElementById('patExpThisMonthEUR').innerText=formatPdfMoney(mE,'€'); document.getElementById('patExpThisMonthUSD').innerText=formatPdfMoney(mU,'$'); document.getElementById('patExpThisMonthTRY').innerText=formatPdfMoney(mT,'₺'); let vD={}; driverTrips.filter(t=>t.status==='COMPLETED').forEach(t=>{if(!vD[t.plate])vD[t.plate]={km:0,c:0}; vD[t.plate].km+=t.totalKm;}); expenses.filter(e=>e.status==='APPROVED'&&e.plaka&&(e.category==='MAZOT'||e.category==='BAKIM'||e.category==='OTOYOL')).forEach(e=>{let p=e.plaka.toUpperCase(); if(!vD[p])vD[p]={km:0,c:0}; let a=e.amount; if(e.currency==='USD')a*=0.9;else if(e.currency==='TRY')a*=0.028; vD[p].c+=a;}); const pV=document.getElementById('patronVehicleList'); pV.innerHTML=''; for(const[p,d] of Object.entries(vD)){if(d.km===0)continue; let cpm=d.c/d.km; let cC=cpm>0.4?'text-rose-600 font-bold bg-rose-50':'text-emerald-600 font-bold bg-emerald-50'; pV.innerHTML+=`<tr class="border-b border-slate-100"><td class="p-3 font-bold uppercase"><span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs">${esc(p)}</span></td><td class="p-3 text-right">${d.km.toLocaleString()} KM</td><td class="p-3 text-right">~${formatPdfMoney(d.c,'€')}</td><td class="p-3 text-right ${cC} rounded-lg">${formatPdfMoney(cpm,'€')} / KM</td></tr>`;} if(pV.innerHTML==='')pV.innerHTML=`<tr><td colspan="4" class="p-4 text-center">Veri yok.</td></tr>`; renderPatronCharts();}
     function renderPatronCharts(){let cC={}; expenses.filter(e=>e.status==='APPROVED').forEach(e=>{cC[e.category]=(cC[e.category]||0)+1;}); const cP=document.getElementById('patronPieChart').getContext('2d'); if(pieChartInstance)pieChartInstance.destroy(); pieChartInstance=new Chart(cP,{type:'doughnut',data:{labels:Object.keys(cC).map(k=>`${catIcons[k]||''} ${k}`),datasets:[{data:Object.values(cC),backgroundColor:['#4AA4F6','#10B981','#F59E0B','#F43F5E','#8B5CF6','#64748B'],borderWidth:2,borderColor:'#fff'}]},options:{cutout:'70%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,font:{size:10}}}}}}); let ms=[]; let tD=[]; let d=new Date(); for(let i=5;i>=0;i--){let pD=new Date(d.getFullYear(),d.getMonth()-i,1); let mS=pD.toISOString().slice(0,7); ms.push(pD.toLocaleString('tr-TR',{month:'short'})); let s=0; expenses.filter(e=>e.status==='APPROVED'&&e.date&&e.date.startsWith(mS)).forEach(e=>{let a=e.amount; if(e.currency==='USD')a*=0.9;else if(e.currency==='TRY')a*=0.028; s+=a;}); tD.push(Math.round(s));} const cT=document.getElementById('patronTrendChart').getContext('2d'); if(trendChartInstance)trendChartInstance.destroy(); trendChartInstance=new Chart(cT,{type:'bar',data:{labels:ms,datasets:[{label:'Tahmini Harcama (€)',data:tD,backgroundColor:'#4AA4F6',borderRadius:4}]},options:{maintainAspectRatio:false,scales:{y:{beginAtZero:true,grid:{color:'#F1F5F9'}},x:{grid:{display:false}}},plugins:{legend:{display:false}}}});}

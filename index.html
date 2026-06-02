@@ -1269,6 +1269,8 @@
         <h3 class="font-bold text-slate-800 text-base">Yıllık Arşiv</h3>
       </div>
       <select id="archiveViewYear" onchange="loadYearlyArchiveData()" class="input-style text-sm font-bold w-36"></select>
+      <button onclick="deleteArchiveYear()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-rose-200"><i class="fa-solid fa-trash"></i> Sil</button>
+      <button onclick="exportArchivePDF()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-file-pdf"></i> PDF</button>
     </div>
     <div id="yearlyArchiveContent">
       <div class="text-xs text-slate-400 text-center py-6">Yıl seçin...</div>
@@ -1877,6 +1879,128 @@
     function deleteAdvance(id){if(confirm("Silinsin mi?")){cAdvances.doc(id).delete(); showToast('Silindi','success');}}
     
     function getDriverBalance(drv){let e=0,u=0,t=0; advances.filter(a=>a.driver===drv&&!a.archived).forEach(a=>{if(a.currency==='EUR')e+=a.amount;else if(a.currency==='USD')u+=a.amount;else t+=a.amount;}); expenses.filter(x=>x.driver===drv&&x.status==='APPROVED').forEach(x=>{if(x.currency==='EUR')e-=x.amount;else if(x.currency==='USD')u-=x.amount;else t-=x.amount;}); return{e:e,u:u,t:t};}
+    async function deleteArchiveYear(){
+        const year=document.getElementById('archiveViewYear')?.value;
+        if(!year){showToast('Önce yıl seçin','error');return;}
+        if(!confirm(`${year} yılı arşivi kalıcı olarak silinecek.\nBu işlem GERİ ALINAMAZ.\n\nDevam edilsin mi?`)) return;
+        if(!confirm(`Son onay: ${year} arşivi silinsin mi?`)) return;
+        try{
+            await db.collection('kare_archive').doc(year).delete();
+            await cLogs.add({action:'ARŞİV_SİLME',user:currentUser,period:year,
+                details:`${year} yılı arşivi silindi.`,
+                timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+            showToast(`${year} arşivi silindi ✓`,'success');
+            // Listeyi yenile
+            await openYearlyArchiveViewer();
+            document.getElementById('yearlyArchiveContent').innerHTML='<div class="text-xs text-slate-400 text-center py-6">Arşiv silindi. Başka bir yıl seçin.</div>';
+        }catch(e){
+            showToast('Hata: '+e.message,'error');
+        }
+    }
+
+    async function exportArchivePDF(){
+        const year=document.getElementById('archiveViewYear')?.value;
+        if(!year){showToast('Önce yıl seçin','error');return;}
+        showToast('PDF hazırlanıyor...','success');
+        try{
+            const doc=await db.collection('kare_archive').doc(year).get();
+            if(!doc.exists){showToast('Arşiv bulunamadı','error');return;}
+            const d=doc.data();
+            const archivedDate=d.archivedAt?.toDate?.()?.toLocaleDateString('tr-TR')||'';
+
+            const content=[];
+            const cats={'HARCIRAH':'Harcırah','MAZOT':'Yakıt/Mazot','OTOYOL':'Otoyol','OTOPARK':'Otopark','GUMRUK':'Gümrük','YEMEK':'Yemek','BAKIM':'Bakım','TELEFON':'Telefon','DIGER':'Diğer'};
+
+            // Başlık
+            content.push({text:`karekara — ${year} Yıllık Arşiv Raporu`,style:'h1',margin:[0,0,0,4]});
+            content.push({text:`Arşivlendi: ${archivedDate} · ${d.archivedBy||''}${d.note?' — '+d.note:''}`,style:'sub',margin:[0,0,0,16]});
+
+            // KPI
+            content.push({columns:[
+                {text:[{text:'Masraf\n',style:'kpiLabel'},{text:(d.expenseCount||0).toString(),style:'kpiVal'}]},
+                {text:[{text:'Avans\n',style:'kpiLabel'},{text:(d.advanceCount||0).toString(),style:'kpiVal'}]},
+                {text:[{text:'Sefer\n',style:'kpiLabel'},{text:(d.tripCount||0).toString(),style:'kpiVal'}]},
+                {text:[{text:'Toplam KM\n',style:'kpiLabel'},{text:((d.tripSummary?.totalKm||0)/1000).toFixed(0)+'K',style:'kpiVal'}]},
+            ],margin:[0,0,0,16]});
+
+            // Personel Cari
+            if(d.driverExtracts&&Object.keys(d.driverExtracts).length){
+                content.push({text:'Personel Cari Ekstresi',style:'h2',margin:[0,0,0,6]});
+                const rows=[
+                    [{text:'Şoför',bold:true,fillColor:'#1E293B',color:'#fff'},{text:'Top. Avans',bold:true,fillColor:'#1E293B',color:'#fff',alignment:'right'},
+                     {text:'Top. Masraf',bold:true,fillColor:'#1E293B',color:'#fff',alignment:'right'},{text:'Net Bakiye',bold:true,fillColor:'#1E293B',color:'#fff',alignment:'right'},
+                     {text:'Sefer/KM',bold:true,fillColor:'#1E293B',color:'#fff',alignment:'right'}]
+                ];
+                Object.entries(d.driverExtracts).forEach(([drv,ext])=>{
+                    const totAdv=ext.advances.reduce((s,a)=>a.currency==='EUR'?s+a.amount:s,0);
+                    const totExp=ext.expenses.reduce((s,e)=>e.currency==='EUR'?s+e.amount:s,0);
+                    const bal=ext.balance?.e||0;
+                    const trips=d.tripSummary?.byDriver?.[drv];
+                    rows.push([drv,{text:totAdv.toFixed(2)+' €',alignment:'right',color:'#059669'},
+                        {text:totExp.toFixed(2)+' €',alignment:'right',color:'#DC2626'},
+                        {text:(bal>0?'+':'')+bal.toFixed(2)+' €',alignment:'right',bold:true,color:bal>=0?'#059669':'#DC2626'},
+                        {text:trips?`${trips.count} · ${(trips.km/1000).toFixed(0)}K km`:'—',alignment:'right',fontSize:8,color:'#94A3B8'}]);
+                });
+                content.push({table:{widths:['*',80,80,80,80],body:rows},layout:{fillColor:(r)=>r>0&&r%2===0?'#F8FAFC':null},margin:[0,0,0,16]});
+            }
+
+            // Araç Maliyeti
+            if(d.vehicleCosts&&Object.keys(d.vehicleCosts).length){
+                content.push({text:'Araç Maliyeti',style:'h2',margin:[0,0,0,6]});
+                const vcRows=[
+                    [{text:'Plaka',bold:true,fillColor:'#1E293B',color:'#fff'},{text:'HGS',bold:true,fillColor:'#1E293B',color:'#fff',alignment:'right'},
+                     {text:'Yakıt',bold:true,fillColor:'#1E293B',color:'#fff',alignment:'right'},{text:'Maaş',bold:true,fillColor:'#1E293B',color:'#fff',alignment:'right'},
+                     {text:'Sefer Masrafı',bold:true,fillColor:'#1E293B',color:'#fff',alignment:'right'},{text:'Toplam',bold:true,fillColor:'#1E293B',color:'#fff',alignment:'right'}]
+                ];
+                let tH=0,tY=0,tS=0,tSf=0,tT=0;
+                Object.entries(d.vehicleCosts).forEach(([plate,vc])=>{
+                    tH+=(vc.hgs||0);tY+=(vc.yak||0);tS+=(vc.sal||0);tSf+=(vc.sef||0);tT+=(vc.total||0);
+                    vcRows.push([{text:plate,bold:true},
+                        {text:(vc.hgs||0).toFixed(2)+' €',alignment:'right',color:'#DC2626'},
+                        {text:(vc.yak||0).toFixed(2)+' €',alignment:'right',color:'#D97706'},
+                        {text:(vc.sal||0).toFixed(2)+' €',alignment:'right',color:'#7C3AED'},
+                        {text:(vc.sef||0).toFixed(2)+' €',alignment:'right',color:'#1D4ED8'},
+                        {text:(vc.total||0).toFixed(2)+' €',alignment:'right',bold:true}]);
+                });
+                vcRows.push([{text:'TOPLAM',bold:true,fillColor:'#1E293B',color:'#fff'},
+                    {text:tH.toFixed(2)+' €',alignment:'right',bold:true,fillColor:'#1E293B',color:'#FCA5A5'},
+                    {text:tY.toFixed(2)+' €',alignment:'right',bold:true,fillColor:'#1E293B',color:'#FDE68A'},
+                    {text:tS.toFixed(2)+' €',alignment:'right',bold:true,fillColor:'#1E293B',color:'#DDD6FE'},
+                    {text:tSf.toFixed(2)+' €',alignment:'right',bold:true,fillColor:'#1E293B',color:'#BFDBFE'},
+                    {text:tT.toFixed(2)+' €',alignment:'right',bold:true,fillColor:'#1E293B',color:'#FED7AA'}]);
+                content.push({table:{widths:['*',65,65,65,80,70],body:vcRows},layout:{fillColor:(r)=>r>0&&r%2===0?'#F8FAFC':null},margin:[0,0,0,16]});
+            }
+
+            // Masraf Kategorileri
+            if(d.categoryBreakdown&&Object.keys(d.categoryBreakdown).length){
+                content.push({text:'Masraf Kategorileri',style:'h2',margin:[0,0,0,6]});
+                const catRows=[[{text:'Kategori',bold:true,fillColor:'#1E293B',color:'#fff'},{text:'Adet',bold:true,fillColor:'#1E293B',color:'#fff',alignment:'right'},{text:'Toplam EUR',bold:true,fillColor:'#1E293B',color:'#fff',alignment:'right'}]];
+                Object.entries(d.categoryBreakdown).sort((a,b)=>b[1].eur-a[1].eur).forEach(([cat,info])=>{
+                    catRows.push([cats[cat]||cat,{text:info.count.toString(),alignment:'right'},{text:(info.eur||0).toFixed(2)+' €',alignment:'right',bold:true}]);
+                });
+                content.push({table:{widths:['*',60,100],body:catRows},layout:{fillColor:(r)=>r>0&&r%2===0?'#F8FAFC':null},margin:[0,0,0,16]});
+            }
+
+            pdfMake.createPdf({
+                pageSize:'A4',pageOrientation:'portrait',
+                pageMargins:[30,40,30,40],
+                content,
+                styles:{
+                    h1:{fontSize:16,bold:true,color:'#0F172A'},
+                    h2:{fontSize:11,bold:true,color:'#1E293B',margin:[0,8,0,4]},
+                    sub:{fontSize:8,color:'#64748B'},
+                    kpiLabel:{fontSize:8,color:'#64748B'},
+                    kpiVal:{fontSize:18,bold:true,color:'#0F172A'}
+                },
+                defaultStyle:{fontSize:9,font:'Roboto'}
+            }).download(`karekara_${year}_arsiv.pdf`);
+            showToast('PDF indirildi ✓','success');
+        }catch(err){
+            console.error('PDF hatası:',err);
+            showToast('PDF hatası: '+err.message,'error');
+        }
+    }
+
     // ── Yıllık Arşiv Görüntüleyici ────────────────────────────
     async function openYearlyArchiveViewer(){
         const modal=document.getElementById('yearlyArchiveModal');
@@ -1963,17 +2087,33 @@
                     <th class="py-2 px-3 text-right">HGS</th>
                     <th class="py-2 px-3 text-right">Yakıt</th>
                     <th class="py-2 px-3 text-right">Maaş</th>
+                    <th class="py-2 px-3 text-right">Sefer Masrafı</th>
+                    <th class="py-2 px-3 text-right">KM</th>
                     <th class="py-2 px-3 text-right">Toplam</th>
                 </tr></thead><tbody>`;
+                let totHgs=0,totYak=0,totSal=0,totSef=0,totKm=0,totAll=0;
                 Object.entries(d.vehicleCosts).forEach(([plate,vc])=>{
+                    totHgs+=(vc.hgs||0); totYak+=(vc.yak||0); totSal+=(vc.sal||0);
+                    totSef+=(vc.sef||0); totKm+=(vc.km||0); totAll+=(vc.total||0);
                     html+=`<tr class="border-t border-slate-100 hover:bg-slate-50">
                         <td class="py-2 px-3 font-bold uppercase"><span class="bg-slate-800 text-white px-2 py-0.5 rounded text-[10px]">${esc(plate)}</span></td>
                         <td class="py-2 px-3 text-right text-red-600">${(vc.hgs||0).toFixed(2)} €</td>
                         <td class="py-2 px-3 text-right text-amber-600">${(vc.yak||0).toFixed(2)} €</td>
                         <td class="py-2 px-3 text-right text-violet-600">${(vc.sal||0).toFixed(2)} €</td>
+                        <td class="py-2 px-3 text-right text-blue-600">${(vc.sef||0).toFixed(2)} €</td>
+                        <td class="py-2 px-3 text-right text-slate-400">${(vc.km||0).toLocaleString()}</td>
                         <td class="py-2 px-3 text-right font-black text-slate-800">${(vc.total||0).toFixed(2)} €</td>
                     </tr>`;
                 });
+                html+=`<tr class="bg-slate-800 text-white font-black text-xs">
+                    <td class="py-2 px-3">TOPLAM</td>
+                    <td class="py-2 px-3 text-right">${totHgs.toFixed(2)} €</td>
+                    <td class="py-2 px-3 text-right">${totYak.toFixed(2)} €</td>
+                    <td class="py-2 px-3 text-right">${totSal.toFixed(2)} €</td>
+                    <td class="py-2 px-3 text-right">${totSef.toFixed(2)} €</td>
+                    <td class="py-2 px-3 text-right">${totKm.toLocaleString()}</td>
+                    <td class="py-2 px-3 text-right text-orange-300">${totAll.toFixed(2)} €</td>
+                </tr>`;
                 html+=`</tbody></table></div>`;
             }
 
@@ -2196,7 +2336,11 @@
                 const hgs=vcYearMonths.reduce((s,m)=>(hgsData[m]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+(e.eur||0),s),0);
                 const yak=vcYearMonths.reduce((s,m)=>(yakitData[m]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+(e.eur||0),s),0);
                 const sal=vcYearMonths.reduce((s,m)=>(salaryData[m]||[]).filter(e=>e.plate===plate).reduce((t,e)=>t+(e.eur||0),s),0);
-                if(hgs||yak||sal) vcSummary[plate]={hgs,yak,sal,total:hgs+yak+sal};
+                // Sefer masrafları (plaka bazında)
+                const sef=expenses.filter(e=>e.status==='APPROVED'&&(e.plaka||'').toUpperCase()===plate&&e.category!=='OTOYOL'&&e.category!=='MAZOT').reduce((s,e)=>s+toEur(e.amount,e.currency),0);
+                // Sefer km (plaka bazında)
+                const km=driverTrips.filter(t=>t.status==='COMPLETED'&&(t.plate||'').toUpperCase()===plate).reduce((s,t)=>s+(t.totalKm||0),0);
+                if(hgs||yak||sal||sef) vcSummary[plate]={hgs,yak,sal,sef,km,total:hgs+yak+sal+sef};
             });
 
             // 3. Şoför cari ekstreleri

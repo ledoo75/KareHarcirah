@@ -1076,16 +1076,25 @@
             </div>
             <div class="glass-card p-5 lg:col-span-2 bg-gradient-to-br from-white to-rose-50 border-rose-100">
                 <h3 class="font-bold text-rose-800 text-lg mb-2"><i class="fa-solid fa-box-archive mr-2"></i>Ay Sonu Devir ve Arşivleme</h3>
-                <p class="text-xs text-rose-600 mb-3">Tüm personelin net kasa bakiyesi hesaplanır, fiş geçmişi <b>kare_archive</b> koleksiyonuna yedeklenir, ardından yeni aya devredilir.</p>
+                <p class="text-xs text-rose-600 mb-3">Tüm personelin net kasa bakiyesi hesaplanır, fiş geçmişi arşivlenir, ardından yeni aya devredilir.</p>
+
+                <!-- Canlı bakiye özeti -->
+                <div id="archiveLivePreview" class="mb-4 border border-rose-100 rounded-xl overflow-hidden">
+                    <div class="bg-rose-50 px-3 py-2 flex items-center justify-between">
+                        <span class="text-[10px] font-bold text-rose-400 uppercase tracking-wide">Mevcut Bakiyeler</span>
+                        <button onclick="refreshArchivePreview()" class="text-[10px] text-rose-400 hover:text-rose-600 font-bold flex items-center gap-1"><i class="fa-solid fa-rotate-right text-[9px]"></i> Yenile</button>
+                    </div>
+                    <div id="archivePreviewRows" class="divide-y divide-rose-50"></div>
+                </div>
+
                 <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-xs text-amber-800 flex gap-2">
                     <i class="fa-solid fa-triangle-exclamation mt-0.5 text-amber-500 shrink-0"></i>
-                    <span>İşlem öncesi <b>arşiv otomatik alınır</b>. Arşivi aşağıdan görüntüleyebilirsiniz. Yine de PDF/Excel rapor almanız önerilir.</span>
+                    <span>Veriler <b>silinmez</b>, sadece arşivlendi olarak işaretlenir. İstediğiniz zaman görüntüleyebilirsiniz.</span>
                 </div>
                 <div class="flex gap-3 flex-wrap">
                     <button onclick="openArchiveModal()" class="flex-1 sm:flex-none px-6 bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-broom"></i> Ayı Kapat ve Bakiyeleri Devret</button>
                     <button onclick="loadArchiveList()" class="flex-1 sm:flex-none px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-clock-rotate-left"></i> Arşivleri Görüntüle</button>
                 </div>
-                <!-- Arşiv listesi -->
                 <div id="archiveList" class="hidden mt-4 space-y-2"></div>
             </div>
         </div>
@@ -1202,9 +1211,30 @@
       <div class="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
         <i class="fa-solid fa-broom text-rose-600"></i>
       </div>
-      <div>
-        <h3 class="font-bold text-slate-800 text-base">Ay Kapanışı — Kısmi Devir</h3>
-        <p class="text-xs text-slate-500 mt-0.5">Devredilecek şoförleri seçin</p>
+      <div class="flex-1">
+        <h3 class="font-bold text-slate-800 text-base">Devir — Dönem Seç</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Hangi döneme ait devir yapılacak?</p>
+      </div>
+    </div>
+
+    <!-- Dönem seçici -->
+    <div class="flex gap-2 mb-4">
+      <div class="flex-1">
+        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-1">Dönem Tipi</label>
+        <select id="archivePeriodType" onchange="updateArchivePeriodKey()" class="input-style text-sm font-bold">
+          <option value="month">Aylık (YYYY-MM)</option>
+          <option value="year">Yıllık (YYYY)</option>
+          <option value="custom">Özel Etiket</option>
+        </select>
+      </div>
+      <div class="flex-1">
+        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-1">Dönem</label>
+        <input type="month" id="archivePeriodMonth" onchange="updateArchivePeriodKey()" class="input-style text-sm font-bold"/>
+        <input type="number" id="archivePeriodYear" onchange="updateArchivePeriodKey()" class="input-style text-sm font-bold hidden" placeholder="2026" min="2020" max="2099"/>
+        <input type="text" id="archivePeriodCustom" onchange="updateArchivePeriodKey()" class="input-style text-sm font-bold hidden" placeholder="örn: Q1-2026"/>
+      </div>
+      <div class="flex items-end pb-0.5">
+        <div class="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-black text-slate-700 whitespace-nowrap" id="archivePeriodKeyDisplay">—</div>
       </div>
     </div>
 
@@ -1591,7 +1621,7 @@
     
     function updateDriverDropdowns(){const uSel=document.getElementById('activeUser'); const aSel=document.getElementById('advDriver'); const si=document.getElementById('driverSearchInput'); uSel.innerHTML=''; if(aSel)aSel.innerHTML=''; if(currentRole==='DRIVER'){uSel.innerHTML=`<option value="${esc(loggedInUser.username)}">${esc(loggedInUser.username)}</option>`; uSel.disabled=true; if(si){si.value=loggedInUser.username; si.disabled=true; si.classList.add('opacity-60');}}else{uSel.disabled=false; if(si){si.disabled=false; si.classList.remove('opacity-60');} let drvs=getDrivers(); if(drvs.length===0){uSel.innerHTML=`<option value="">Şoför Yok</option>`;} drvs.forEach(d=>{uSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`; if(aSel)aSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`;}); uSel.value=currentUser; if(si)si.value=currentUser;} if(currentRole!=='DRIVER'&&getDrivers().length>0&&!getDrivers().includes(currentUser)){currentUser=getDrivers()[0]; uSel.value=currentUser; if(si)si.value=currentUser;}}
     function updateTabVisibility(){const defaultPerms={ADMIN:['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],PATRON:['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],OPS:['DRIVER','OPERATIONS','DASHBOARD','ANALYTICS'],OPS_MANAGER:['DRIVER','OPERATIONS','FLEET','DASHBOARD','ANALYTICS','VEHICLE_COST'],ACCOUNTING:['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],FLEET:['DRIVER','FLEET','DASHBOARD','VEHICLE_COST'],DRIVER:['DRIVER']}; let myTabs=loggedInUser.allowedTabs||defaultPerms[currentRole]||['DRIVER']; if(currentRole==='ADMIN')myTabs=defaultPerms['ADMIN'];['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'].forEach(tab=>{const el=document.getElementById(`tab-${tab}`); if(el)el.style.display=myTabs.includes(tab)?'flex':'none';});}
-    function switchTab(tabId){document.querySelectorAll('.role-btn').forEach(b=>{b.classList.remove('bg-slate-800','text-white','shadow-md'); b.classList.add('bg-transparent','text-slate-500');}); const activeBtn=document.getElementById(`tab-${tabId}`); if(activeBtn){activeBtn.classList.remove('bg-transparent','text-slate-500'); activeBtn.classList.add('bg-slate-800','text-white','shadow-md');} document.querySelectorAll('.panel-section').forEach(p=>p.style.display='none'); document.getElementById(`panel-${tabId}`).style.display='block'; localStorage.setItem('kare_last_tab',tabId); renderAll(); if(tabId==='PATRON'&&['ADMIN','PATRON'].includes(currentRole))updatePatronDashboard(); if(tabId==='DRIVER')checkActiveTrip(); if(tabId==='DASHBOARD')renderDashboard(); if(tabId==='FLEET')renderFleetPanel(); if(tabId==='ANALYTICS')renderAnalyticsTab(); if(tabId==='AUDITLOG'){auditPage=50; renderAuditLog();} if(tabId==='VEHICLE_COST'){ loadAllVcFromFirebase();const now=new Date().toISOString().slice(0,7); const si=document.getElementById('vcStartMonth'); const ei=document.getElementById('vcEndMonth'); const vm=document.getElementById('vcMonth'); if(si&&!si.value){si.value=now;} if(ei&&!ei.value){ei.value=now;} if(vm&&!vm.value){vm.value=now;} const b0=document.getElementById('vcBtn0'); if(b0){clearVcBtns(); b0.className='vc-month-btn bg-orange-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition';} updateVcMonthLabel(); loadSalaryRows(); loadHgsRows(); loadYakitRows(); renderVehicleCost();}}
+    function switchTab(tabId){document.querySelectorAll('.role-btn').forEach(b=>{b.classList.remove('bg-slate-800','text-white','shadow-md'); b.classList.add('bg-transparent','text-slate-500');}); const activeBtn=document.getElementById(`tab-${tabId}`); if(activeBtn){activeBtn.classList.remove('bg-transparent','text-slate-500'); activeBtn.classList.add('bg-slate-800','text-white','shadow-md');} document.querySelectorAll('.panel-section').forEach(p=>p.style.display='none'); document.getElementById(`panel-${tabId}`).style.display='block'; localStorage.setItem('kare_last_tab',tabId); renderAll(); if(tabId==='PATRON'&&['ADMIN','PATRON'].includes(currentRole))updatePatronDashboard(); if(tabId==='DRIVER')checkActiveTrip(); if(tabId==='DASHBOARD')renderDashboard(); if(tabId==='FLEET')renderFleetPanel(); if(tabId==='ANALYTICS')renderAnalyticsTab(); if(tabId==='AUDITLOG'){auditPage=50; renderAuditLog();} if(tabId==='ACCOUNTING'){refreshArchivePreview();} if(tabId==='VEHICLE_COST'){ loadAllVcFromFirebase();const now=new Date().toISOString().slice(0,7); const si=document.getElementById('vcStartMonth'); const ei=document.getElementById('vcEndMonth'); const vm=document.getElementById('vcMonth'); if(si&&!si.value){si.value=now;} if(ei&&!ei.value){ei.value=now;} if(vm&&!vm.value){vm.value=now;} const b0=document.getElementById('vcBtn0'); if(b0){clearVcBtns(); b0.className='vc-month-btn bg-orange-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition';} updateVcMonthLabel(); loadSalaryRows(); loadHgsRows(); loadYakitRows(); renderVehicleCost();}}
     function changeUser(){currentUser=document.getElementById('activeUser').value; renderAll(); if(currentRole!=='DRIVER')checkActiveTrip();}
     function filterCari(){let input=document.getElementById('searchCariInput').value.toLowerCase(); document.querySelectorAll('.cari-row').forEach(row=>{row.style.display=row.getAttribute('data-driver').toLowerCase().includes(input)?'':'none';});}
     
@@ -1946,6 +1976,62 @@
     }
 
     // ── Ay Kapanışı Güvenli Modal ─────────────────────────────
+    function updateArchivePeriodKey(){
+        const type=document.getElementById('archivePeriodType')?.value;
+        const mEl=document.getElementById('archivePeriodMonth');
+        const yEl=document.getElementById('archivePeriodYear');
+        const cEl=document.getElementById('archivePeriodCustom');
+        const disp=document.getElementById('archivePeriodKeyDisplay');
+
+        // Göster/gizle
+        mEl?.classList.toggle('hidden', type!=='month');
+        yEl?.classList.toggle('hidden', type!=='year');
+        cEl?.classList.toggle('hidden', type!=='custom');
+
+        // Key hesapla
+        let key='';
+        if(type==='month') key=mEl?.value||new Date().toISOString().slice(0,7);
+        else if(type==='year') key=yEl?.value||new Date().getFullYear().toString();
+        else if(type==='custom') key=cEl?.value?.trim()||'';
+
+        if(disp) disp.textContent=key||'—';
+        return key;
+    }
+
+    function getArchivePeriodKey(){
+        return updateArchivePeriodKey();
+    }
+
+    function refreshArchivePreview(){
+        const div=document.getElementById('archivePreviewRows'); if(!div) return;
+        const drivers=getDrivers();
+        if(!drivers.length){ div.innerHTML='<div class="p-3 text-xs text-slate-400 text-center">Şoför yok.</div>'; return; }
+        div.innerHTML='';
+        drivers.forEach(d=>{
+            const b=getDriverBalance(d);
+            const exp=expenses.filter(e=>e.driver===d&&e.status==='APPROVED'&&!e.archived).length;
+            const adv=advances.filter(a=>a.driver===d&&!a.archived).length;
+            const hasBalance=b.e!==0||b.u!==0||b.t!==0;
+            const row=document.createElement('div');
+            row.className='flex items-center gap-3 px-3 py-2 hover:bg-rose-50/50 transition';
+            row.innerHTML=`
+                <div class="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-user text-slate-500 text-[10px]"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-bold text-slate-700 truncate">${esc(d)}</p>
+                    <p class="text-[10px] text-slate-400">${exp} onaylı masraf · ${adv} avans</p>
+                </div>
+                <div class="text-right shrink-0">
+                    ${b.e!==0?`<p class="text-xs font-black ${b.e>0?'text-emerald-600':'text-rose-600'}">${b.e>0?'+':''}${b.e.toFixed(2)} €</p>`:''}
+                    ${b.u!==0?`<p class="text-xs font-black ${b.u>0?'text-emerald-600':'text-rose-600'}">${b.u>0?'+':''}${b.u.toFixed(2)} $</p>`:''}
+                    ${b.t!==0?`<p class="text-xs font-black ${b.t>0?'text-emerald-600':'text-rose-600'}">${b.t>0?'+':''}${b.t.toLocaleString('tr-TR')} ₺</p>`:''}
+                    ${!hasBalance?`<p class="text-[10px] text-slate-300">Sıfır bakiye</p>`:''}
+                </div>`;
+            div.appendChild(row);
+        });
+    }
+
     function archiveSelectAll(val){
         document.querySelectorAll('.archive-drv-cb').forEach(cb=>cb.checked=val);
         updateArchiveCounts();
@@ -1994,6 +2080,13 @@
             tbody.appendChild(row);
         });
         updateArchiveCounts();
+        // Dönem inputlarını bugüne set et
+        const now=new Date().toISOString().slice(0,7);
+        const mEl=document.getElementById('archivePeriodMonth');
+        const yEl=document.getElementById('archivePeriodYear');
+        if(mEl&&!mEl.value) mEl.value=now;
+        if(yEl&&!yEl.value) yEl.value=new Date().getFullYear();
+        updateArchivePeriodKey();
         document.getElementById('archiveConfirmModal').style.display='flex';
     }
     function closeArchiveModal(){
@@ -2012,7 +2105,7 @@
         if(!selectedDrivers||!selectedDrivers.length){showToast('Şoför seçilmedi.','error');return;}
         showToast('Arşiv başlatılıyor...','success');
         const now=new Date();
-        const archiveKey=now.toISOString().slice(0,7);
+        const archiveKey=getArchivePeriodKey()||now.toISOString().slice(0,7);
         const archiveDate=now.toISOString().split('T')[0];
 
         try{

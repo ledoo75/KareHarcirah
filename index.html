@@ -874,6 +874,12 @@
             </div>
         </div>
 
+        <!-- Kişisel Özet -->
+        <div id="driverPersonalSummary" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4"></div>
+
+        <!-- Masraf Durum Bildirimleri -->
+        <div id="driverNotifications" class="hidden mb-4"></div>
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="glass-card p-5 h-fit lg:col-span-1">
                 <h3 class="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2"><i class="fa-solid fa-receipt text-primary"></i> Yeni Masraf Ekle</h3>
@@ -915,6 +921,10 @@
     </div>
 
     <div id="panel-ACCOUNTING" class="panel-section hidden-panel">
+
+        <!-- 1. Aylık Gider Özeti -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 no-print" id="accountingMonthlySummary"></div>
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 no-print">
             <div class="glass-card p-5 bg-gradient-to-br from-white to-blue-50 border-blue-100">
                 <h3 class="font-bold text-blue-800 text-sm mb-3 flex items-center gap-2"><i class="fa-solid fa-money-bill-transfer"></i> Personele Avans Çıkışı Yap</h3>
@@ -937,9 +947,65 @@
                 <div class="overflow-x-auto"><table class="w-full text-left text-xs whitespace-nowrap min-w-[300px]"><tbody id="recentAdvancesList" class="divide-y divide-slate-100 text-slate-600"></tbody></table></div>
             </div>
         </div>
+
+        <!-- 2. Masraf Arama/Filtreleme -->
+        <div class="glass-card p-4 mb-5 no-print">
+            <div class="flex flex-wrap items-center gap-2 mb-3">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="fa-solid fa-filter text-indigo-500"></i> Masraf Filtrele</h3>
+                <button onclick="clearExpenseFilters()" class="text-[10px] text-slate-400 hover:text-slate-600 underline ml-auto">Temizle</button>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <input list="filterDriverList" id="filterDriver" onchange="renderFilteredExpenses()" oninput="renderFilteredExpenses()" class="input-style text-xs" placeholder="Şoför adı yaz..."/>
+                <datalist id="filterDriverList"></datalist>
+                <select id="filterCategory" onchange="renderFilteredExpenses()" class="input-style text-xs">
+                    <option value="">Tüm Kategoriler</option>
+                    <option value="HARCIRAH">💵 Harcırah</option>
+                    <option value="MAZOT">⛽ Yakıt</option>
+                    <option value="OTOYOL">🛣️ Otoyol</option>
+                    <option value="OTOPARK">🅿️ Otopark</option>
+                    <option value="GUMRUK">🛂 Gümrük</option>
+                    <option value="YEMEK">🍔 Yemek</option>
+                    <option value="BAKIM">🔧 Bakım</option>
+                    <option value="DIGER">📝 Diğer</option>
+                </select>
+                <select id="filterStatus" onchange="renderFilteredExpenses()" class="input-style text-xs">
+                    <option value="">Tüm Durumlar</option>
+                    <option value="PENDING_OP">Bekliyor</option>
+                    <option value="APPROVED">Onaylandı</option>
+                    <option value="REJECTED">Reddedildi</option>
+                </select>
+                <input type="month" id="filterMonth" onchange="renderFilteredExpenses()" class="input-style text-xs"/>
+            </div>
+            <div id="filteredExpenseResult" class="hidden mt-3">
+                <div class="flex items-center justify-between mb-2">
+                    <span id="filteredExpenseCount" class="text-xs font-bold text-slate-600"></span>
+                    <span id="filteredExpenseTotal" class="text-sm font-black text-primary"></span>
+                </div>
+                <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-64 overflow-y-auto">
+                    <table class="w-full text-xs whitespace-nowrap">
+                        <thead class="bg-slate-50 text-slate-500 font-bold uppercase sticky top-0">
+                            <tr><th class="p-2 px-3 text-left">Şoför</th><th class="p-2 px-3">Tarih</th><th class="p-2 px-3">Kategori</th><th class="p-2 px-3">Açıklama</th><th class="p-2 px-3 text-right">Tutar</th><th class="p-2 px-3 text-center">Durum</th></tr>
+                        </thead>
+                        <tbody id="filteredExpenseList" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Şoför Bazlı Maliyet Analizi -->
+        <div class="glass-card p-4 mb-5 no-print">
+            <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2"><i class="fa-solid fa-chart-bar text-rose-500"></i> Şoför Bazlı Maliyet Analizi</h3>
+            <div id="driverCostAnalysis" class="space-y-2"></div>
+        </div>
+
+        <!-- 4. Personel Cari Ekstresi + Toplu Ekstre -->
         <div class="glass-card p-5">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4 no-print">
-                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3"><h3 class="font-bold text-slate-800 text-lg">Personel Cari Ekstresi</h3><button onclick="exportAccountingCSV()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5"><i class="fa-solid fa-download"></i> Tümünü İndir</button></div>
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                    <h3 class="font-bold text-slate-800 text-lg">Personel Cari Ekstresi</h3>
+                    <button onclick="exportAccountingCSV()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5"><i class="fa-solid fa-download"></i> Tümünü CSV</button>
+                    <button onclick="exportBulkExtrePDF()" class="bg-rose-700 hover:bg-rose-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5"><i class="fa-solid fa-file-pdf"></i> Toplu Ekstre PDF</button>
+                </div>
                 <div class="relative w-full md:w-72"><i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-indigo-400"></i><input type="text" id="searchCariInput" onkeyup="filterCari()" placeholder="Şoför adı ile filtrele..." class="w-full bg-slate-50 border border-indigo-200 text-sm rounded-xl pl-9 pr-3 py-2 font-medium outline-none"></div>
             </div>
             <div class="overflow-x-auto border border-slate-200 rounded-xl relative"><table class="w-full text-left text-sm whitespace-nowrap min-w-[900px] overflow-hidden"><thead class="bg-slate-800 text-white text-xs uppercase font-semibold"><tr><th class="p-3">Personel</th><th class="p-3 text-right">Verilen Toplam Avans</th><th class="p-3 text-right">Onaylı Toplam Masraf</th><th class="p-3 text-right">Net Bakiye (Kasa)</th><th class="p-3 text-right no-print">İşlemler (Ekstre / PDF / Excel)</th></tr></thead><tbody id="accountingCariList" class="divide-y divide-slate-200 text-slate-700 bg-white"></tbody></table></div>
@@ -1647,7 +1713,7 @@
     
     function updateDriverDropdowns(){const uSel=document.getElementById('activeUser'); const aSel=document.getElementById('advDriver'); const si=document.getElementById('driverSearchInput'); uSel.innerHTML=''; if(aSel)aSel.innerHTML=''; if(currentRole==='DRIVER'){uSel.innerHTML=`<option value="${esc(loggedInUser.username)}">${esc(loggedInUser.username)}</option>`; uSel.disabled=true; if(si){si.value=loggedInUser.username; si.disabled=true; si.classList.add('opacity-60');}}else{uSel.disabled=false; if(si){si.disabled=false; si.classList.remove('opacity-60');} let drvs=getDrivers(); if(drvs.length===0){uSel.innerHTML=`<option value="">Şoför Yok</option>`;} drvs.forEach(d=>{uSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`; if(aSel)aSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`;}); uSel.value=currentUser; if(si)si.value=currentUser;} if(currentRole!=='DRIVER'&&getDrivers().length>0&&!getDrivers().includes(currentUser)){currentUser=getDrivers()[0]; uSel.value=currentUser; if(si)si.value=currentUser;}}
     function updateTabVisibility(){const defaultPerms={ADMIN:['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],PATRON:['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],OPS:['DRIVER','OPERATIONS','DASHBOARD','ANALYTICS'],OPS_MANAGER:['DRIVER','OPERATIONS','FLEET','DASHBOARD','ANALYTICS','VEHICLE_COST'],ACCOUNTING:['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],FLEET:['DRIVER','FLEET','DASHBOARD','VEHICLE_COST'],DRIVER:['DRIVER']}; let myTabs=loggedInUser.allowedTabs||defaultPerms[currentRole]||['DRIVER']; if(currentRole==='ADMIN')myTabs=defaultPerms['ADMIN'];['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'].forEach(tab=>{const el=document.getElementById(`tab-${tab}`); if(el)el.style.display=myTabs.includes(tab)?'flex':'none';});}
-    function switchTab(tabId){document.querySelectorAll('.role-btn').forEach(b=>{b.classList.remove('bg-slate-800','text-white','shadow-md'); b.classList.add('bg-transparent','text-slate-500');}); const activeBtn=document.getElementById(`tab-${tabId}`); if(activeBtn){activeBtn.classList.remove('bg-transparent','text-slate-500'); activeBtn.classList.add('bg-slate-800','text-white','shadow-md');} document.querySelectorAll('.panel-section').forEach(p=>p.style.display='none'); document.getElementById(`panel-${tabId}`).style.display='block'; localStorage.setItem('kare_last_tab',tabId); renderAll(); if(tabId==='PATRON'&&['ADMIN','PATRON'].includes(currentRole))updatePatronDashboard(); if(tabId==='DRIVER')checkActiveTrip(); if(tabId==='DASHBOARD')renderDashboard(); if(tabId==='FLEET')renderFleetPanel(); if(tabId==='ANALYTICS')renderAnalyticsTab(); if(tabId==='AUDITLOG'){auditPage=50; renderAuditLog();} if(tabId==='ACCOUNTING'){refreshArchivePreview(); loadArchiveSummary();} if(tabId==='VEHICLE_COST'){ loadAllVcFromFirebase();const now=new Date().toISOString().slice(0,7); const si=document.getElementById('vcStartMonth'); const ei=document.getElementById('vcEndMonth'); const vm=document.getElementById('vcMonth'); if(si&&!si.value){si.value=now;} if(ei&&!ei.value){ei.value=now;} if(vm&&!vm.value){vm.value=now;} const b0=document.getElementById('vcBtn0'); if(b0){clearVcBtns(); b0.className='vc-month-btn bg-orange-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition';} updateVcMonthLabel(); loadSalaryRows(); loadHgsRows(); loadYakitRows(); renderVehicleCost();}}
+    function switchTab(tabId){document.querySelectorAll('.role-btn').forEach(b=>{b.classList.remove('bg-slate-800','text-white','shadow-md'); b.classList.add('bg-transparent','text-slate-500');}); const activeBtn=document.getElementById(`tab-${tabId}`); if(activeBtn){activeBtn.classList.remove('bg-transparent','text-slate-500'); activeBtn.classList.add('bg-slate-800','text-white','shadow-md');} document.querySelectorAll('.panel-section').forEach(p=>p.style.display='none'); document.getElementById(`panel-${tabId}`).style.display='block'; localStorage.setItem('kare_last_tab',tabId); renderAll(); if(tabId==='PATRON'&&['ADMIN','PATRON'].includes(currentRole))updatePatronDashboard(); if(tabId==='DRIVER')checkActiveTrip(); if(tabId==='DASHBOARD')renderDashboard(); if(tabId==='FLEET')renderFleetPanel(); if(tabId==='ANALYTICS')renderAnalyticsTab(); if(tabId==='AUDITLOG'){auditPage=50; renderAuditLog();} if(tabId==='ACCOUNTING'){refreshArchivePreview(); loadArchiveSummary(); renderAccountingExtras();} if(tabId==='VEHICLE_COST'){ loadAllVcFromFirebase();const now=new Date().toISOString().slice(0,7); const si=document.getElementById('vcStartMonth'); const ei=document.getElementById('vcEndMonth'); const vm=document.getElementById('vcMonth'); if(si&&!si.value){si.value=now;} if(ei&&!ei.value){ei.value=now;} if(vm&&!vm.value){vm.value=now;} const b0=document.getElementById('vcBtn0'); if(b0){clearVcBtns(); b0.className='vc-month-btn bg-orange-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition';} updateVcMonthLabel(); loadSalaryRows(); loadHgsRows(); loadYakitRows(); renderVehicleCost();}}
     function changeUser(){currentUser=document.getElementById('activeUser').value; renderAll(); if(currentRole!=='DRIVER')checkActiveTrip();}
     function filterCari(){let input=document.getElementById('searchCariInput').value.toLowerCase(); document.querySelectorAll('.cari-row').forEach(row=>{row.style.display=row.getAttribute('data-driver').toLowerCase().includes(input)?'':'none';});}
     
@@ -1872,7 +1938,26 @@
         finally{btn.innerHTML='<i class="fa-solid fa-floppy-disk mr-2"></i>Seçili İzinleri Kaydet'; btn.disabled=false;}
     }
     
-    function checkActiveTrip(){if(!currentUser)return; const activeTrip=driverTrips.find(t=>t.driver===currentUser&&t.status==='ACTIVE'); if(activeTrip){document.getElementById('tripStartBox').style.display='none'; document.getElementById('tripActiveBox').style.display='flex'; document.getElementById('activeTripNoDisplay').innerText=esc(activeTrip.tripNo); document.getElementById('activeTripPosNoDisplay').innerText=esc(activeTrip.posNo || '-'); document.getElementById('activeTripRoute').innerText=esc(activeTrip.route); document.getElementById('activeTripPlate').innerText=esc(activeTrip.plate); document.getElementById('activeTripTrailer').innerText=esc(activeTrip.trailer)||'-'; document.getElementById('activeTripStartKm').innerText=activeTrip.startKm;}else{document.getElementById('tripActiveBox').style.display='none'; document.getElementById('tripStartBox').style.display='flex';}}
+    function checkActiveTrip(){
+        if(!currentUser)return;
+        const drv=currentRole==='DRIVER'?currentUser:(document.getElementById('activeUser')?.value||currentUser);
+        const activeTrip=driverTrips.find(t=>t.driver===drv&&t.status==='ACTIVE');
+        const startBox=document.getElementById('tripStartBox');
+        const activeBox=document.getElementById('tripActiveBox');
+        if(activeTrip){
+            if(startBox) startBox.style.display='none';
+            if(activeBox) activeBox.style.display='flex';
+            document.getElementById('activeTripNoDisplay').innerText=activeTrip.tripNo||'';
+            document.getElementById('activeTripPosNoDisplay').innerText=activeTrip.posNo||'-';
+            document.getElementById('activeTripRoute').innerText=activeTrip.route||'';
+            document.getElementById('activeTripPlate').innerText=activeTrip.plate||'';
+            document.getElementById('activeTripTrailer').innerText=activeTrip.trailer||'-';
+            document.getElementById('activeTripStartKm').innerText=activeTrip.startKm||0;
+        }else{
+            if(activeBox) activeBox.style.display='none';
+            if(startBox) startBox.style.display='flex';
+        }
+    }
     function openTripModal(){const targetUser=users.find(u=>u.username===currentUser); if(targetUser){document.getElementById('newTripPlate').value=targetUser.defaultPlate||''; document.getElementById('newTripTrailer').value=targetUser.defaultTrailer||'';} document.getElementById('tripModal').style.display='flex';}
     function closeTripModal(){document.getElementById('tripModal').style.display='none';}
     async function startTrip(e){if(e)e.preventDefault(); const tripNo=document.getElementById('newTripNo').value.trim(); if(driverTrips.some(t=>t.tripNo===tripNo)){alert("HATA: Bu Sefer No zaten sistemde kayıtlı! Lütfen farklı bir numara girin."); return false;} if(driverTrips.some(t=>t.driver===currentUser&&t.status==='ACTIVE')){alert("Aktif seferiniz var."); closeTripModal(); return false;} const btn=document.querySelector('#tripForm button[type="submit"]'); const txt=btn.innerHTML; btn.innerHTML='İşleniyor...'; btn.disabled=true; try{const posNo=document.getElementById('newTripPosNo').value; const route=document.getElementById('newTripRoute').value; const plate=document.getElementById('newTripPlate').value.toUpperCase(); await cTrips.add({driver:currentUser,tripNo,posNo,route,plate,trailer:document.getElementById('newTripTrailer').value.toUpperCase(),startKm:parseInt(document.getElementById('newTripKm').value),endKm:0,totalKm:0,endDate:'',status:'ACTIVE',timestamp:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('tripForm').reset(); closeTripModal(); showToast('Sefer Başladı','success');}catch(error){alert("Hata: "+error.message);}finally{btn.innerHTML=txt; btn.disabled=false;} return false;}
@@ -2538,6 +2623,256 @@
 
 
     
+    // ── Şoför Kişisel Özet ────────────────────────────────────
+    function renderDriverPersonalSummary(targetDrv){
+        const el=document.getElementById('driverPersonalSummary'); if(!el) return;
+        const drv=targetDrv||currentUser;
+        if(!drv){el.innerHTML='';return;}
+        const thisMonth=new Date().toISOString().slice(0,7);
+        const myExp=expenses.filter(e=>e.driver===drv);
+        const myTrips=driverTrips.filter(t=>t.driver===drv);
+        const monthTrips=myTrips.filter(t=>t.status==='COMPLETED'&&(t.endDate||'').startsWith(thisMonth));
+        const totalKm=monthTrips.reduce((s,t)=>s+(t.totalKm||0),0);
+        const pending=myExp.filter(e=>e.status==='PENDING_OP'||e.status==='PENDING_ACC').length;
+        const approved=myExp.filter(e=>e.status==='APPROVED'&&(e.date||'').startsWith(thisMonth)).length;
+        const totalExp=myExp.filter(e=>e.status==='APPROVED'&&(e.date||'').startsWith(thisMonth)&&e.currency==='EUR').reduce((s,e)=>s+e.amount,0);
+        el.innerHTML=`
+            <div class="glass-card p-3 text-center border-t-4 border-blue-400">
+                <p class="text-[10px] text-slate-400 font-bold uppercase mb-1">Bu Ay Sefer</p>
+                <p class="text-2xl font-black text-blue-600">${monthTrips.length}</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">${totalKm.toLocaleString()} km</p>
+            </div>
+            <div class="glass-card p-3 text-center border-t-4 border-amber-400">
+                <p class="text-[10px] text-slate-400 font-bold uppercase mb-1">Bekleyen</p>
+                <p class="text-2xl font-black ${pending>0?'text-amber-600':'text-slate-300'}">${pending}</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">masraf onayda</p>
+            </div>
+            <div class="glass-card p-3 text-center border-t-4 border-emerald-400">
+                <p class="text-[10px] text-slate-400 font-bold uppercase mb-1">Onaylanan</p>
+                <p class="text-2xl font-black text-emerald-600">${approved}</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">bu ay</p>
+            </div>
+            <div class="glass-card p-3 text-center border-t-4 border-rose-400">
+                <p class="text-[10px] text-slate-400 font-bold uppercase mb-1">Toplam Masraf</p>
+                <p class="text-xl font-black text-rose-600">${totalExp.toFixed(0)} €</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">bu ay EUR</p>
+            </div>`;
+    }
+
+    // ── Masraf Durum Bildirimleri ─────────────────────────────
+    let _prevExpStatuses={};
+    function renderDriverNotifications(targetDrv){
+        const el=document.getElementById('driverNotifications'); if(!el) return;
+        const drv=targetDrv||currentUser;
+        if(!drv){el.classList.add('hidden');return;}
+        const myExp=expenses.filter(e=>e.driver===drv);
+        const notes=[];
+        const rejected=myExp.filter(e=>e.status==='REJECTED');
+        const accPending=myExp.filter(e=>e.status==='PENDING_ACC');
+        const week=new Date(Date.now()-7*24*60*60*1000).toISOString().slice(0,10);
+        const recentApproved=myExp.filter(e=>e.status==='APPROVED'&&(e.date||'')>=week);
+        if(recentApproved.length) notes.push({color:'emerald',icon:'fa-circle-check',title:`${recentApproved.length} masrafınız onaylandı ✓`,sub:recentApproved.slice(0,2).map(e=>`${e.tripName||e.category}: ${formatMoney(e.amount,e.currency)}`).join(' · ')});
+        if(accPending.length) notes.push({color:'indigo',icon:'fa-clock',title:`${accPending.length} masrafınız muhasebe onayında`,sub:'Muhasebe inceliyor...'});
+        if(rejected.length) notes.push({color:'rose',icon:'fa-circle-xmark',title:`${rejected.length} masrafınız reddedildi`,sub:rejected.slice(0,2).map(e=>`${e.tripName||e.category}: ${formatMoney(e.amount,e.currency)}`).join(' · ')});
+        if(!notes.length){el.classList.add('hidden');return;}
+        el.classList.remove('hidden');
+        el.innerHTML=notes.map(n=>`<div class="flex items-start gap-3 bg-${n.color}-50 border border-${n.color}-200 rounded-xl px-3 py-2.5 mb-2">
+            <i class="fa-solid ${n.icon} text-${n.color}-500 mt-0.5 shrink-0"></i>
+            <div class="flex-1 min-w-0">
+                <p class="text-xs font-bold text-${n.color}-800">${n.title}</p>
+                <p class="text-[10px] text-${n.color}-600 truncate">${n.sub}</p>
+            </div>
+        </div>`).join('');
+    }
+
+    // ── 1. Aylık Gider Özeti ──────────────────────────────────
+    function renderAccountingMonthlySummary(){
+        const el=document.getElementById('accountingMonthlySummary'); if(!el) return;
+        const m=new Date().toISOString().slice(0,7);
+        const prev=new Date(new Date().getFullYear(),new Date().getMonth()-1,1).toISOString().slice(0,7);
+        const mExp=expenses.filter(e=>e.status==='APPROVED'&&(e.date||'').startsWith(m));
+        const pExp=expenses.filter(e=>e.status==='APPROVED'&&(e.date||'').startsWith(prev));
+        const mAdv=advances.filter(a=>(a.date||'').startsWith(m));
+        const toEUR=e=>e.currency==='EUR'?e.amount:e.currency==='USD'?e.amount*0.92:e.amount*0.026;
+        const mTotal=mExp.reduce((s,e)=>s+toEUR(e),0);
+        const pTotal=pExp.reduce((s,e)=>s+toEUR(e),0);
+        const mAdvTotal=mAdv.reduce((s,a)=>s+(a.currency==='EUR'?a.amount:a.currency==='USD'?a.amount*0.92:a.amount*0.026),0);
+        const diff=pTotal>0?((mTotal-pTotal)/pTotal*100):0;
+        const diffColor=diff>0?'text-rose-600':'text-emerald-600';
+        const pending=expenses.filter(e=>e.status==='PENDING_OP'||e.status==='PENDING_ACC').length;
+
+        el.innerHTML=`
+            <div class="glass-card p-3 text-center border-t-4 border-rose-400">
+                <p class="text-[9px] text-slate-400 font-bold uppercase mb-1">Bu Ay Masraf</p>
+                <p class="text-xl font-black text-rose-600">${mTotal.toFixed(0)} €</p>
+                <p class="text-[9px] mt-0.5 ${diffColor}">${diff>0?'↑':'↓'}${Math.abs(diff).toFixed(0)}% geçen ay</p>
+            </div>
+            <div class="glass-card p-3 text-center border-t-4 border-blue-400">
+                <p class="text-[9px] text-slate-400 font-bold uppercase mb-1">Bu Ay Avans</p>
+                <p class="text-xl font-black text-blue-600">${mAdvTotal.toFixed(0)} €</p>
+                <p class="text-[9px] text-slate-400 mt-0.5">${mAdv.length} işlem</p>
+            </div>
+            <div class="glass-card p-3 text-center border-t-4 border-amber-400">
+                <p class="text-[9px] text-slate-400 font-bold uppercase mb-1">Onay Bekleyen</p>
+                <p class="text-xl font-black ${pending>0?'text-amber-600':'text-slate-300'}">${pending}</p>
+                <p class="text-[9px] text-slate-400 mt-0.5">masraf</p>
+            </div>
+            <div class="glass-card p-3 text-center border-t-4 border-slate-400">
+                <p class="text-[9px] text-slate-400 font-bold uppercase mb-1">Geçen Ay</p>
+                <p class="text-xl font-black text-slate-600">${pTotal.toFixed(0)} €</p>
+                <p class="text-[9px] text-slate-400 mt-0.5">${pExp.length} masraf</p>
+            </div>`;
+    }
+
+    // ── 2. Masraf Filtreleme ──────────────────────────────────
+    function renderFilteredExpenses(){
+        const drv=document.getElementById('filterDriver')?.value?.trim().toLowerCase();
+        const cat=document.getElementById('filterCategory')?.value;
+        const sta=document.getElementById('filterStatus')?.value;
+        const mon=document.getElementById('filterMonth')?.value;
+        const res=document.getElementById('filteredExpenseResult');
+        const list=document.getElementById('filteredExpenseList');
+        if(!res||!list) return;
+
+        let filtered=expenses.filter(e=>{
+            if(drv&&!(e.driver||'').toLowerCase().includes(drv)) return false;
+            if(cat&&e.category!==cat) return false;
+            if(sta&&e.status!==sta) return false;
+            if(mon&&!(e.date||'').startsWith(mon)) return false;
+            return true;
+        }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+
+        res.classList.remove('hidden');
+        const total=filtered.filter(e=>e.currency==='EUR').reduce((s,e)=>s+e.amount,0);
+        document.getElementById('filteredExpenseCount').textContent=`${filtered.length} masraf bulundu`;
+        document.getElementById('filteredExpenseTotal').textContent=total>0?`Toplam EUR: ${total.toFixed(2)} €`:'';
+
+        const statusMap={'PENDING_OP':'<span class="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold">Bekliyor</span>','APPROVED':'<span class="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">Onaylı</span>','REJECTED':'<span class="bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded font-bold">Red</span>','PENDING_ACC':'<span class="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-bold">Muhasebe</span>'};
+        const cats={'HARCIRAH':'💵','MAZOT':'⛽','OTOYOL':'🛣️','OTOPARK':'🅿️','GUMRUK':'🛂','YEMEK':'🍔','BAKIM':'🔧','TELEFON':'📱','DIGER':'📝'};
+
+        list.innerHTML=filtered.slice(0,100).map(e=>`<tr class="hover:bg-slate-50">
+            <td class="p-2 px-3 font-bold">${esc(e.driver)}</td>
+            <td class="p-2 px-3 text-slate-400">${e.date||''}</td>
+            <td class="p-2 px-3">${cats[e.category]||'📝'} ${e.category}</td>
+            <td class="p-2 px-3 text-slate-600 max-w-[160px] truncate">${esc(e.tripName||'')}</td>
+            <td class="p-2 px-3 text-right font-bold">${formatMoney(e.amount,e.currency)}</td>
+            <td class="p-2 px-3 text-center">${statusMap[e.status]||e.status}</td>
+        </tr>`).join('')||'<tr><td colspan="6" class="p-4 text-center text-slate-400">Sonuç yok.</td></tr>';
+    }
+
+    function clearExpenseFilters(){
+        ['filterDriver','filterCategory','filterStatus','filterMonth'].forEach(id=>{
+            const el=document.getElementById(id); if(el) el.value='';
+        });
+        const res=document.getElementById('filteredExpenseResult');
+        if(res) res.classList.add('hidden');
+    }
+
+    function initFilterDriverSelect(){
+        const dl=document.getElementById('filterDriverList'); if(!dl) return;
+        dl.innerHTML=getDrivers().map(d=>`<option value="${esc(d)}">`).join('');
+    }
+
+    // ── 3. Şoför Bazlı Maliyet Analizi ───────────────────────
+    function renderDriverCostAnalysis(){
+        const el=document.getElementById('driverCostAnalysis'); if(!el) return;
+        const drivers=getDrivers();
+        if(!drivers.length){el.innerHTML='<p class="text-xs text-slate-400">Veri yok.</p>';return;}
+
+        const toEUR=e=>e.currency==='EUR'?e.amount:e.currency==='USD'?e.amount*0.92:e.amount*0.026;
+        const driverData=drivers.map(d=>{
+            const dExp=expenses.filter(e=>e.driver===d&&e.status==='APPROVED');
+            const total=dExp.reduce((s,e)=>s+toEUR(e),0);
+            const byCategory={};
+            dExp.forEach(e=>{ byCategory[e.category]=(byCategory[e.category]||0)+toEUR(e); });
+            const trips=driverTrips.filter(t=>t.driver===d&&t.status==='COMPLETED');
+            const km=trips.reduce((s,t)=>s+(t.totalKm||0),0);
+            return {driver:d, total, byCategory, trips:trips.length, km};
+        }).sort((a,b)=>b.total-a.total);
+
+        const maxTotal=driverData[0]?.total||1;
+        const cats={'HARCIRAH':'💵','MAZOT':'⛽','OTOYOL':'🛣️','OTOPARK':'🅿️','GUMRUK':'🛂','YEMEK':'🍔','BAKIM':'🔧','TELEFON':'📱','DIGER':'📝'};
+
+        el.innerHTML=driverData.map(d=>{
+            const pct=Math.round(d.total/maxTotal*100);
+            const topCat=Object.entries(d.byCategory).sort((a,b)=>b[1]-a[1]).slice(0,3);
+            return `<div class="border border-slate-200 rounded-xl p-3">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="font-bold text-slate-700 text-sm">${esc(d.driver)}</span>
+                    <div class="text-right">
+                        <span class="font-black text-slate-800">${d.total.toFixed(2)} €</span>
+                        <span class="text-[10px] text-slate-400 ml-2">${d.trips} sefer · ${d.km.toLocaleString()} km</span>
+                    </div>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2 mb-2">
+                    <div class="bg-primary h-2 rounded-full transition-all" style="width:${pct}%"></div>
+                </div>
+                <div class="flex gap-2 flex-wrap">
+                    ${topCat.map(([c,v])=>`<span class="text-[10px] bg-slate-50 border border-slate-200 rounded px-2 py-0.5">${cats[c]||'📝'} ${v.toFixed(0)} €</span>`).join('')}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ── 4. Toplu Ekstre PDF ───────────────────────────────────
+    async function exportBulkExtrePDF(){
+        if(typeof pdfMake==='undefined'){showToast('PDF kütüphanesi yüklenmedi','error');return;}
+        showToast('Toplu ekstre hazırlanıyor...','success');
+        const drivers=getDrivers();
+        const content=[];
+        const toEUR=e=>e.currency==='EUR'?e.amount:e.currency==='USD'?e.amount*0.92:e.amount*0.026;
+
+        content.push({text:'karekara — Personel Toplu Cari Ekstresi',style:'h1',margin:[0,0,0,4]});
+        content.push({text:new Date().toLocaleDateString('tr-TR')+' tarihi itibarıyla',style:'sub',margin:[0,0,0,16]});
+
+        drivers.forEach((drv,i)=>{
+            const dAdv=advances.filter(a=>a.driver===drv);
+            const dExp=expenses.filter(e=>e.driver===drv&&e.status==='APPROVED');
+            const totAdv=dAdv.reduce((s,a)=>s+(a.currency==='EUR'?a.amount:a.currency==='USD'?a.amount*0.92:a.amount*0.026),0);
+            const totExp=dExp.reduce((s,e)=>s+toEUR(e),0);
+            const bal=totAdv-totExp;
+
+            if(i>0) content.push({text:'',margin:[0,12,0,0]});
+            content.push({text:drv,style:'h2',margin:[0,8,0,6]});
+
+            const rows=[
+                [{text:'Tarih',bold:true,fillColor:'#1E293B',color:'#fff',fontSize:8},
+                 {text:'Açıklama',bold:true,fillColor:'#1E293B',color:'#fff',fontSize:8},
+                 {text:'Tutar',bold:true,fillColor:'#1E293B',color:'#fff',alignment:'right',fontSize:8},
+                 {text:'Tür',bold:true,fillColor:'#1E293B',color:'#fff',alignment:'center',fontSize:8}]
+            ];
+            [...dAdv.map(a=>({date:a.date,desc:a.note||'Avans',amount:a.currency==='EUR'?a.amount:a.currency==='USD'?a.amount*0.92:a.amount*0.026,type:'AVANS',sign:1})),
+             ...dExp.map(e=>({date:e.date,desc:e.tripName||e.category,amount:toEUR(e),type:'MASRAF',sign:-1}))
+            ].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(t=>{
+                rows.push([
+                    {text:t.date||'',fontSize:8},
+                    {text:t.desc,fontSize:8},
+                    {text:(t.sign>0?'+':'-')+t.amount.toFixed(2)+' €',alignment:'right',fontSize:8,color:t.sign>0?'#059669':'#DC2626',bold:true},
+                    {text:t.type,alignment:'center',fontSize:7,color:t.sign>0?'#059669':'#DC2626'}
+                ]);
+            });
+            rows.push([
+                {text:'NET BAKİYE',bold:true,fillColor:'#1E293B',color:'#fff',colSpan:2,fontSize:8},{}  ,
+                {text:(bal>=0?'+':'')+bal.toFixed(2)+' €',bold:true,alignment:'right',fillColor:'#1E293B',color:bal>=0?'#6EE7B7':'#FCA5A5',fontSize:9},
+                {text:'',fillColor:'#1E293B'}
+            ]);
+            content.push({table:{widths:['auto','*','auto','auto'],body:rows},layout:{fillColor:(r)=>r>0&&r%2===0?'#F8FAFC':null}});
+        });
+
+        pdfMake.createPdf({
+            pageSize:'A4',pageMargins:[30,40,30,40],content,
+            styles:{h1:{fontSize:14,bold:true},h2:{fontSize:11,bold:true,color:'#1E293B'},sub:{fontSize:8,color:'#64748B'}},
+            defaultStyle:{fontSize:9,font:'Roboto'}
+        }).download(`karekara_toplu_ekstre_${new Date().toISOString().slice(0,10)}.pdf`);
+        showToast('Toplu ekstre PDF indirildi ✓','success');
+    }
+
+    function renderAccountingExtras(){
+        renderAccountingMonthlySummary();
+        renderDriverCostAnalysis();
+        initFilterDriverSelect();
+    }
+
     function updatePatronDashboard(){let tE=0,tU=0,tT=0,rC=0; const aTrips=driverTrips.filter(t=>t.status==='ACTIVE').length; const dL=document.getElementById('patronDriverRiskList'); dL.innerHTML=''; getDrivers().forEach(drv=>{const b=getDriverBalance(drv); tE+=b.e; tU+=b.u; tT+=b.t; if(b.e>0||b.u>0||b.t>0){let isR=(b.e>1000||b.u>1100||b.t>35000); if(isR)rC++; let det=''; if(b.e>0)det+=`<span class="text-blue-700 font-bold mr-2">${formatPdfMoney(b.e,'€')}</span>`; if(b.u>0)det+=`<span class="text-emerald-700 font-bold mr-2">${formatPdfMoney(b.u,'$')}</span>`; if(b.t>0)det+=`<span class="text-indigo-700 font-bold">${formatPdfMoney(b.t,'₺')}</span>`; let bdg=isR?`<span class="bg-red-500 text-white px-2 py-1 rounded text-[10px] font-bold">RİSK</span>`:`<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded text-[10px] font-bold">NORMAL</span>`; dL.innerHTML+=`<tr class="border-b border-slate-100 ${isR?'risk-row':'hover:bg-slate-50'}"><td class="p-3 font-bold">${esc(drv)}</td><td class="p-3 text-right">${det}</td><td class="p-3 text-center">${bdg}</td></tr>`;}}); if(dL.innerHTML==='')dL.innerHTML=`<tr><td colspan="3" class="p-4 text-center text-slate-500">Riskli personel yok.</td></tr>`; document.getElementById('patSafeEUR').innerText=formatPdfMoney(tE,'€'); document.getElementById('patSafeUSD').innerText=formatPdfMoney(tU,'$'); document.getElementById('patSafeTRY').innerText=formatPdfMoney(tT,'₺'); document.getElementById('patActiveTripsCount').innerText=aTrips; document.getElementById('patRiskyDriversCount').innerText=rC; let cM=new Date().toISOString().slice(0,7); let mE=0,mU=0,mT=0; expenses.filter(e=>e.status==='APPROVED'&&e.date&&e.date.startsWith(cM)).forEach(e=>{if(e.currency==='EUR')mE+=e.amount;else if(e.currency==='USD')mU+=e.amount;else mT+=e.amount;}); document.getElementById('patExpThisMonthEUR').innerText=formatPdfMoney(mE,'€'); document.getElementById('patExpThisMonthUSD').innerText=formatPdfMoney(mU,'$'); document.getElementById('patExpThisMonthTRY').innerText=formatPdfMoney(mT,'₺'); let vD={}; driverTrips.filter(t=>t.status==='COMPLETED').forEach(t=>{if(!vD[t.plate])vD[t.plate]={km:0,c:0}; vD[t.plate].km+=t.totalKm;}); expenses.filter(e=>e.status==='APPROVED'&&e.plaka&&(e.category==='MAZOT'||e.category==='BAKIM'||e.category==='OTOYOL')).forEach(e=>{let p=e.plaka.toUpperCase(); if(!vD[p])vD[p]={km:0,c:0}; let a=e.amount; if(e.currency==='USD')a*=0.9;else if(e.currency==='TRY')a*=0.028; vD[p].c+=a;}); const pV=document.getElementById('patronVehicleList'); pV.innerHTML=''; for(const[p,d] of Object.entries(vD)){if(d.km===0)continue; let cpm=d.c/d.km; let cC=cpm>0.4?'text-rose-600 font-bold bg-rose-50':'text-emerald-600 font-bold bg-emerald-50'; pV.innerHTML+=`<tr class="border-b border-slate-100"><td class="p-3 font-bold uppercase"><span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs">${esc(p)}</span></td><td class="p-3 text-right">${d.km.toLocaleString()} KM</td><td class="p-3 text-right">~${formatPdfMoney(d.c,'€')}</td><td class="p-3 text-right ${cC} rounded-lg">${formatPdfMoney(cpm,'€')} / KM</td></tr>`;} if(pV.innerHTML==='')pV.innerHTML=`<tr><td colspan="4" class="p-4 text-center">Veri yok.</td></tr>`; renderPatronCharts();}
     function renderPatronCharts(){let cC={}; expenses.filter(e=>e.status==='APPROVED').forEach(e=>{cC[e.category]=(cC[e.category]||0)+1;}); const cP=document.getElementById('patronPieChart').getContext('2d'); if(pieChartInstance)pieChartInstance.destroy(); pieChartInstance=new Chart(cP,{type:'doughnut',data:{labels:Object.keys(cC).map(k=>`${catIcons[k]||''} ${k}`),datasets:[{data:Object.values(cC),backgroundColor:['#4AA4F6','#10B981','#F59E0B','#F43F5E','#8B5CF6','#64748B'],borderWidth:2,borderColor:'#fff'}]},options:{cutout:'70%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,font:{size:10}}}}}}); let ms=[]; let tD=[]; let d=new Date(); for(let i=5;i>=0;i--){let pD=new Date(d.getFullYear(),d.getMonth()-i,1); let mS=pD.toISOString().slice(0,7); ms.push(pD.toLocaleString('tr-TR',{month:'short'})); let s=0; expenses.filter(e=>e.status==='APPROVED'&&e.date&&e.date.startsWith(mS)).forEach(e=>{let a=e.amount; if(e.currency==='USD')a*=0.9;else if(e.currency==='TRY')a*=0.028; s+=a;}); tD.push(Math.round(s));} const cT=document.getElementById('patronTrendChart').getContext('2d'); if(trendChartInstance)trendChartInstance.destroy(); trendChartInstance=new Chart(cT,{type:'bar',data:{labels:ms,datasets:[{label:'Tahmini Harcama (€)',data:tD,backgroundColor:'#4AA4F6',borderRadius:4}]},options:{maintainAspectRatio:false,scales:{y:{beginAtZero:true,grid:{color:'#F1F5F9'}},x:{grid:{display:false}}},plugins:{legend:{display:false}}}});}
     function exportTripsCSV(){let rows=[["Bitis Tarihi","Sefer No","Pozisyon No","Personel","Guzergah","Plaka","Dorse","Bas KM","Bit KM","Total KM"].join(";")]; const sV=(document.getElementById('searchTripInput')?.value.toLowerCase()||''); let c=driverTrips.filter(t=>t.status==='COMPLETED').sort((a,b)=>b.endDate.localeCompare(a.endDate)); if(sV)c=c.filter(t=>(t.tripNo||'').toLowerCase().includes(sV)||(t.driver||'').toLowerCase().includes(sV)||(t.route||'').toLowerCase().includes(sV)||(t.plate||'').toLowerCase().includes(sV)); if(c.length===0)return alert("Kayıt yok!"); c.forEach(t=>{rows.push([t.endDate,`"${t.tripNo}"`,`"${t.posNo || '-'}"`,`"${t.driver}"`,`"${t.route}"`,`"${t.plate}"`,`"${t.trailer||'-'}"`,t.startKm,t.endKm,t.totalKm].join(";"));}); const blob=new Blob(["\uFEFF"+rows.join("\n")],{type:'text/csv;charset=utf-8;'}); const link=document.createElement("a"); link.href=URL.createObjectURL(blob); link.download=`Sefer_Raporu_${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);}
@@ -2559,12 +2894,15 @@
     function renderOpsActiveTrips(){const l=document.getElementById('opsActiveTripsList'); if(!l)return; l.innerHTML=''; let act=driverTrips.filter(t=>t.status==='ACTIVE'); act.forEach(t=>{let btns=`<button onclick="openEditActiveTripModal('${t.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg"><i class="fa-solid fa-pen"></i></button><button onclick="openEndTripModal('${t.id}')" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg ml-1"><i class="fa-solid fa-stop"></i></button><button onclick="deleteTrip('${t.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg ml-1"><i class="fa-solid fa-trash"></i></button>`; l.innerHTML+=`<tr class="border-b border-slate-100 hover:bg-amber-50/50"><td class="p-3 font-bold"><i class="fa-solid fa-user text-slate-300 mr-2"></i>${esc(t.driver)}</td><td class="p-3 font-bold text-indigo-600">${esc(t.tripNo)}</td><td class="p-3 font-bold text-amber-600">${esc(t.posNo || '-')}</td><td class="p-3 text-sm text-slate-600">${esc(t.route)}</td><td class="p-3 text-xs"><span class="bg-slate-100 px-2 py-1 rounded font-bold">${esc(t.plate)}</span> / ${esc(t.trailer)||'-'}</td><td class="p-3 font-bold">${t.startKm.toLocaleString()} KM</td><td class="p-3 text-right">${btns}</td></tr>`;}); if(act.length===0)l.innerHTML=`<tr><td colspan="7" class="p-4 text-center text-slate-500">Sistemde devam eden sefer yok.</td></tr>`;}
     
     function renderAll(){
-        if(!currentUser)return; const bal=getDriverBalance(currentUser); if(document.getElementById('driverNameTitle'))document.getElementById('driverNameTitle').innerText=currentUser;        if(document.getElementById('mySafeEUR'))document.getElementById('mySafeEUR').innerHTML=formatMoney(bal.e,'€'); if(document.getElementById('mySafeUSD'))document.getElementById('mySafeUSD').innerHTML=formatMoney(bal.u,'$'); if(document.getElementById('mySafeTRY'))document.getElementById('mySafeTRY').innerHTML=formatMoney(bal.t,'₺');
+        if(!currentUser)return; const bal=getDriverBalance(currentUser); if(document.getElementById('driverNameTitle'))document.getElementById('driverNameTitle').innerText=currentUser;
+        const targetDrv=currentRole==='DRIVER'?currentUser:(document.getElementById('activeUser')?.value||currentUser);
+        renderDriverPersonalSummary(targetDrv);
+        renderDriverNotifications(targetDrv);        if(document.getElementById('mySafeEUR'))document.getElementById('mySafeEUR').innerHTML=formatMoney(bal.e,'€'); if(document.getElementById('mySafeUSD'))document.getElementById('mySafeUSD').innerHTML=formatMoney(bal.u,'$'); if(document.getElementById('mySafeTRY'))document.getElementById('mySafeTRY').innerHTML=formatMoney(bal.t,'₺');
         // Aktif veya son sefer kartı
         const tripCard=document.getElementById('driverTripCard');
         if(tripCard){
             const activeTrip=driverTrips.find(t=>t.driver===currentUser&&t.status==='ACTIVE');
-            const lastTrip=driverTrips.filter(t=>t.driver===currentUser&&t.status==='COMPLETED').sort((a,b)=>(b.endDate||'').localeCompare(a.endDate||''))[0];
+            const lastTrip=driverTrips.filter(t=>t.driver===_drvFilter&&t.status==='COMPLETED').sort((a,b)=>(b.endDate||'').localeCompare(a.endDate||''))[0];
             const showTrip=activeTrip||lastTrip;
             if(showTrip){
                 tripCard.classList.remove('hidden');
@@ -2594,7 +2932,7 @@
                 tripCard.classList.add('hidden');
             }
         }
-        const dList=document.getElementById('driverList'); if(dList){dList.innerHTML=''; let mE=expenses.filter(e=>e.driver===currentUser).sort((a,b)=>{const order={'PENDING_OP':0,'PENDING_ACC':1,'REJECTED':2,'APPROVED':3}; const oa=order[a.status]??4,ob=order[b.status]??4; if(oa!==ob)return oa-ob; return (b.timestamp?.seconds||0)-(a.timestamp?.seconds||0)||(b.date||'').localeCompare(a.date||'');}); mE.forEach(e=>{let bC=e.status==='APPROVED'?'bg-emerald-100 text-emerald-700':(e.status==='REJECTED'?'bg-rose-100 text-rose-700':'bg-amber-100 text-amber-700'); let sT=e.status==='PENDING_OP'?'Bekliyor':(e.status==='APPROVED'?'Onaylandı':'Red'); let tT=e.tripId?`<span class="text-[9px] font-bold text-indigo-400 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded mt-0.5 inline-block">${esc(e.tripId)}</span>`:''; const canEdit=canEditExpense(e); const canDel=canDeleteExpense(e); let editBtns=''; if(canEdit||canDel){editBtns=`<div class="flex gap-1 mt-1.5">${canEdit?`<button onclick="editExpense('${e.id}')" class="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg text-[10px] font-bold hover:bg-blue-100 transition"><i class="fa-solid fa-pen mr-1"></i>Düzenle</button>`:''}${canDel?`<button onclick="deleteExpense('${e.id}')" class="bg-rose-50 text-rose-600 px-2 py-1 rounded-lg text-[10px] font-bold hover:bg-rose-100 transition"><i class="fa-solid fa-trash mr-1"></i>Sil</button>`:''}</div>`;} else if(e.status==='APPROVED'){editBtns=`<div class="mt-1.5"><span class="text-[10px] text-slate-400"><i class="fa-solid fa-lock mr-1"></i>Onaylandı — düzenlenemez</span></div>`;} dList.innerHTML+=`<div class="p-4 bg-white border border-slate-100 rounded-xl shadow-sm flex justify-between items-start mb-2 hover:shadow-md transition"><div class="flex items-start gap-3"><div class="text-2xl bg-slate-50 w-10 h-10 flex items-center justify-center rounded-lg shrink-0">${catIcons[e.category]||'📝'}</div><div><div class="text-[10px] text-slate-400 font-bold">${e.date}</div><div class="text-sm font-bold text-slate-800">${esc(e.tripName)}</div>${tT}${editBtns}</div></div><div class="text-right flex flex-col items-end gap-1 ml-2"><div class="text-base text-slate-800 whitespace-nowrap">${formatMoney(e.amount,e.currency)}</div><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${bC}">${sT}</span></div></div>`;}); if(mE.length===0)dList.innerHTML=`<div class="text-center py-6 text-slate-400 text-sm">Masraf yok.</div>`;}
+        const dList=document.getElementById('driverList'); if(dList){dList.innerHTML=''; let drvFilter=currentRole==='DRIVER'?currentUser:(document.getElementById('activeUser')?.value||currentUser); let mE=expenses.filter(e=>e.driver===drvFilter).sort((a,b)=>{const order={'PENDING_OP':0,'PENDING_ACC':1,'REJECTED':2,'APPROVED':3}; const oa=order[a.status]??4,ob=order[b.status]??4; if(oa!==ob)return oa-ob; return (b.timestamp?.seconds||0)-(a.timestamp?.seconds||0)||(b.date||'').localeCompare(a.date||'');}); mE.forEach(e=>{let bC=e.status==='APPROVED'?'bg-emerald-100 text-emerald-700':(e.status==='REJECTED'?'bg-rose-100 text-rose-700':'bg-amber-100 text-amber-700'); let sT=e.status==='PENDING_OP'?'Bekliyor':(e.status==='APPROVED'?'Onaylandı':'Red'); let tT=e.tripId?`<span class="text-[9px] font-bold text-indigo-400 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded mt-0.5 inline-block">${esc(e.tripId)}</span>`:''; const canEdit=canEditExpense(e); const canDel=canDeleteExpense(e); let editBtns=''; if(canEdit||canDel){editBtns=`<div class="flex gap-1 mt-1.5">${canEdit?`<button onclick="editExpense('${e.id}')" class="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg text-[10px] font-bold hover:bg-blue-100 transition"><i class="fa-solid fa-pen mr-1"></i>Düzenle</button>`:''}${canDel?`<button onclick="deleteExpense('${e.id}')" class="bg-rose-50 text-rose-600 px-2 py-1 rounded-lg text-[10px] font-bold hover:bg-rose-100 transition"><i class="fa-solid fa-trash mr-1"></i>Sil</button>`:''}</div>`;} else if(e.status==='APPROVED'){editBtns=`<div class="mt-1.5"><span class="text-[10px] text-slate-400"><i class="fa-solid fa-lock mr-1"></i>Onaylandı — düzenlenemez</span></div>`;} dList.innerHTML+=`<div class="p-4 bg-white border border-slate-100 rounded-xl shadow-sm flex justify-between items-start mb-2 hover:shadow-md transition"><div class="flex items-start gap-3"><div class="text-2xl bg-slate-50 w-10 h-10 flex items-center justify-center rounded-lg shrink-0">${catIcons[e.category]||'📝'}</div><div><div class="text-[10px] text-slate-400 font-bold">${e.date}</div><div class="text-sm font-bold text-slate-800">${esc(e.tripName)}</div>${tT}${editBtns}</div></div><div class="text-right flex flex-col items-end gap-1 ml-2"><div class="text-base text-slate-800 whitespace-nowrap">${formatMoney(e.amount,e.currency)}</div><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${bC}">${sT}</span></div></div>`;}); if(mE.length===0)dList.innerHTML=`<div class="text-center py-6 text-slate-400 text-sm">Masraf yok.</div>`;}
         const fP=document.getElementById('panel-FLEET'); if(fP&&fP.style.display!=='none')renderFleetPanel();
         if(['ADMIN','OPS','PATRON','OPS_MANAGER'].includes(currentRole)){
             renderOpsActiveTrips(); const opL=document.getElementById('operationsList'); if(opL){opL.innerHTML=''; expenses.filter(e=>e.status==='PENDING_OP').forEach(e=>{let tL=e.tripId?`<span class="bg-indigo-50 border border-indigo-200 text-indigo-700 font-black text-sm px-3 py-1 rounded-lg">${esc(e.tripId)}</span>`:`<span class="text-slate-300 text-xs">—</span>`; let aB=`<button onclick="opApprove('${e.id}')" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg shadow-sm"><i class="fa-solid fa-check"></i></button><button onclick="editExpense('${e.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-pen"></i></button><button onclick="opReject('${e.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-xmark"></i></button><button onclick="deleteExpense('${e.id}')" class="bg-red-100 text-red-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-trash"></i></button>`; opL.innerHTML+=`<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="p-4"><p class="font-bold">${esc(e.driver)}</p><p class="text-[10px] text-slate-500">${e.date}</p></td><td class="p-4"><p class="font-semibold text-sm">${catIcons[e.category]} ${e.category}</p><p class="text-xs text-slate-500">${esc(e.tripName)}</p></td><td class="p-4 text-primary text-base">${formatMoney(e.amount,e.currency)}</td><td class="p-4">${tL}</td><td class="p-4"><span class="text-slate-300 text-xs">—</span></td><td class="p-4 text-right flex justify-end gap-1">${aB}</td></tr>`;}); if(opL.innerHTML==='')opL.innerHTML=`<tr><td colspan="6" class="p-6 text-center text-slate-400 text-sm"><i class="fa-regular fa-circle-check text-2xl block mb-2 opacity-30"></i>Bekleyen masraf yok.</td></tr>`;}

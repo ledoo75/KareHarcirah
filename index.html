@@ -955,9 +955,8 @@
                 <button onclick="clearExpenseFilters()" class="text-[10px] text-slate-400 hover:text-slate-600 underline ml-auto">Temizle</button>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <select id="filterDriver" onchange="renderFilteredExpenses()" class="input-style text-xs">
-                    <option value="">Tüm Şoförler</option>
-                </select>
+                <input list="filterDriverList" id="filterDriver" onchange="renderFilteredExpenses()" oninput="renderFilteredExpenses()" class="input-style text-xs" placeholder="Şoför adı yaz..."/>
+                <datalist id="filterDriverList"></datalist>
                 <select id="filterCategory" onchange="renderFilteredExpenses()" class="input-style text-xs">
                     <option value="">Tüm Kategoriler</option>
                     <option value="HARCIRAH">💵 Harcırah</option>
@@ -2706,7 +2705,7 @@
 
     // ── 2. Masraf Filtreleme ──────────────────────────────────
     function renderFilteredExpenses(){
-        const drv=document.getElementById('filterDriver')?.value;
+        const drv=document.getElementById('filterDriver')?.value?.trim().toLowerCase();
         const cat=document.getElementById('filterCategory')?.value;
         const sta=document.getElementById('filterStatus')?.value;
         const mon=document.getElementById('filterMonth')?.value;
@@ -2715,7 +2714,7 @@
         if(!res||!list) return;
 
         let filtered=expenses.filter(e=>{
-            if(drv&&e.driver!==drv) return false;
+            if(drv&&!(e.driver||'').toLowerCase().includes(drv)) return false;
             if(cat&&e.category!==cat) return false;
             if(sta&&e.status!==sta) return false;
             if(mon&&!(e.date||'').startsWith(mon)) return false;
@@ -2749,9 +2748,8 @@
     }
 
     function initFilterDriverSelect(){
-        const sel=document.getElementById('filterDriver'); if(!sel) return;
-        const drivers=getDrivers();
-        sel.innerHTML='<option value="">Tüm Şoförler</option>'+drivers.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');
+        const dl=document.getElementById('filterDriverList'); if(!dl) return;
+        dl.innerHTML=getDrivers().map(d=>`<option value="${esc(d)}">`).join('');
     }
 
     // ── 3. Şoför Bazlı Maliyet Analizi ───────────────────────

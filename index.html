@@ -874,6 +874,12 @@
             </div>
         </div>
 
+        <!-- Kişisel Özet -->
+        <div id="driverPersonalSummary" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4"></div>
+
+        <!-- Masraf Durum Bildirimleri -->
+        <div id="driverNotifications" class="hidden mb-4"></div>
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="glass-card p-5 h-fit lg:col-span-1">
                 <h3 class="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2"><i class="fa-solid fa-receipt text-primary"></i> Yeni Masraf Ekle</h3>
@@ -2538,6 +2544,66 @@
 
 
     
+    // ── Şoför Kişisel Özet ────────────────────────────────────
+    function renderDriverPersonalSummary(){
+        const el=document.getElementById('driverPersonalSummary'); if(!el) return;
+        if(currentRole!=='DRIVER'){el.innerHTML='';return;}
+        const thisMonth=new Date().toISOString().slice(0,7);
+        const myExp=expenses.filter(e=>e.driver===currentUser);
+        const myTrips=driverTrips.filter(t=>t.driver===currentUser);
+        const monthTrips=myTrips.filter(t=>t.status==='COMPLETED'&&(t.endDate||'').startsWith(thisMonth));
+        const totalKm=monthTrips.reduce((s,t)=>s+(t.totalKm||0),0);
+        const pending=myExp.filter(e=>e.status==='PENDING_OP'||e.status==='PENDING_ACC').length;
+        const approved=myExp.filter(e=>e.status==='APPROVED'&&(e.date||'').startsWith(thisMonth)).length;
+        const totalExp=myExp.filter(e=>e.status==='APPROVED'&&(e.date||'').startsWith(thisMonth)&&e.currency==='EUR').reduce((s,e)=>s+e.amount,0);
+        el.innerHTML=`
+            <div class="glass-card p-3 text-center border-t-4 border-blue-400">
+                <p class="text-[10px] text-slate-400 font-bold uppercase mb-1">Bu Ay Sefer</p>
+                <p class="text-2xl font-black text-blue-600">${monthTrips.length}</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">${totalKm.toLocaleString()} km</p>
+            </div>
+            <div class="glass-card p-3 text-center border-t-4 border-amber-400">
+                <p class="text-[10px] text-slate-400 font-bold uppercase mb-1">Bekleyen</p>
+                <p class="text-2xl font-black ${pending>0?'text-amber-600':'text-slate-300'}">${pending}</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">masraf onayda</p>
+            </div>
+            <div class="glass-card p-3 text-center border-t-4 border-emerald-400">
+                <p class="text-[10px] text-slate-400 font-bold uppercase mb-1">Onaylanan</p>
+                <p class="text-2xl font-black text-emerald-600">${approved}</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">bu ay</p>
+            </div>
+            <div class="glass-card p-3 text-center border-t-4 border-rose-400">
+                <p class="text-[10px] text-slate-400 font-bold uppercase mb-1">Toplam Masraf</p>
+                <p class="text-xl font-black text-rose-600">${totalExp.toFixed(0)} €</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">bu ay EUR</p>
+            </div>`;
+    }
+
+    // ── Masraf Durum Bildirimleri ─────────────────────────────
+    let _prevExpStatuses={};
+    function renderDriverNotifications(){
+        const el=document.getElementById('driverNotifications'); if(!el) return;
+        if(currentRole!=='DRIVER'){el.classList.add('hidden');return;}
+        const myExp=expenses.filter(e=>e.driver===currentUser);
+        const notes=[];
+        const rejected=myExp.filter(e=>e.status==='REJECTED');
+        const accPending=myExp.filter(e=>e.status==='PENDING_ACC');
+        const week=new Date(Date.now()-7*24*60*60*1000).toISOString().slice(0,10);
+        const recentApproved=myExp.filter(e=>e.status==='APPROVED'&&(e.date||'')>=week);
+        if(recentApproved.length) notes.push({color:'emerald',icon:'fa-circle-check',title:`${recentApproved.length} masrafınız onaylandı ✓`,sub:recentApproved.slice(0,2).map(e=>`${e.tripName||e.category}: ${formatMoney(e.amount,e.currency)}`).join(' · ')});
+        if(accPending.length) notes.push({color:'indigo',icon:'fa-clock',title:`${accPending.length} masrafınız muhasebe onayında`,sub:'Muhasebe inceliyor...'});
+        if(rejected.length) notes.push({color:'rose',icon:'fa-circle-xmark',title:`${rejected.length} masrafınız reddedildi`,sub:rejected.slice(0,2).map(e=>`${e.tripName||e.category}: ${formatMoney(e.amount,e.currency)}`).join(' · ')});
+        if(!notes.length){el.classList.add('hidden');return;}
+        el.classList.remove('hidden');
+        el.innerHTML=notes.map(n=>`<div class="flex items-start gap-3 bg-${n.color}-50 border border-${n.color}-200 rounded-xl px-3 py-2.5 mb-2">
+            <i class="fa-solid ${n.icon} text-${n.color}-500 mt-0.5 shrink-0"></i>
+            <div class="flex-1 min-w-0">
+                <p class="text-xs font-bold text-${n.color}-800">${n.title}</p>
+                <p class="text-[10px] text-${n.color}-600 truncate">${n.sub}</p>
+            </div>
+        </div>`).join('');
+    }
+
     function updatePatronDashboard(){let tE=0,tU=0,tT=0,rC=0; const aTrips=driverTrips.filter(t=>t.status==='ACTIVE').length; const dL=document.getElementById('patronDriverRiskList'); dL.innerHTML=''; getDrivers().forEach(drv=>{const b=getDriverBalance(drv); tE+=b.e; tU+=b.u; tT+=b.t; if(b.e>0||b.u>0||b.t>0){let isR=(b.e>1000||b.u>1100||b.t>35000); if(isR)rC++; let det=''; if(b.e>0)det+=`<span class="text-blue-700 font-bold mr-2">${formatPdfMoney(b.e,'€')}</span>`; if(b.u>0)det+=`<span class="text-emerald-700 font-bold mr-2">${formatPdfMoney(b.u,'$')}</span>`; if(b.t>0)det+=`<span class="text-indigo-700 font-bold">${formatPdfMoney(b.t,'₺')}</span>`; let bdg=isR?`<span class="bg-red-500 text-white px-2 py-1 rounded text-[10px] font-bold">RİSK</span>`:`<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded text-[10px] font-bold">NORMAL</span>`; dL.innerHTML+=`<tr class="border-b border-slate-100 ${isR?'risk-row':'hover:bg-slate-50'}"><td class="p-3 font-bold">${esc(drv)}</td><td class="p-3 text-right">${det}</td><td class="p-3 text-center">${bdg}</td></tr>`;}}); if(dL.innerHTML==='')dL.innerHTML=`<tr><td colspan="3" class="p-4 text-center text-slate-500">Riskli personel yok.</td></tr>`; document.getElementById('patSafeEUR').innerText=formatPdfMoney(tE,'€'); document.getElementById('patSafeUSD').innerText=formatPdfMoney(tU,'$'); document.getElementById('patSafeTRY').innerText=formatPdfMoney(tT,'₺'); document.getElementById('patActiveTripsCount').innerText=aTrips; document.getElementById('patRiskyDriversCount').innerText=rC; let cM=new Date().toISOString().slice(0,7); let mE=0,mU=0,mT=0; expenses.filter(e=>e.status==='APPROVED'&&e.date&&e.date.startsWith(cM)).forEach(e=>{if(e.currency==='EUR')mE+=e.amount;else if(e.currency==='USD')mU+=e.amount;else mT+=e.amount;}); document.getElementById('patExpThisMonthEUR').innerText=formatPdfMoney(mE,'€'); document.getElementById('patExpThisMonthUSD').innerText=formatPdfMoney(mU,'$'); document.getElementById('patExpThisMonthTRY').innerText=formatPdfMoney(mT,'₺'); let vD={}; driverTrips.filter(t=>t.status==='COMPLETED').forEach(t=>{if(!vD[t.plate])vD[t.plate]={km:0,c:0}; vD[t.plate].km+=t.totalKm;}); expenses.filter(e=>e.status==='APPROVED'&&e.plaka&&(e.category==='MAZOT'||e.category==='BAKIM'||e.category==='OTOYOL')).forEach(e=>{let p=e.plaka.toUpperCase(); if(!vD[p])vD[p]={km:0,c:0}; let a=e.amount; if(e.currency==='USD')a*=0.9;else if(e.currency==='TRY')a*=0.028; vD[p].c+=a;}); const pV=document.getElementById('patronVehicleList'); pV.innerHTML=''; for(const[p,d] of Object.entries(vD)){if(d.km===0)continue; let cpm=d.c/d.km; let cC=cpm>0.4?'text-rose-600 font-bold bg-rose-50':'text-emerald-600 font-bold bg-emerald-50'; pV.innerHTML+=`<tr class="border-b border-slate-100"><td class="p-3 font-bold uppercase"><span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs">${esc(p)}</span></td><td class="p-3 text-right">${d.km.toLocaleString()} KM</td><td class="p-3 text-right">~${formatPdfMoney(d.c,'€')}</td><td class="p-3 text-right ${cC} rounded-lg">${formatPdfMoney(cpm,'€')} / KM</td></tr>`;} if(pV.innerHTML==='')pV.innerHTML=`<tr><td colspan="4" class="p-4 text-center">Veri yok.</td></tr>`; renderPatronCharts();}
     function renderPatronCharts(){let cC={}; expenses.filter(e=>e.status==='APPROVED').forEach(e=>{cC[e.category]=(cC[e.category]||0)+1;}); const cP=document.getElementById('patronPieChart').getContext('2d'); if(pieChartInstance)pieChartInstance.destroy(); pieChartInstance=new Chart(cP,{type:'doughnut',data:{labels:Object.keys(cC).map(k=>`${catIcons[k]||''} ${k}`),datasets:[{data:Object.values(cC),backgroundColor:['#4AA4F6','#10B981','#F59E0B','#F43F5E','#8B5CF6','#64748B'],borderWidth:2,borderColor:'#fff'}]},options:{cutout:'70%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,font:{size:10}}}}}}); let ms=[]; let tD=[]; let d=new Date(); for(let i=5;i>=0;i--){let pD=new Date(d.getFullYear(),d.getMonth()-i,1); let mS=pD.toISOString().slice(0,7); ms.push(pD.toLocaleString('tr-TR',{month:'short'})); let s=0; expenses.filter(e=>e.status==='APPROVED'&&e.date&&e.date.startsWith(mS)).forEach(e=>{let a=e.amount; if(e.currency==='USD')a*=0.9;else if(e.currency==='TRY')a*=0.028; s+=a;}); tD.push(Math.round(s));} const cT=document.getElementById('patronTrendChart').getContext('2d'); if(trendChartInstance)trendChartInstance.destroy(); trendChartInstance=new Chart(cT,{type:'bar',data:{labels:ms,datasets:[{label:'Tahmini Harcama (€)',data:tD,backgroundColor:'#4AA4F6',borderRadius:4}]},options:{maintainAspectRatio:false,scales:{y:{beginAtZero:true,grid:{color:'#F1F5F9'}},x:{grid:{display:false}}},plugins:{legend:{display:false}}}});}
     function exportTripsCSV(){let rows=[["Bitis Tarihi","Sefer No","Pozisyon No","Personel","Guzergah","Plaka","Dorse","Bas KM","Bit KM","Total KM"].join(";")]; const sV=(document.getElementById('searchTripInput')?.value.toLowerCase()||''); let c=driverTrips.filter(t=>t.status==='COMPLETED').sort((a,b)=>b.endDate.localeCompare(a.endDate)); if(sV)c=c.filter(t=>(t.tripNo||'').toLowerCase().includes(sV)||(t.driver||'').toLowerCase().includes(sV)||(t.route||'').toLowerCase().includes(sV)||(t.plate||'').toLowerCase().includes(sV)); if(c.length===0)return alert("Kayıt yok!"); c.forEach(t=>{rows.push([t.endDate,`"${t.tripNo}"`,`"${t.posNo || '-'}"`,`"${t.driver}"`,`"${t.route}"`,`"${t.plate}"`,`"${t.trailer||'-'}"`,t.startKm,t.endKm,t.totalKm].join(";"));}); const blob=new Blob(["\uFEFF"+rows.join("\n")],{type:'text/csv;charset=utf-8;'}); const link=document.createElement("a"); link.href=URL.createObjectURL(blob); link.download=`Sefer_Raporu_${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);}
@@ -2559,7 +2625,9 @@
     function renderOpsActiveTrips(){const l=document.getElementById('opsActiveTripsList'); if(!l)return; l.innerHTML=''; let act=driverTrips.filter(t=>t.status==='ACTIVE'); act.forEach(t=>{let btns=`<button onclick="openEditActiveTripModal('${t.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg"><i class="fa-solid fa-pen"></i></button><button onclick="openEndTripModal('${t.id}')" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg ml-1"><i class="fa-solid fa-stop"></i></button><button onclick="deleteTrip('${t.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg ml-1"><i class="fa-solid fa-trash"></i></button>`; l.innerHTML+=`<tr class="border-b border-slate-100 hover:bg-amber-50/50"><td class="p-3 font-bold"><i class="fa-solid fa-user text-slate-300 mr-2"></i>${esc(t.driver)}</td><td class="p-3 font-bold text-indigo-600">${esc(t.tripNo)}</td><td class="p-3 font-bold text-amber-600">${esc(t.posNo || '-')}</td><td class="p-3 text-sm text-slate-600">${esc(t.route)}</td><td class="p-3 text-xs"><span class="bg-slate-100 px-2 py-1 rounded font-bold">${esc(t.plate)}</span> / ${esc(t.trailer)||'-'}</td><td class="p-3 font-bold">${t.startKm.toLocaleString()} KM</td><td class="p-3 text-right">${btns}</td></tr>`;}); if(act.length===0)l.innerHTML=`<tr><td colspan="7" class="p-4 text-center text-slate-500">Sistemde devam eden sefer yok.</td></tr>`;}
     
     function renderAll(){
-        if(!currentUser)return; const bal=getDriverBalance(currentUser); if(document.getElementById('driverNameTitle'))document.getElementById('driverNameTitle').innerText=currentUser;        if(document.getElementById('mySafeEUR'))document.getElementById('mySafeEUR').innerHTML=formatMoney(bal.e,'€'); if(document.getElementById('mySafeUSD'))document.getElementById('mySafeUSD').innerHTML=formatMoney(bal.u,'$'); if(document.getElementById('mySafeTRY'))document.getElementById('mySafeTRY').innerHTML=formatMoney(bal.t,'₺');
+        if(!currentUser)return; const bal=getDriverBalance(currentUser); if(document.getElementById('driverNameTitle'))document.getElementById('driverNameTitle').innerText=currentUser;
+        renderDriverPersonalSummary();
+        renderDriverNotifications();        if(document.getElementById('mySafeEUR'))document.getElementById('mySafeEUR').innerHTML=formatMoney(bal.e,'€'); if(document.getElementById('mySafeUSD'))document.getElementById('mySafeUSD').innerHTML=formatMoney(bal.u,'$'); if(document.getElementById('mySafeTRY'))document.getElementById('mySafeTRY').innerHTML=formatMoney(bal.t,'₺');
         // Aktif veya son sefer kartı
         const tripCard=document.getElementById('driverTripCard');
         if(tripCard){

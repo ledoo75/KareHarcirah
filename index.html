@@ -1095,8 +1095,8 @@
 
         </div>
 
-        <!-- Duyuru Sistemi (Kompakt) -->
-        <div class="glass-card p-4 mt-5">
+        <!-- Duyuru Sistemi (Kompakt) - Sadece Yöneticiler -->
+        <div class="glass-card p-4 mt-5" id="duyuruPanel">
             <div class="flex items-center justify-between mb-3">
                 <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="fa-solid fa-bullhorn text-amber-500"></i> Duyurular</h3>
                 <button onclick="toggleDuyuruForm()" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-plus"></i> Yeni</button>
@@ -1842,7 +1842,7 @@
         checkActiveTrip();
     }
     
-    function updateDriverDropdowns(){const uSel=document.getElementById('activeUser'); const aSel=document.getElementById('advDriver'); const si=document.getElementById('driverSearchInput'); uSel.innerHTML=''; if(aSel)aSel.innerHTML=''; if(currentRole==='DRIVER'){uSel.innerHTML=`<option value="${esc(loggedInUser.username)}">${esc(loggedInUser.username)}</option>`; uSel.disabled=true; if(si){si.value=loggedInUser.username; si.disabled=true; si.classList.add('opacity-60');}}else{uSel.disabled=false; if(si){si.disabled=false; si.classList.remove('opacity-60');} let drvs=getDrivers(); if(drvs.length===0){uSel.innerHTML=`<option value="">Şoför Yok</option>`;} drvs.forEach(d=>{uSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`; if(aSel)aSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`;}); uSel.value=currentUser; if(si)si.value=currentUser;} if(currentRole!=='DRIVER'&&getDrivers().length>0&&!getDrivers().includes(currentUser)){currentUser=getDrivers()[0]; uSel.value=currentUser; if(si)si.value=currentUser;} fillCariTarihDrivers();}
+    function updateDriverDropdowns(){const uSel=document.getElementById('activeUser'); const aSel=document.getElementById('advDriver'); const si=document.getElementById('driverSearchInput'); uSel.innerHTML=''; if(aSel)aSel.innerHTML=''; if(currentRole==='DRIVER'){uSel.innerHTML=`<option value="${esc(loggedInUser.username)}">${esc(loggedInUser.username)}</option>`; uSel.disabled=true; if(si){si.value=''; si.disabled=true; si.classList.add('opacity-60');}}else{uSel.disabled=false; if(si){si.disabled=false; si.classList.remove('opacity-60');} let drvs=getDrivers(); if(drvs.length===0){uSel.innerHTML=`<option value="">Şoför Yok</option>`;} drvs.forEach(d=>{uSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`; if(aSel)aSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`;}); uSel.value=currentUser; if(si)si.value=currentUser;} if(currentRole!=='DRIVER'&&getDrivers().length>0&&!getDrivers().includes(currentUser)){currentUser=getDrivers()[0]; uSel.value=currentUser; if(si)si.value=currentUser;} fillCariTarihDrivers();}
     function updateTabVisibility(){const defaultPerms={ADMIN:['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],PATRON:['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],OPS:['DRIVER','OPERATIONS','DASHBOARD','ANALYTICS'],OPS_MANAGER:['DRIVER','OPERATIONS','FLEET','DASHBOARD','ANALYTICS','VEHICLE_COST'],ACCOUNTING:['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],FLEET:['DRIVER','FLEET','DASHBOARD','VEHICLE_COST'],DRIVER:['DRIVER']}; let myTabs=loggedInUser.allowedTabs||defaultPerms[currentRole]||['DRIVER']; if(currentRole==='ADMIN')myTabs=defaultPerms['ADMIN'];['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'].forEach(tab=>{const el=document.getElementById(`tab-${tab}`); if(el)el.style.display=myTabs.includes(tab)?'flex':'none';});}
     function switchTab(tabId){document.querySelectorAll('.role-btn').forEach(b=>{b.classList.remove('bg-slate-800','text-white','shadow-md'); b.classList.add('bg-transparent','text-slate-500');}); const activeBtn=document.getElementById(`tab-${tabId}`); if(activeBtn){activeBtn.classList.remove('bg-transparent','text-slate-500'); activeBtn.classList.add('bg-slate-800','text-white','shadow-md');} document.querySelectorAll('.panel-section').forEach(p=>p.style.display='none'); document.getElementById(`panel-${tabId}`).style.display='block'; localStorage.setItem('kare_last_tab',tabId); renderAll(); if(tabId==='PATRON'&&['ADMIN','PATRON'].includes(currentRole))updatePatronDashboard(); if(tabId==='DRIVER'){checkActiveTrip(); renderDriverDuyurular();} if(tabId==='DASHBOARD')renderDashboard(); if(tabId==='FLEET')renderFleetPanel(); if(tabId==='ANALYTICS')renderAnalyticsTab(); if(tabId==='AUDITLOG'){auditPage=50; renderAuditLog();} if(tabId==='ACCOUNTING'){renderAccountingExtras(); loadDuyurular();refreshArchivePreview(); loadArchiveSummary();} if(tabId==='VEHICLE_COST'){ loadAllVcFromFirebase();const now=new Date().toISOString().slice(0,7); const si=document.getElementById('vcStartMonth'); const ei=document.getElementById('vcEndMonth'); const vm=document.getElementById('vcMonth'); if(si&&!si.value){si.value=now;} if(ei&&!ei.value){ei.value=now;} if(vm&&!vm.value){vm.value=now;} const b0=document.getElementById('vcBtn0'); if(b0){clearVcBtns(); b0.className='vc-month-btn bg-orange-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition';} updateVcMonthLabel(); loadSalaryRows(); loadHgsRows(); loadYakitRows(); renderVehicleCost();}}
     function changeUser(){currentUser=document.getElementById('activeUser').value; renderAll(); if(currentRole!=='DRIVER')checkActiveTrip();}
@@ -3482,7 +3482,9 @@
                 </div>
                 <p class="mt-0.5 opacity-80">${esc(d.text)}</p>
                 <div class="flex items-center gap-3 mt-1.5 flex-wrap">
-                    <span class="opacity-50 text-[9px]">${esc(d.createdBy||'')}${d.expiry?' · '+d.expiry:''}</span>
+                    ${d.target&&d.target!=='ALL'?`<span class="opacity-50 text-[9px]">→ ${esc(d.target)}</span>`:''}
+                    ${d.expiry?`<span class="opacity-50 text-[9px]">Bitiş: ${d.expiry}</span>`:''}
+                    ${expired?'<span class="text-[9px] text-rose-500 opacity-60">Süresi doldu</span>':''}
                     ${readBy.length>0?`<span class="opacity-50 text-[9px]">✓ ${readBy.length} kişi okudu</span>`:''}
                     ${!isAdmin&&!alreadyRead?`<button data-duyuru-read="${doc.id}" onclick="markDuyuruRead('${doc.id}')" class="bg-white/70 hover:bg-white border border-current/20 px-2 py-0.5 rounded-lg text-[10px] font-bold transition">Okundu olarak işaretle</button>`:''}
                     ${!isAdmin&&alreadyRead?`<span class="text-[10px] font-bold opacity-70"><i class="fa-solid fa-check mr-1"></i>Okundu</span>`:''}
@@ -3495,6 +3497,9 @@
     async function loadDuyurular(){
         const list=document.getElementById('duyuruList'); if(!list) return;
         const isAdmin=['ADMIN','PATRON','ACCOUNTING','OPS_MANAGER'].includes(currentRole);
+        // Duyuru panelini sadece yöneticiler görsün
+        const panel=document.getElementById('duyuruPanel');
+        if(panel) panel.style.display=isAdmin?'':'none';
         list.innerHTML='<div class="text-xs text-slate-400 text-center py-3">Yükleniyor...</div>';
 
         // Filtre select doldur
@@ -5469,8 +5474,8 @@
     
     function filterDriverSearch(){const q=document.getElementById('driverSearchInput').value.toLowerCase(); showDriverDropdown(q);}
     function showDriverDropdown(q=''){const dd=document.getElementById('driverDropdown'); if(!dd)return; if(currentRole==='DRIVER'){dd.classList.add('hidden'); return;} const drvs=getDrivers(); const filtered=q?drvs.filter(d=>d.toLowerCase().includes(q)):drvs; if(filtered.length===0){dd.innerHTML='<div class="px-3 py-2 text-xs text-slate-400 italic">Bulunamadı</div>'; dd.classList.remove('hidden'); return;} dd.innerHTML=filtered.map(d=>'<div class="px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-primary cursor-pointer rounded-lg flex items-center gap-2 transition-colors" onmousedown="selectDriver(\'' + d + '\')">' + '<i class="fa-solid fa-user text-slate-300 text-xs"></i>' + d + '</div>').join(''); dd.classList.remove('hidden');}
-    function hideDriverDropdown(){setTimeout(()=>{const dd=document.getElementById('driverDropdown'); if(dd)dd.classList.add('hidden'); const si=document.getElementById('driverSearchInput'); if(si&&currentUser)si.value=currentUser;},200);}
-    function selectDriver(name){const uSel=document.getElementById('activeUser'); const si=document.getElementById('driverSearchInput'); if(uSel)uSel.value=name; if(si)si.value=name; const dd=document.getElementById('driverDropdown'); if(dd)dd.classList.add('hidden'); currentUser=name; renderAll(); checkActiveTrip();}
+    function hideDriverDropdown(){setTimeout(()=>{const dd=document.getElementById('driverDropdown'); if(dd)dd.classList.add('hidden');},200);}
+    function selectDriver(name){const uSel=document.getElementById('activeUser'); const si=document.getElementById('driverSearchInput'); if(uSel)uSel.value=name; if(si){si.value=name; si.placeholder=name;} const dd=document.getElementById('driverDropdown'); if(dd)dd.classList.add('hidden'); currentUser=name; renderAll(); checkActiveTrip();}
 
     /* ===== MOBİL PERFORMANS & DOKUNMA İYİLEŞTİRMELERİ ===== */
     

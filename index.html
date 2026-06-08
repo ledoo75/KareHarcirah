@@ -1361,6 +1361,58 @@
                 <div class="overflow-x-auto border border-slate-200 rounded-xl relative"><table class="w-full text-left text-sm whitespace-nowrap min-w-[600px] overflow-hidden"><thead class="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-200"><tr><th class="p-3">Kullanıcı Adı</th><th class="p-3">Sabit Plaka / Dorse</th><th class="p-3">Yetki / Rol</th><th class="p-3 text-center">Durum</th><th class="p-3 text-right">İşlem</th></tr></thead><tbody id="userListTable" class="divide-y divide-slate-100"></tbody></table></div>
             </div>
         </div>
+        <!-- Sistem İstatistikleri -->
+        <div class="glass-card p-5 mb-6">
+            <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-chart-pie text-indigo-500"></i> Sistem İstatistikleri</h3>
+                <button onclick="renderSystemStats()" class="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1"><i class="fa-solid fa-rotate-right"></i> Yenile</button>
+            </div>
+
+            <!-- Bağlantı durumu -->
+            <div id="sysFirebaseStatus" class="flex items-center gap-2 mb-4 text-xs">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-emerald-600 font-bold">Firebase Bağlı</span>
+                <span id="sysLastUpdate" class="text-slate-400 ml-2"></span>
+            </div>
+
+            <!-- KPI Kartları -->
+            <div id="sysKpiCards" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5"></div>
+
+            <!-- Bu ay / bu hafta / bugün -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-center">
+                    <p class="text-[9px] text-blue-400 font-bold uppercase mb-1">Bugün</p>
+                    <p id="statToday" class="text-xl font-black text-blue-700">—</p>
+                    <p class="text-[9px] text-blue-400">yeni işlem</p>
+                </div>
+                <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-center">
+                    <p class="text-[9px] text-indigo-400 font-bold uppercase mb-1">Bu Hafta</p>
+                    <p id="statWeek" class="text-xl font-black text-indigo-700">—</p>
+                    <p class="text-[9px] text-indigo-400">yeni işlem</p>
+                </div>
+                <div class="bg-violet-50 border border-violet-200 rounded-xl p-3 text-center">
+                    <p class="text-[9px] text-violet-400 font-bold uppercase mb-1">Bu Ay</p>
+                    <p id="statMonth" class="text-xl font-black text-violet-700">—</p>
+                    <p class="text-[9px] text-violet-400">yeni işlem</p>
+                </div>
+            </div>
+
+            <!-- Detay tablosu -->
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-xs">
+                    <thead class="bg-slate-800 text-white font-bold uppercase">
+                        <tr>
+                            <th class="p-3 text-left">Koleksiyon</th>
+                            <th class="p-3 text-right">Kayıt</th>
+                            <th class="p-3 text-right">Tahmini Boyut</th>
+                            <th class="p-3 text-left">En Aktif</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sysStatsTable" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 
     <div id="panel-ANALYTICS" class="panel-section hidden-panel">
@@ -1415,57 +1467,6 @@
             <div class="overflow-x-auto max-h-72 border border-slate-200 rounded-xl"><table class="w-full text-left text-sm whitespace-nowrap min-w-[600px]"><thead class="bg-slate-50 text-slate-500 text-xs uppercase border-b border-slate-200 sticky top-0"><tr><th class="p-3">Tarih</th><th class="p-3">İşlem</th><th class="p-3">Personel</th><th class="p-3 text-right">Tutar/KM</th><th class="p-3 text-center">Durum</th></tr></thead><tbody id="systemLogList" class="divide-y divide-slate-100"></tbody></table></div>
         </div>
 
-        <!-- Sistem İstatistikleri -->
-        <div class="glass-card p-5 mb-6">
-            <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-chart-pie text-indigo-500"></i> Sistem İstatistikleri</h3>
-                <button onclick="renderSystemStats()" class="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1"><i class="fa-solid fa-rotate-right"></i> Yenile</button>
-            </div>
-
-            <!-- Bağlantı durumu -->
-            <div id="sysFirebaseStatus" class="flex items-center gap-2 mb-4 text-xs">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span class="text-emerald-600 font-bold">Firebase Bağlı</span>
-                <span id="sysLastUpdate" class="text-slate-400 ml-2"></span>
-            </div>
-
-            <!-- KPI Kartları -->
-            <div id="sysKpiCards" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5"></div>
-
-            <!-- Bu ay / bu hafta / bugün -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-                <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-center">
-                    <p class="text-[9px] text-blue-400 font-bold uppercase mb-1">Bugün</p>
-                    <p id="statToday" class="text-xl font-black text-blue-700">—</p>
-                    <p class="text-[9px] text-blue-400">yeni işlem</p>
-                </div>
-                <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-center">
-                    <p class="text-[9px] text-indigo-400 font-bold uppercase mb-1">Bu Hafta</p>
-                    <p id="statWeek" class="text-xl font-black text-indigo-700">—</p>
-                    <p class="text-[9px] text-indigo-400">yeni işlem</p>
-                </div>
-                <div class="bg-violet-50 border border-violet-200 rounded-xl p-3 text-center">
-                    <p class="text-[9px] text-violet-400 font-bold uppercase mb-1">Bu Ay</p>
-                    <p id="statMonth" class="text-xl font-black text-violet-700">—</p>
-                    <p class="text-[9px] text-violet-400">yeni işlem</p>
-                </div>
-            </div>
-
-            <!-- Detay tablosu -->
-            <div class="overflow-x-auto border border-slate-200 rounded-xl">
-                <table class="w-full text-xs">
-                    <thead class="bg-slate-800 text-white font-bold uppercase">
-                        <tr>
-                            <th class="p-3 text-left">Koleksiyon</th>
-                            <th class="p-3 text-right">Kayıt</th>
-                            <th class="p-3 text-right">Tahmini Boyut</th>
-                            <th class="p-3 text-left">En Aktif</th>
-                        </tr>
-                    </thead>
-                    <tbody id="sysStatsTable" class="divide-y divide-slate-100"></tbody>
-                </table>
-            </div>
-        </div>
 
     </div>
 

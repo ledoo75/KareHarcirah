@@ -3790,9 +3790,11 @@
                 const tripCount=driverTrips.filter(t=>t.driver===drv&&t.status==='COMPLETED').length;
                 const pendingCount=expenses.filter(e=>e.driver===drv&&(e.status==='PENDING_OP'||e.status==='PENDING_ACC')).length;
 
-                const balColor=!hasBalance?'text-slate-400':isNeg?'text-rose-700':'text-emerald-700';
-                const balBg=!hasBalance?'bg-slate-50':isNeg?'bg-rose-50':'bg-emerald-50';
-                const balBorder=!hasBalance?'border-slate-200':isNeg?'border-rose-200':'border-emerald-200';
+                const balColor=!hasBalance?'text-slate-400':isNeg?'text-white':'text-white';
+                const balBg=!hasBalance?'bg-slate-100':isNeg?'bg-rose-500':'bg-emerald-500';
+                const balBorder=!hasBalance?'border-slate-200':isNeg?'border-rose-600':'border-emerald-600';
+                const balLabelColor=!hasBalance?'text-slate-400':isNeg?'text-rose-100':'text-emerald-100';
+                const balSubColor=!hasBalance?'text-slate-400':isNeg?'text-rose-200':'text-emerald-200';
 
                 const row=document.createElement('tr');
                 row.className='cari-row border-b border-slate-100 hover:bg-slate-50/50';
@@ -3828,11 +3830,11 @@
                     </td>
                     <td class="p-4">
                         <div class="flex justify-end">
-                            <div class="${balBg} ${balBorder} border rounded-xl px-4 py-2 text-right min-w-[100px]">
-                                <p class="text-[9px] text-slate-400 font-bold uppercase mb-0.5">Net Bakiye</p>
-                                <p class="font-black text-base ${balColor}">${netE!==0?(netE>0?'+':'')+netE.toFixed(2)+' €':''}</p>
-                                ${netU!==0?`<p class="font-black text-sm ${netU>0?'text-emerald-600':'text-rose-600'}">${netU>0?'+':''}${netU.toFixed(2)} $</p>`:''}
-                                ${netT!==0?`<p class="font-black text-sm ${netT>0?'text-emerald-600':'text-rose-600'}">${netT>0?'+':''}${netT.toLocaleString('tr-TR')} ₺</p>`:''}
+                            <div class="${balBg} ${balBorder} border-2 rounded-xl px-4 py-3 text-right min-w-[120px] shadow-sm">
+                                <p class="text-[9px] ${balLabelColor} font-bold uppercase mb-1">Net Bakiye</p>
+                                <p class="font-black text-lg ${balColor}">${netE!==0?(netE>0?'+':'')+netE.toFixed(2)+' €':''}</p>
+                                ${netU!==0?`<p class="font-black text-sm ${balSubColor}">${netU>0?'+':''}${netU.toFixed(2)} $</p>`:''}
+                                ${netT!==0?`<p class="font-black text-sm ${balSubColor}">${netT>0?'+':''}${netT.toLocaleString('tr-TR')} ₺</p>`:''}
                                 ${!hasBalance?`<p class="text-xs text-slate-400">Sıfır</p>`:''}
                             </div>
                         </div>

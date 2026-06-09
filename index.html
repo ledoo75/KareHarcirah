@@ -3783,14 +3783,14 @@
                 dExp.forEach(x=>{if(x.currency==='EUR')eE+=x.amount;else if(x.currency==='USD')eU+=x.amount;else eT+=x.amount;});
                 const netE=aE-eE, netU=aU-eU, netT=aT-eT;
                 const hasBalance=netE!==0||netU!==0||netT!==0;
-                const isNeg=netE<0||netU<0||netT<0;
                 const thisMonth=new Date().toISOString().slice(0,7);
                 const monthExp=dExp.filter(e=>(e.date||'').startsWith(thisMonth)).reduce((s,e)=>e.currency==='EUR'?s+e.amount:s,0);
                 const monthAdv=dAdv.filter(a=>(a.date||'').startsWith(thisMonth)).reduce((s,a)=>a.currency==='EUR'?s+a.amount:s,0);
                 const tripCount=driverTrips.filter(t=>t.driver===drv&&t.status==='COMPLETED').length;
                 const pendingCount=expenses.filter(e=>e.driver===drv&&(e.status==='PENDING_OP'||e.status==='PENDING_ACC')).length;
 
-                const balColor=!hasBalance?'text-slate-400':isNeg?'text-white':'text-white';
+                const isNeg=netE<0;
+                const balColor='text-white';
                 const balBg=!hasBalance?'bg-slate-100':isNeg?'bg-rose-500':'bg-emerald-500';
                 const balBorder=!hasBalance?'border-slate-200':isNeg?'border-rose-600':'border-emerald-600';
                 const balLabelColor=!hasBalance?'text-slate-400':isNeg?'text-rose-100':'text-emerald-100';

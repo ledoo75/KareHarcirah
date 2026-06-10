@@ -911,17 +911,55 @@
     </div>
 
     <div id="panel-OPERATIONS" class="panel-section hidden-panel">
-        <div class="glass-card p-5 mb-6 border-l-4 border-amber-500">
-            <div class="flex justify-between items-center mb-2"><h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-satellite-dish text-amber-500 mr-2 animate-pulse"></i>Sistemdeki Tüm Aktif Seferler (Canlı)</h3><button onclick="openOpsTripModal()" class="bg-amber-100 text-amber-700 hover:bg-amber-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm"><i class="fa-solid fa-plus mr-1"></i> Yeni Ekle</button></div>
-            <div class="overflow-x-auto border border-slate-200 rounded-xl relative"><table class="w-full text-left text-sm whitespace-nowrap min-w-[800px]"><thead class="bg-amber-50 text-amber-700 font-bold text-xs uppercase border-b border-slate-200"><tr><th class="p-3">Şoför</th><th class="p-3">Sefer/Dosya No</th><th class="p-3">Pozisyon No</th><th class="p-3">Güzergah</th><th class="p-3">Araç & Dorse</th><th class="p-3">Başlangıç KM</th><th class="p-3 text-right">İşlem</th></tr></thead><tbody id="opsActiveTripsList" class="divide-y divide-slate-100 text-slate-700 bg-white"></tbody></table></div>
+        <!-- Aktif Seferler -->
+        <div class="glass-card p-4 mb-5 border-l-4 border-amber-500">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2"><i class="fa-solid fa-satellite-dish text-amber-500 animate-pulse"></i> Aktif Seferler</h3>
+                <button onclick="openOpsTripModal()" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5"><i class="fa-solid fa-plus"></i> Yeni</button>
+            </div>
+            <!-- Masaüstü tablo -->
+            <div class="hidden sm:block overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-left text-sm whitespace-nowrap min-w-[800px]">
+                    <thead class="bg-amber-50 text-amber-700 font-bold text-xs uppercase border-b border-slate-200">
+                        <tr><th class="p-3">Şoför</th><th class="p-3">Sefer/Dosya No</th><th class="p-3">Pozisyon No</th><th class="p-3">Güzergah</th><th class="p-3">Araç & Dorse</th><th class="p-3">Başlangıç KM</th><th class="p-3 text-right">İşlem</th></tr>
+                    </thead>
+                    <tbody id="opsActiveTripsList" class="divide-y divide-slate-100 text-slate-700 bg-white"></tbody>
+                </table>
+            </div>
+            <!-- Mobil kart görünümü -->
+            <div class="sm:hidden space-y-3" id="opsActiveTripsCards"></div>
         </div>
-        <div class="glass-card p-5">
-            <h3 class="font-bold text-slate-800 text-lg mb-4">Onay Bekleyen Masraflar</h3>
-            <div class="overflow-x-auto border border-slate-200 rounded-xl relative"><table class="w-full text-left text-sm whitespace-nowrap min-w-[900px]"><thead class="bg-slate-50 text-slate-500 font-medium text-xs uppercase border-b border-slate-200"><tr><th class="p-4">Personel / Tarih</th><th class="p-4">Kategori & Açıklama</th><th class="p-4">Tutar</th><th class="p-4">Sefer/Dosya No</th><th class="p-4">Onaylayan</th><th class="p-4 text-right">İşlem</th></tr></thead><tbody id="operationsList" class="divide-y divide-slate-100 text-slate-700"></tbody></table></div>
+
+        <!-- Onay Bekleyen Masraflar -->
+        <div class="glass-card p-4 mb-5">
+            <h3 class="font-bold text-slate-800 text-base mb-3 flex items-center gap-2"><i class="fa-solid fa-clock text-amber-500"></i> Onay Bekleyen Masraflar</h3>
+            <!-- Masaüstü tablo -->
+            <div class="hidden sm:block overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-left text-sm whitespace-nowrap min-w-[900px]">
+                    <thead class="bg-slate-50 text-slate-500 font-medium text-xs uppercase border-b border-slate-200">
+                        <tr><th class="p-4">Personel / Tarih</th><th class="p-4">Kategori & Açıklama</th><th class="p-4">Tutar</th><th class="p-4">Sefer/Dosya No</th><th class="p-4">Onaylayan</th><th class="p-4 text-right">İşlem</th></tr>
+                    </thead>
+                    <tbody id="operationsList" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                </table>
+            </div>
+            <!-- Mobil kart görünümü -->
+            <div class="sm:hidden space-y-3" id="operationsListCards"></div>
         </div>
-        <div class="glass-card p-5 mt-6 border-l-4 border-indigo-500">
-            <h3 class="font-bold text-slate-800 text-lg mb-4">Son Onaylanan Masraflar (Düzelt / Sil)</h3>
-            <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-[300px] overflow-y-auto"><table class="w-full text-left text-sm whitespace-nowrap min-w-[900px]"><thead class="bg-slate-50 text-slate-500 font-medium text-xs uppercase border-b border-slate-200 sticky top-0"><tr><th class="p-4">Personel / Tarih</th><th class="p-4">Kategori & Açıklama</th><th class="p-4">Tutar</th><th class="p-4">Onaylayan</th><th class="p-4 text-right">İşlem</th></tr></thead><tbody id="approvedOperationsList" class="divide-y divide-slate-100 text-slate-700"></tbody></table></div>
+
+        <!-- Son Onaylanan Masraflar -->
+        <div class="glass-card p-4 border-l-4 border-indigo-500">
+            <h3 class="font-bold text-slate-800 text-base mb-3 flex items-center gap-2"><i class="fa-solid fa-check-circle text-indigo-500"></i> Son Onaylanan Masraflar</h3>
+            <!-- Masaüstü tablo -->
+            <div class="hidden sm:block overflow-x-auto border border-slate-200 rounded-xl max-h-[300px] overflow-y-auto">
+                <table class="w-full text-left text-sm whitespace-nowrap min-w-[900px]">
+                    <thead class="bg-slate-50 text-slate-500 font-medium text-xs uppercase border-b border-slate-200 sticky top-0">
+                        <tr><th class="p-4">Personel / Tarih</th><th class="p-4">Kategori & Açıklama</th><th class="p-4">Tutar</th><th class="p-4">Onaylayan</th><th class="p-4 text-right">İşlem</th></tr>
+                    </thead>
+                    <tbody id="approvedOperationsList" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                </table>
+            </div>
+            <!-- Mobil kart görünümü -->
+            <div class="sm:hidden space-y-3 max-h-[400px] overflow-y-auto" id="approvedOperationsListCards"></div>
         </div>
     </div>
 
@@ -3975,7 +4013,27 @@
     function deleteTrip(tripId){if(confirm("Sefer silinsin mi?")){cTrips.doc(tripId).delete(); showToast('Silindi','success');}}
     function filterTrips(){renderDashboard();}
     
-    function renderOpsActiveTrips(){const l=document.getElementById('opsActiveTripsList'); if(!l)return; l.innerHTML=''; let act=driverTrips.filter(t=>t.status==='ACTIVE'); act.forEach(t=>{let btns=`<button onclick="openEditActiveTripModal('${t.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg"><i class="fa-solid fa-pen"></i></button><button onclick="openEndTripModal('${t.id}')" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg ml-1"><i class="fa-solid fa-stop"></i></button><button onclick="deleteTrip('${t.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg ml-1"><i class="fa-solid fa-trash"></i></button>`; l.innerHTML+=`<tr class="border-b border-slate-100 hover:bg-amber-50/50"><td class="p-3 font-bold"><i class="fa-solid fa-user text-slate-300 mr-2"></i>${esc(t.driver)}</td><td class="p-3 font-bold text-indigo-600">${esc(t.tripNo)}</td><td class="p-3 font-bold text-amber-600">${esc(t.posNo || '-')}</td><td class="p-3 text-sm text-slate-600">${esc(t.route)}</td><td class="p-3 text-xs"><span class="bg-slate-100 px-2 py-1 rounded font-bold">${esc(t.plate)}</span> / ${esc(t.trailer)||'-'}</td><td class="p-3 font-bold">${t.startKm.toLocaleString()} KM</td><td class="p-3 text-right">${btns}</td></tr>`;}); if(act.length===0)l.innerHTML=`<tr><td colspan="7" class="p-4 text-center text-slate-500">Sistemde devam eden sefer yok.</td></tr>`;}
+    function renderOpsActiveTrips(){const l=document.getElementById('opsActiveTripsList'); if(!l)return; l.innerHTML=''; let act=driverTrips.filter(t=>t.status==='ACTIVE'); act.forEach(t=>{let btns=`<button onclick="openEditActiveTripModal('${t.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg"><i class="fa-solid fa-pen"></i></button><button onclick="openEndTripModal('${t.id}')" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg ml-1"><i class="fa-solid fa-stop"></i></button><button onclick="deleteTrip('${t.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg ml-1"><i class="fa-solid fa-trash"></i></button>`; l.innerHTML+=`<tr class="border-b border-slate-100 hover:bg-amber-50/50"><td class="p-3 font-bold"><i class="fa-solid fa-user text-slate-300 mr-2"></i>${esc(t.driver)}</td><td class="p-3 font-bold text-indigo-600">${esc(t.tripNo)}</td><td class="p-3 font-bold text-amber-600">${esc(t.posNo || '-')}</td><td class="p-3 text-sm text-slate-600">${esc(t.route)}</td><td class="p-3 text-xs"><span class="bg-slate-100 px-2 py-1 rounded font-bold">${esc(t.plate)}</span> / ${esc(t.trailer)||'-'}</td><td class="p-3 font-bold">${t.startKm.toLocaleString()} KM</td><td class="p-3 text-right">${btns}</td></tr>`;}); if(act.length===0)l.innerHTML=`<tr><td colspan="7" class="p-4 text-center text-slate-500">Sistemde devam eden sefer yok.</td></tr>`;
+        // Mobil kartlar
+        const mc=document.getElementById('opsActiveTripsCards'); if(!mc)return;
+        mc.innerHTML='';
+        if(act.length===0){mc.innerHTML='<p class="text-center text-slate-400 text-sm py-4">Aktif sefer yok.</p>';return;}
+        act.forEach(t=>{mc.innerHTML+=`<div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div class="flex justify-between items-start mb-2">
+                <div><p class="font-bold text-slate-800">${esc(t.driver)}</p><p class="text-xs text-indigo-600 font-bold">${esc(t.tripNo)} ${t.posNo?'· <span class="text-amber-600">'+esc(t.posNo)+'</span>':''}</p></div>
+                <span class="bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">AKTİF</span>
+            </div>
+            <div class="grid grid-cols-2 gap-1 text-xs text-slate-600 mb-3">
+                <span>🛣️ ${esc(t.route)}</span>
+                <span>🚛 ${esc(t.plate)} / ${esc(t.trailer||'-')}</span>
+                <span>📍 ${t.startKm.toLocaleString()} KM</span>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="openEditActiveTripModal('${t.id}')" class="flex-1 bg-blue-100 text-blue-700 py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-pen mr-1"></i>Düzelt</button>
+                <button onclick="openEndTripModal('${t.id}')" class="flex-1 bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-stop mr-1"></i>Bitir</button>
+                <button onclick="deleteTrip('${t.id}')" class="bg-rose-100 text-rose-600 px-3 py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        </div>`;});}
     
     function renderAll(){ if(document.getElementById('panel-USERS')?.style.display==='block') renderSystemStats();
         if(!currentUser)return; const bal=getDriverBalance(currentUser); if(document.getElementById('driverNameTitle'))document.getElementById('driverNameTitle').innerText=currentUser;
@@ -4019,8 +4077,43 @@
         const dList=document.getElementById('driverList'); if(dList){dList.innerHTML=''; let mE=expenses.filter(e=>e.driver===currentUser).sort((a,b)=>{const order={'PENDING_OP':0,'PENDING_ACC':1,'REJECTED':2,'APPROVED':3}; const oa=order[a.status]??4,ob=order[b.status]??4; if(oa!==ob)return oa-ob; return (b.timestamp?.seconds||0)-(a.timestamp?.seconds||0)||(b.date||'').localeCompare(a.date||'');}); mE.forEach(e=>{let bC=e.status==='APPROVED'?'bg-emerald-100 text-emerald-700':(e.status==='REJECTED'?'bg-rose-100 text-rose-700':'bg-amber-100 text-amber-700'); let sT=e.status==='PENDING_OP'?'Bekliyor':(e.status==='APPROVED'?'Onaylandı':'Red'); let tT=e.tripId?`<span class="text-[9px] font-bold text-indigo-400 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded mt-0.5 inline-block">${esc(e.tripId)}</span>`:''; const canEdit=canEditExpense(e); const canDel=canDeleteExpense(e); let editBtns=''; if(canEdit||canDel){editBtns=`<div class="flex gap-1 mt-1.5">${canEdit?`<button onclick="editExpense('${e.id}')" class="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg text-[10px] font-bold hover:bg-blue-100 transition"><i class="fa-solid fa-pen mr-1"></i>Düzenle</button>`:''}${canDel?`<button onclick="deleteExpense('${e.id}')" class="bg-rose-50 text-rose-600 px-2 py-1 rounded-lg text-[10px] font-bold hover:bg-rose-100 transition"><i class="fa-solid fa-trash mr-1"></i>Sil</button>`:''}</div>`;} else if(e.status==='APPROVED'){editBtns=`<div class="mt-1.5"><span class="text-[10px] text-slate-400"><i class="fa-solid fa-lock mr-1"></i>Onaylandı — düzenlenemez</span></div>`;} dList.innerHTML+=`<div class="p-4 bg-white border border-slate-100 rounded-xl shadow-sm flex justify-between items-start mb-2 hover:shadow-md transition"><div class="flex items-start gap-3"><div class="text-2xl bg-slate-50 w-10 h-10 flex items-center justify-center rounded-lg shrink-0">${catIcons[e.category]||'📝'}</div><div><div class="text-[10px] text-slate-400 font-bold">${e.date}</div><div class="text-sm font-bold text-slate-800">${esc(e.tripName)}</div>${tT}${editBtns}</div></div><div class="text-right flex flex-col items-end gap-1 ml-2"><div class="text-base text-slate-800 whitespace-nowrap">${formatMoney(e.amount,e.currency)}</div><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${bC}">${sT}</span></div></div>`;}); if(mE.length===0)dList.innerHTML=`<div class="text-center py-6 text-slate-400 text-sm">Masraf yok.</div>`;}
         const fP=document.getElementById('panel-FLEET'); if(fP&&fP.style.display!=='none')renderFleetPanel();
         if(['ADMIN','OPS','PATRON','OPS_MANAGER'].includes(currentRole)){
-            renderOpsActiveTrips(); const opL=document.getElementById('operationsList'); if(opL){opL.innerHTML=''; expenses.filter(e=>e.status==='PENDING_OP').forEach(e=>{let tL=e.tripId?`<span class="bg-indigo-50 border border-indigo-200 text-indigo-700 font-black text-sm px-3 py-1 rounded-lg">${esc(e.tripId)}</span>`:`<span class="text-slate-300 text-xs">—</span>`; let aB=`<button onclick="opApprove('${e.id}')" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg shadow-sm"><i class="fa-solid fa-check"></i></button><button onclick="editExpense('${e.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-pen"></i></button><button onclick="opReject('${e.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-xmark"></i></button><button onclick="deleteExpense('${e.id}')" class="bg-red-100 text-red-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-trash"></i></button>`; opL.innerHTML+=`<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="p-4"><p class="font-bold">${esc(e.driver)}</p><p class="text-[10px] text-slate-500">${e.date}</p></td><td class="p-4"><p class="font-semibold text-sm">${catIcons[e.category]} ${e.category}</p><p class="text-xs text-slate-500">${esc(e.tripName)}</p></td><td class="p-4 text-primary text-base">${formatMoney(e.amount,e.currency)}</td><td class="p-4">${tL}</td><td class="p-4"><span class="text-slate-300 text-xs">—</span></td><td class="p-4 text-right flex justify-end gap-1">${aB}</td></tr>`;}); if(opL.innerHTML==='')opL.innerHTML=`<tr><td colspan="6" class="p-6 text-center text-slate-400 text-sm"><i class="fa-regular fa-circle-check text-2xl block mb-2 opacity-30"></i>Bekleyen masraf yok.</td></tr>`;}
-            const apL=document.getElementById('approvedOperationsList'); if(apL){apL.innerHTML=''; expenses.filter(e=>e.status==='APPROVED').slice(0,40).forEach(e=>{let aB=`<button onclick="editExpense('${e.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg" title="Düzenle"><i class="fa-solid fa-pen"></i></button>${isAdmin()?`<button onclick="deleteExpense('${e.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg ml-1" title="Sil"><i class="fa-solid fa-trash"></i></button>`:'<span class="w-8 h-8 ml-1 inline-flex items-center justify-center text-slate-300" title="Sadece yönetici silebilir"><i class="fa-solid fa-lock text-xs"></i></span>'}`; let approvedByBadge=e.approvedBy?`<span class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fa-solid fa-user-check mr-1"></i>${esc(e.approvedBy)}</span>`:'<span class="text-slate-300 text-xs">—</span>'; apL.innerHTML+=`<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="p-4 font-bold">${esc(e.driver)}<br><span class="text-[10px] text-slate-400">${e.date}</span></td><td class="p-4 text-sm font-semibold">${catIcons[e.category]||'📝'} ${esc(e.tripName)} <span class="text-[10px] block mt-0.5">Dosya: ${esc(e.tripId)||'-'}</span></td><td class="p-4 text-emerald-600 font-bold">${formatMoney(e.amount,e.currency)}</td><td class="p-4">${approvedByBadge}</td><td class="p-4 text-right flex justify-end gap-1">${aB}</td></tr>`;}); if(apL.innerHTML==='')apL.innerHTML=`<tr><td colspan="5" class="p-4 text-center">Kayıt yok.</td></tr>`;} renderDashboard();
+            renderOpsActiveTrips(); const opL=document.getElementById('operationsList'); if(opL){opL.innerHTML=''; expenses.filter(e=>e.status==='PENDING_OP').forEach(e=>{let tL=e.tripId?`<span class="bg-indigo-50 border border-indigo-200 text-indigo-700 font-black text-sm px-3 py-1 rounded-lg">${esc(e.tripId)}</span>`:`<span class="text-slate-300 text-xs">—</span>`; let aB=`<button onclick="opApprove('${e.id}')" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg shadow-sm"><i class="fa-solid fa-check"></i></button><button onclick="editExpense('${e.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-pen"></i></button><button onclick="opReject('${e.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-xmark"></i></button><button onclick="deleteExpense('${e.id}')" class="bg-red-100 text-red-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-trash"></i></button>`; opL.innerHTML+=`<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="p-4"><p class="font-bold">${esc(e.driver)}</p><p class="text-[10px] text-slate-500">${e.date}</p></td><td class="p-4"><p class="font-semibold text-sm">${catIcons[e.category]} ${e.category}</p><p class="text-xs text-slate-500">${esc(e.tripName)}</p></td><td class="p-4 text-primary text-base">${formatMoney(e.amount,e.currency)}</td><td class="p-4">${tL}</td><td class="p-4"><span class="text-slate-300 text-xs">—</span></td><td class="p-4 text-right flex justify-end gap-1">${aB}</td></tr>`;}); if(opL.innerHTML==='')opL.innerHTML=`<tr><td colspan="6" class="p-6 text-center text-slate-400 text-sm"><i class="fa-regular fa-circle-check text-2xl block mb-2 opacity-30"></i>Bekleyen masraf yok.</td></tr>`;
+            // Mobil kartlar
+            const oc=document.getElementById('operationsListCards'); if(oc){oc.innerHTML='';
+            const pending=expenses.filter(e=>e.status==='PENDING_OP');
+            if(pending.length===0){oc.innerHTML='<p class="text-center text-slate-400 text-sm py-4"><i class="fa-regular fa-circle-check mr-1"></i>Bekleyen masraf yok.</p>';}
+            else{pending.forEach(e=>{oc.innerHTML+=`<div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                <div class="flex justify-between items-start mb-2">
+                    <div><p class="font-bold text-slate-800">${esc(e.driver)}</p><p class="text-xs text-slate-400">${e.date}</p></div>
+                    <span class="text-base font-black text-primary">${formatMoney(e.amount,e.currency)}</span>
+                </div>
+                <p class="text-sm font-semibold text-slate-700 mb-1">${catIcons[e.category]||'📝'} ${e.category}</p>
+                <p class="text-xs text-slate-500 mb-3">${esc(e.tripName||'')} ${e.tripId?'· Dosya: '+esc(e.tripId):''}</p>
+                <div class="flex gap-2">
+                    <button onclick="opApprove('${e.id}')" class="flex-1 bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-check mr-1"></i>Onayla</button>
+                    <button onclick="editExpense('${e.id}')" class="bg-blue-100 text-blue-700 px-3 py-2.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="opReject('${e.id}')" class="bg-rose-100 text-rose-600 px-3 py-2.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-xmark"></i></button>
+                    <button onclick="deleteExpense('${e.id}')" class="bg-red-100 text-red-600 px-3 py-2.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>`;});}}}
+            const apL=document.getElementById('approvedOperationsList'); if(apL){apL.innerHTML=''; expenses.filter(e=>e.status==='APPROVED').slice(0,40).forEach(e=>{let aB=`<button onclick="editExpense('${e.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg" title="Düzenle"><i class="fa-solid fa-pen"></i></button>${isAdmin()?`<button onclick="deleteExpense('${e.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg ml-1" title="Sil"><i class="fa-solid fa-trash"></i></button>`:'<span class="w-8 h-8 ml-1 inline-flex items-center justify-center text-slate-300" title="Sadece yönetici silebilir"><i class="fa-solid fa-lock text-xs"></i></span>'}`; let approvedByBadge=e.approvedBy?`<span class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fa-solid fa-user-check mr-1"></i>${esc(e.approvedBy)}</span>`:'<span class="text-slate-300 text-xs">—</span>'; apL.innerHTML+=`<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="p-4 font-bold">${esc(e.driver)}<br><span class="text-[10px] text-slate-400">${e.date}</span></td><td class="p-4 text-sm font-semibold">${catIcons[e.category]||'📝'} ${esc(e.tripName)} <span class="text-[10px] block mt-0.5">Dosya: ${esc(e.tripId)||'-'}</span></td><td class="p-4 text-emerald-600 font-bold">${formatMoney(e.amount,e.currency)}</td><td class="p-4">${approvedByBadge}</td><td class="p-4 text-right flex justify-end gap-1">${aB}</td></tr>`;}); if(apL.innerHTML==='')apL.innerHTML=`<tr><td colspan="5" class="p-4 text-center">Kayıt yok.</td></tr>`;
+            // Mobil kartlar
+            const ac=document.getElementById('approvedOperationsListCards'); if(ac){ac.innerHTML='';
+            const approved=expenses.filter(e=>e.status==='APPROVED').slice(0,40);
+            if(approved.length===0){ac.innerHTML='<p class="text-center text-slate-400 text-sm py-4">Kayıt yok.</p>';}
+            else{approved.forEach(e=>{ac.innerHTML+=`<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                <div class="flex justify-between items-start mb-1">
+                    <div><p class="font-bold text-slate-800">${esc(e.driver)}</p><p class="text-xs text-slate-400">${e.date}</p></div>
+                    <span class="text-base font-black text-emerald-600">${formatMoney(e.amount,e.currency)}</span>
+                </div>
+                <p class="text-sm font-semibold text-slate-700 mb-1">${catIcons[e.category]||'📝'} ${e.category}</p>
+                <p class="text-xs text-slate-500 mb-2">${esc(e.tripName||'')} ${e.tripId?'· '+esc(e.tripId):''}</p>
+                ${e.approvedBy?`<p class="text-[10px] text-emerald-600 mb-2"><i class="fa-solid fa-user-check mr-1"></i>${esc(e.approvedBy)}</p>`:''}
+                <div class="flex gap-2">
+                    <button onclick="editExpense('${e.id}')" class="flex-1 bg-blue-100 text-blue-700 py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-pen mr-1"></i>Düzelt</button>
+                    ${isAdmin()?`<button onclick="deleteExpense('${e.id}')" class="bg-rose-100 text-rose-600 px-3 py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-trash"></i></button>`:''}
+                </div>
+            </div>`;});}}} renderDashboard();
         }
         if(['ADMIN','PATRON','ACCOUNTING'].includes(currentRole)){
             const cL=document.getElementById('accountingCariList'); 

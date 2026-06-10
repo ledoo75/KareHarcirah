@@ -3979,9 +3979,9 @@
     
     function renderAll(){ if(document.getElementById('panel-USERS')?.style.display==='block') renderSystemStats();
         if(!currentUser)return; const bal=getDriverBalance(currentUser); if(document.getElementById('driverNameTitle'))document.getElementById('driverNameTitle').innerText=currentUser;
-        const eurEl=document.getElementById('mySafeEUR'); if(eurEl){eurEl.innerHTML=formatMoney(bal.e,'€'); eurEl.className=`text-base sm:text-xl font-black ${bal.e>0?'text-emerald-300':bal.e<0?'text-rose-300':'text-white'}`;}
-        const usdEl=document.getElementById('mySafeUSD'); if(usdEl){usdEl.innerHTML=formatMoney(bal.u,'$'); usdEl.className=`text-base sm:text-xl font-black ${bal.u>0?'text-emerald-300':bal.u<0?'text-rose-300':'text-white'}`;}
-        const tryEl=document.getElementById('mySafeTRY'); if(tryEl){tryEl.innerHTML=formatMoney(bal.t,'₺'); tryEl.className=`text-base sm:text-xl font-black ${bal.t>0?'text-emerald-300':bal.t<0?'text-rose-300':'text-white'}`;}
+        const eurEl=document.getElementById('mySafeEUR'); if(eurEl){eurEl.innerText=(bal.e>=0?'+':'')+bal.e.toFixed(2)+' €'; eurEl.className='text-base sm:text-xl font-black text-white';}
+        const usdEl=document.getElementById('mySafeUSD'); if(usdEl){usdEl.innerText=(bal.u>=0?'+':'')+bal.u.toFixed(2)+' $'; usdEl.className='text-base sm:text-xl font-black text-white';}
+        const tryEl=document.getElementById('mySafeTRY'); if(tryEl){tryEl.innerText=(bal.t>=0?'+':'')+bal.t.toLocaleString('tr-TR')+' ₺'; tryEl.className='text-base sm:text-xl font-black text-white';}
         // Aktif veya son sefer kartı
         const tripCard=document.getElementById('driverTripCard');
         if(tripCard){

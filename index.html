@@ -3785,17 +3785,10 @@
                 dExp.forEach(x=>{if(x.currency==='EUR')eE+=x.amount;else if(x.currency==='USD')eU+=x.amount;else eT+=x.amount;});
                 const netE=aE-eE, netU=aU-eU, netT=aT-eT;
                 const hasBalance=netE!==0||netU!==0||netT!==0;
-                const isNeg=netE<0||netU<0||netT<0;
-                const thisMonth=new Date().toISOString().slice(0,7);
-                const monthExp=dExp.filter(e=>(e.date||'').startsWith(thisMonth)).reduce((s,e)=>e.currency==='EUR'?s+e.amount:s,0);
-                const monthAdv=dAdv.filter(a=>(a.date||'').startsWith(thisMonth)).reduce((s,a)=>a.currency==='EUR'?s+a.amount:s,0);
-                const tripCount=driverTrips.filter(t=>t.driver===drv&&t.status==='COMPLETED').length;
-                const pendingCount=expenses.filter(e=>e.driver===drv&&(e.status==='PENDING_OP'||e.status==='PENDING_ACC')).length;
-
-                const balColor=!hasBalance?'text-slate-400':isNeg?'text-rose-700':'text-emerald-700';
-                const balBg=!hasBalance?'bg-slate-50':isNeg?'bg-rose-50':'bg-emerald-50';
-                const balBorder=!hasBalance?'border-slate-200':isNeg?'border-rose-200':'border-emerald-200';
-
+                const isNeg=netE<0;
+                const balColor=!hasBalance?'text-slate-400':'text-white';
+                const balBg=!hasBalance?'bg-slate-100':isNeg?'bg-rose-500':'bg-emerald-500';
+                const balBorder=!hasBalance?'border-slate-200':isNeg?'border-rose-600':'border-emerald-600';
                 const row=document.createElement('tr');
                 row.className='cari-row border-b border-slate-100 hover:bg-slate-50/50';
                 row.setAttribute('data-driver',esc(drv));
@@ -3830,11 +3823,11 @@
                     </td>
                     <td class="p-4">
                         <div class="flex justify-end">
-                            <div class="${balBg} ${balBorder} border rounded-xl px-4 py-2 text-right min-w-[100px]">
-                                <p class="text-[9px] text-slate-400 font-bold uppercase mb-0.5">Net Bakiye</p>
+                            <div class="${balBg} ${balBorder} border-2 rounded-xl px-4 py-2.5 text-right min-w-[110px]">
+                                <p class="text-[9px] text-white/70 font-bold uppercase mb-0.5">Net Bakiye</p>
                                 <p class="font-black text-base ${balColor}">${netE!==0?(netE>0?'+':'')+netE.toFixed(2)+' €':''}</p>
-                                ${netU!==0?`<p class="font-black text-sm ${netU>0?'text-emerald-600':'text-rose-600'}">${netU>0?'+':''}${netU.toFixed(2)} $</p>`:''}
-                                ${netT!==0?`<p class="font-black text-sm ${netT>0?'text-emerald-600':'text-rose-600'}">${netT>0?'+':''}${netT.toLocaleString('tr-TR')} ₺</p>`:''}
+                                ${netU!==0?`<p class="font-black text-sm text-white/80">${netU>0?'+':''}${netU.toFixed(2)} $</p>`:''}
+                                ${netT!==0?`<p class="font-black text-sm text-white/80">${netT>0?'+':''}${netT.toLocaleString('tr-TR')} ₺</p>`:''}
                                 ${!hasBalance?`<p class="text-xs text-slate-400">Sıfır</p>`:''}
                             </div>
                         </div>
@@ -3843,7 +3836,8 @@
                         <div class="flex justify-end gap-1.5">
                             <button onclick="openDriverStatementModal('${esc(drv)}')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1" title="Cari Döküm"><i class="fa-solid fa-list"></i></button>
                             <button onclick="exportSingleDriverCSV('${esc(drv)}')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 px-3 py-2 rounded-lg text-xs font-bold transition" title="Excel"><i class="fa-solid fa-file-excel"></i></button>
-                            <button onclick="openPdfDateModal('${esc(drv)}')" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition" title="PDF"><i class="fa-solid fa-file-pdf"></i></button>
+                            <button onclick="exportDriverSummaryPDF('${esc(drv)}')" class="bg-violet-600 hover:bg-violet-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition" title="Özet PDF"><i class="fa-solid fa-file-pdf"></i></button>
+                            <button onclick="openPdfDateModal('${esc(drv)}')" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition" title="Detaylı PDF"><i class="fa-solid fa-scroll"></i></button>
                         </div>
                     </td>`;
                 cL.appendChild(row);

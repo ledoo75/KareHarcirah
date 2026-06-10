@@ -917,48 +917,25 @@
                 <h3 class="font-bold text-slate-800 text-base flex items-center gap-2"><i class="fa-solid fa-satellite-dish text-amber-500 animate-pulse"></i> Aktif Seferler</h3>
                 <button onclick="openOpsTripModal()" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5"><i class="fa-solid fa-plus"></i> Yeni</button>
             </div>
-            <!-- Masaüstü tablo -->
-            <div class="hidden sm:block overflow-x-auto border border-slate-200 rounded-xl">
-                <table class="w-full text-left text-sm whitespace-nowrap min-w-[800px]">
-                    <thead class="bg-amber-50 text-amber-700 font-bold text-xs uppercase border-b border-slate-200">
-                        <tr><th class="p-3">Şoför</th><th class="p-3">Sefer/Dosya No</th><th class="p-3">Pozisyon No</th><th class="p-3">Güzergah</th><th class="p-3">Araç & Dorse</th><th class="p-3">Başlangıç KM</th><th class="p-3 text-right">İşlem</th></tr>
-                    </thead>
-                    <tbody id="opsActiveTripsList" class="divide-y divide-slate-100 text-slate-700 bg-white"></tbody>
-                </table>
+            <div class="hidden sm:block overflow-x-auto border border-slate-200 rounded-xl relative">
+                <table class="w-full text-left text-sm whitespace-nowrap min-w-[800px]"><thead class="bg-amber-50 text-amber-700 font-bold text-xs uppercase border-b border-slate-200"><tr><th class="p-3">Şoför</th><th class="p-3">Sefer/Dosya No</th><th class="p-3">Pozisyon No</th><th class="p-3">Güzergah</th><th class="p-3">Araç & Dorse</th><th class="p-3">Başlangıç KM</th><th class="p-3 text-right">İşlem</th></tr></thead><tbody id="opsActiveTripsList" class="divide-y divide-slate-100 text-slate-700 bg-white"></tbody></table>
             </div>
-            <!-- Mobil kart görünümü -->
             <div class="sm:hidden space-y-3" id="opsActiveTripsCards"></div>
         </div>
-
-        <!-- Onay Bekleyen Masraflar -->
+        <!-- Onay Bekleyen -->
         <div class="glass-card p-4 mb-5">
             <h3 class="font-bold text-slate-800 text-base mb-3 flex items-center gap-2"><i class="fa-solid fa-clock text-amber-500"></i> Onay Bekleyen Masraflar</h3>
-            <!-- Masaüstü tablo -->
-            <div class="hidden sm:block overflow-x-auto border border-slate-200 rounded-xl">
-                <table class="w-full text-left text-sm whitespace-nowrap min-w-[900px]">
-                    <thead class="bg-slate-50 text-slate-500 font-medium text-xs uppercase border-b border-slate-200">
-                        <tr><th class="p-4">Personel / Tarih</th><th class="p-4">Kategori & Açıklama</th><th class="p-4">Tutar</th><th class="p-4">Sefer/Dosya No</th><th class="p-4">Onaylayan</th><th class="p-4 text-right">İşlem</th></tr>
-                    </thead>
-                    <tbody id="operationsList" class="divide-y divide-slate-100 text-slate-700"></tbody>
-                </table>
+            <div class="hidden sm:block overflow-x-auto border border-slate-200 rounded-xl relative">
+                <table class="w-full text-left text-sm whitespace-nowrap min-w-[900px]"><thead class="bg-slate-50 text-slate-500 font-medium text-xs uppercase border-b border-slate-200"><tr><th class="p-4">Personel / Tarih</th><th class="p-4">Kategori & Açıklama</th><th class="p-4">Tutar</th><th class="p-4">Sefer/Dosya No</th><th class="p-4">Onaylayan</th><th class="p-4 text-right">İşlem</th></tr></thead><tbody id="operationsList" class="divide-y divide-slate-100 text-slate-700"></tbody></table>
             </div>
-            <!-- Mobil kart görünümü -->
             <div class="sm:hidden space-y-3" id="operationsListCards"></div>
         </div>
-
-        <!-- Son Onaylanan Masraflar -->
+        <!-- Son Onaylananlar -->
         <div class="glass-card p-4 border-l-4 border-indigo-500">
             <h3 class="font-bold text-slate-800 text-base mb-3 flex items-center gap-2"><i class="fa-solid fa-check-circle text-indigo-500"></i> Son Onaylanan Masraflar</h3>
-            <!-- Masaüstü tablo -->
             <div class="hidden sm:block overflow-x-auto border border-slate-200 rounded-xl max-h-[300px] overflow-y-auto">
-                <table class="w-full text-left text-sm whitespace-nowrap min-w-[900px]">
-                    <thead class="bg-slate-50 text-slate-500 font-medium text-xs uppercase border-b border-slate-200 sticky top-0">
-                        <tr><th class="p-4">Personel / Tarih</th><th class="p-4">Kategori & Açıklama</th><th class="p-4">Tutar</th><th class="p-4">Onaylayan</th><th class="p-4 text-right">İşlem</th></tr>
-                    </thead>
-                    <tbody id="approvedOperationsList" class="divide-y divide-slate-100 text-slate-700"></tbody>
-                </table>
+                <table class="w-full text-left text-sm whitespace-nowrap min-w-[900px]"><thead class="bg-slate-50 text-slate-500 font-medium text-xs uppercase border-b border-slate-200 sticky top-0"><tr><th class="p-4">Personel / Tarih</th><th class="p-4">Kategori & Açıklama</th><th class="p-4">Tutar</th><th class="p-4">Onaylayan</th><th class="p-4 text-right">İşlem</th></tr></thead><tbody id="approvedOperationsList" class="divide-y divide-slate-100 text-slate-700"></tbody></table>
             </div>
-            <!-- Mobil kart görünümü -->
             <div class="sm:hidden space-y-3 max-h-[400px] overflow-y-auto" id="approvedOperationsListCards"></div>
         </div>
     </div>
@@ -1835,7 +1812,7 @@
 </div></div>
 <div id="pdfTripWrapper"><div id="pdfTripTemplate"><div style="display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #0F172A; padding-bottom:20px; margin-bottom:30px;"><div style="display:flex; align-items:center; gap:15px;"><svg width="48" height="48" viewBox="0 0 100 100" fill="#4AA4F6" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="15" width="24" height="70"/><path d="M44 55 L 75 24 H 95 L 44 75 Z"/><rect x="70" y="60" width="25" height="25"/></svg><div><h1 style="margin:0; font-size:28px; font-weight:800; color:#0F172A; letter-spacing:-1px; text-transform:lowercase;">karekara</h1><p style="margin:2px 0 0 0; font-size:11px; font-weight:bold; color:#64748B;">TAMAMLANAN SEFERLER RAPORU</p></div></div><div style="text-align:right;"><h2 style="margin:0; font-size:22px; color:#10B981; font-weight:800;">SEFER (KM) DÖKÜMÜ</h2><p style="margin:5px 0 0 0; font-size:14px; color:#475569;">Tarih: <b><span id="pdfTripDate"></span></b></p></div></div><table style="width:100%; border-collapse:collapse; margin-bottom:25px; font-size:11px;"><thead><tr style="background-color:#F1F5F9; color:#334155;"><th style="padding:10px; text-align:left; border:1px solid #CBD5E1;">Bitiş Tarihi</th><th style="padding:10px; text-align:left; border:1px solid #CBD5E1;">Sefer No</th><th style="padding:10px; text-align:left; border:1px solid #CBD5E1;">Poz No</th><th style="padding:10px; text-align:left; border:1px solid #CBD5E1;">Şoför</th><th style="padding:10px; text-align:left; border:1px solid #CBD5E1;">Güzergah</th><th style="padding:10px; text-align:left; border:1px solid #CBD5E1;">Plaka & Dorse</th><th style="padding:10px; text-align:right; border:1px solid #CBD5E1;">KM Bilgisi</th></tr></thead><tbody id="pdfTripTableBody"></tbody></table><p style="text-align:right; font-size:12px; color:#64748B;">Sistem tarafından otomatik üretilmiştir.</p></div></div>
 
-<div id="pdfTripCostWrapper"><div id="pdfTripCostTemplate" style="width:720px;padding:16px 20px;font-family:Arial,sans-serif;box-sizing:border-box;"><div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0F172A;padding-bottom:8px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:8px;"><svg width="32" height="32" viewBox="0 0 100 100" fill="#4AA4F6" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="15" width="24" height="70"/><path d="M44 55 L 75 24 H 95 L 44 75 Z"/><rect x="70" y="60" width="25" height="25"/></svg><div><div style="font-size:18px;font-weight:800;color:#0F172A;">karekara</div><div style="font-size:8px;font-weight:bold;color:#64748B;letter-spacing:1px;">SEFER BAZLI MALİYET ANALİZİ</div></div></div><div style="text-align:right;"><div style="font-size:16px;color:#10B981;font-weight:800;">MALİYET DÖKÜMÜ</div><div style="font-size:10px;color:#475569;margin-top:2px;">Tarih: <b><span id="pdfTripCostDate"></span></b></div></div></div><table style="width:100%;border-collapse:collapse;font-size:9px;"><thead><tr style="background:#1E293B;color:#fff;"><th style="padding:5px 6px;text-align:left;">Tarih</th><th style="padding:5px 6px;text-align:left;">Sefer No</th><th style="padding:5px 6px;text-align:left;">Poz No</th><th style="padding:5px 6px;text-align:left;">Şoför</th><th style="padding:5px 6px;text-align:left;">Güzergah</th><th style="padding:5px 6px;text-align:right;">KM</th><th style="padding:5px 6px;text-align:right;">Toplam Masraf</th><th style="padding:5px 6px;text-align:right;">Maliyet/KM</th></tr></thead><tbody id="pdfTripCostTableBody"></tbody></table></div></div>
+<div id="pdfTripCostWrapper"><div id="pdfTripCostTemplate"><div style="display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #0F172A; padding-bottom:20px; margin-bottom:30px;"><div style="display:flex; align-items:center; gap:15px;"><svg width="48" height="48" viewBox="0 0 100 100" fill="#4AA4F6" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="15" width="24" height="70"/><path d="M44 55 L 75 24 H 95 L 44 75 Z"/><rect x="70" y="60" width="25" height="25"/></svg><div><h1 style="margin:0; font-size:28px; font-weight:800; color:#0F172A; letter-spacing:-1px; text-transform:lowercase;">karekara</h1><p style="margin:2px 0 0 0; font-size:11px; font-weight:bold; color:#64748B;">SEFER BAZLI MALİYET ANALİZİ</p></div></div><div style="text-align:right;"><h2 style="margin:0; font-size:22px; color:#10B981; font-weight:800;">MALİYET DÖKÜMÜ</h2><p style="margin:5px 0 0 0; font-size:14px; color:#475569;">Tarih: <b><span id="pdfTripCostDate"></span></b></p></div></div><table style="width:100%; border-collapse:collapse; margin-bottom:25px; font-size:11px;"><thead><tr style="background-color:#F1F5F9; color:#334155;"><th style="padding:10px; text-align:left; border:1px solid #CBD5E1;">Tarih</th><th style="padding:10px; text-align:left; border:1px solid #CBD5E1;">Sefer No</th><th style="padding:10px; text-align:left; border:1px solid #CBD5E1;">Poz No</th><th style="padding:10px; text-align:left; border:1px solid #CBD5E1;">Şoför</th><th style="padding:10px; text-align:left; border:1px solid #CBD5E1;">Güzergah</th><th style="padding:10px; text-align:right; border:1px solid #CBD5E1;">KM</th><th style="padding:10px; text-align:right; border:1px solid #CBD5E1;">Toplam Masraf</th><th style="padding:10px; text-align:right; border:1px solid #CBD5E1;">Maliyet/KM</th></tr></thead><tbody id="pdfTripCostTableBody"></tbody></table></div></div>
 
 <script>
     const firebaseConfig={apiKey:"AIzaSyBXlr2DGdcoT8_MLzcGFHomnbZyyfuQBto",authDomain:"kare-6172d.firebaseapp.com",databaseURL:"https://kare-6172d-default-rtdb.europe-west1.firebasedatabase.app",projectId:"kare-6172d",storageBucket:"kare-6172d.firebasestorage.app",messagingSenderId:"56836825489",appId:"1:56836825489:web:0fe3464b501678b1177a30",measurementId:"G-Y637DLVD8B"};
@@ -2179,10 +2156,10 @@
     function checkActiveTrip(){if(!currentUser)return; const activeTrip=driverTrips.find(t=>t.driver===currentUser&&t.status==='ACTIVE'); if(activeTrip){document.getElementById('tripStartBox').style.display='none'; document.getElementById('tripActiveBox').style.display='flex'; document.getElementById('activeTripNoDisplay').innerText=esc(activeTrip.tripNo); document.getElementById('activeTripPosNoDisplay').innerText=esc(activeTrip.posNo || '-'); document.getElementById('activeTripRoute').innerText=esc(activeTrip.route); document.getElementById('activeTripPlate').innerText=esc(activeTrip.plate); document.getElementById('activeTripTrailer').innerText=esc(activeTrip.trailer)||'-'; document.getElementById('activeTripStartKm').innerText=activeTrip.startKm;}else{document.getElementById('tripActiveBox').style.display='none'; document.getElementById('tripStartBox').style.display='flex';}}
     function openTripModal(){const targetUser=users.find(u=>u.username===currentUser); if(targetUser){document.getElementById('newTripPlate').value=targetUser.defaultPlate||''; document.getElementById('newTripTrailer').value=targetUser.defaultTrailer||'';} document.getElementById('tripModal').style.display='flex';}
     function closeTripModal(){document.getElementById('tripModal').style.display='none';}
-    async function startTrip(e){if(e)e.preventDefault(); const tripNo=document.getElementById('newTripNo').value.trim(); if(driverTrips.some(t=>t.tripNo===tripNo)){alert("HATA: Bu Sefer No zaten sistemde kayıtlı! Lütfen farklı bir numara girin."); return false;} const posNoVal=document.getElementById('newTripPosNo').value.trim(); if(posNoVal&&driverTrips.some(t=>t.posNo&&t.posNo.trim()===posNoVal)){alert("HATA: Bu Pozisyon No ("+posNoVal+") zaten sistemde kayıtlı! Lütfen farklı bir numara girin."); return false;} if(driverTrips.some(t=>t.driver===currentUser&&t.status==='ACTIVE')){alert("Aktif seferiniz var."); closeTripModal(); return false;} const btn=document.querySelector('#tripForm button[type="submit"]'); const txt=btn.innerHTML; btn.innerHTML='İşleniyor...'; btn.disabled=true; try{const posNo=document.getElementById('newTripPosNo').value; const route=document.getElementById('newTripRoute').value; const plate=document.getElementById('newTripPlate').value.toUpperCase(); await cTrips.add({driver:currentUser,tripNo,posNo,route,plate,trailer:document.getElementById('newTripTrailer').value.toUpperCase(),startKm:parseInt(document.getElementById('newTripKm').value),endKm:0,totalKm:0,endDate:'',status:'ACTIVE',timestamp:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('tripForm').reset(); closeTripModal(); showToast('Sefer Başladı','success');}catch(error){alert("Hata: "+error.message);}finally{btn.innerHTML=txt; btn.disabled=false;} return false;}
+    async function startTrip(e){if(e)e.preventDefault(); const tripNo=document.getElementById('newTripNo').value.trim(); if(driverTrips.some(t=>t.tripNo===tripNo)){alert("HATA: Bu Sefer No zaten sistemde kayıtlı! Lütfen farklı bir numara girin."); return false;} if(driverTrips.some(t=>t.driver===currentUser&&t.status==='ACTIVE')){alert("Aktif seferiniz var."); closeTripModal(); return false;} const btn=document.querySelector('#tripForm button[type="submit"]'); const txt=btn.innerHTML; btn.innerHTML='İşleniyor...'; btn.disabled=true; try{const posNo=document.getElementById('newTripPosNo').value; const route=document.getElementById('newTripRoute').value; const plate=document.getElementById('newTripPlate').value.toUpperCase(); await cTrips.add({driver:currentUser,tripNo,posNo,route,plate,trailer:document.getElementById('newTripTrailer').value.toUpperCase(),startKm:parseInt(document.getElementById('newTripKm').value),endKm:0,totalKm:0,endDate:'',status:'ACTIVE',timestamp:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('tripForm').reset(); closeTripModal(); showToast('Sefer Başladı','success');}catch(error){alert("Hata: "+error.message);}finally{btn.innerHTML=txt; btn.disabled=false;} return false;}
     function openOpsTripModal(){const sel=document.getElementById('opsTripDriver'); sel.innerHTML='<option value="">-- Şoför Seç --</option>'; getDrivers().forEach(d=>{sel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`;}); document.getElementById('opsTripModal').style.display='flex';}
     function closeOpsTripModal(){document.getElementById('opsTripModal').style.display='none';}
-    async function startOpsTrip(e){if(e)e.preventDefault(); const drv=document.getElementById('opsTripDriver').value; const tripNo=document.getElementById('opsTripNo').value.trim(); if(driverTrips.some(t=>t.tripNo===tripNo)){alert("HATA: Bu Sefer No zaten sistemde kayıtlı!"); return false;} const opsPosNo=document.getElementById('opsTripPosNo').value.trim(); if(opsPosNo&&driverTrips.some(t=>t.posNo&&t.posNo.trim()===opsPosNo)){alert("HATA: Bu Pozisyon No ("+opsPosNo+") zaten sistemde kayıtlı! Lütfen farklı bir numara girin."); return false;} if(driverTrips.some(t=>t.driver===drv&&t.status==='ACTIVE')){alert("Şoförün aktif seferi var!"); return false;} const btn=document.querySelector('#opsTripForm button[type="submit"]'); const txt=btn.innerHTML; btn.innerHTML='İşleniyor...'; btn.disabled=true; try{const posNo=document.getElementById('opsTripPosNo').value; const route=document.getElementById('opsTripRoute').value; const plate=document.getElementById('opsTripPlate').value.toUpperCase(); await cTrips.add({driver:drv,tripNo,posNo,route,plate,trailer:document.getElementById('opsTripTrailer').value.toUpperCase(),startKm:parseInt(document.getElementById('opsTripStartKm').value),endKm:0,totalKm:0,endDate:'',status:'ACTIVE',timestamp:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('opsTripForm').reset(); closeOpsTripModal(); showToast('Sefer Başladı','success');}catch(error){alert("Hata: "+error.message);}finally{btn.innerHTML=txt; btn.disabled=false;}}
+    async function startOpsTrip(e){if(e)e.preventDefault(); const drv=document.getElementById('opsTripDriver').value; const tripNo=document.getElementById('opsTripNo').value.trim(); if(driverTrips.some(t=>t.tripNo===tripNo)){alert("HATA: Bu Sefer No zaten sistemde kayıtlı!"); return false;} if(driverTrips.some(t=>t.driver===drv&&t.status==='ACTIVE')){alert("Şoförün aktif seferi var!"); return false;} const btn=document.querySelector('#opsTripForm button[type="submit"]'); const txt=btn.innerHTML; btn.innerHTML='İşleniyor...'; btn.disabled=true; try{const posNo=document.getElementById('opsTripPosNo').value; const route=document.getElementById('opsTripRoute').value; const plate=document.getElementById('opsTripPlate').value.toUpperCase(); await cTrips.add({driver:drv,tripNo,posNo,route,plate,trailer:document.getElementById('opsTripTrailer').value.toUpperCase(),startKm:parseInt(document.getElementById('opsTripStartKm').value),endKm:0,totalKm:0,endDate:'',status:'ACTIVE',timestamp:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('opsTripForm').reset(); closeOpsTripModal(); showToast('Sefer Başladı','success');}catch(error){alert("Hata: "+error.message);}finally{btn.innerHTML=txt; btn.disabled=false;}}
     function openEditActiveTripModal(tripId=null){let t; if(tripId&&typeof tripId==='string')t=driverTrips.find(x=>x.id===tripId); else t=driverTrips.find(x=>x.driver===currentUser&&x.status==='ACTIVE'); if(!t)return; document.getElementById('editActiveTripIdHidden').value=t.id; document.getElementById('editActiveTripNo').value=t.tripNo||''; document.getElementById('editActiveTripPosNo').value=t.posNo||''; document.getElementById('editActiveTripRoute').value=t.route||''; document.getElementById('editActivePlate').value=t.plate; document.getElementById('editActiveTrailer').value=t.trailer||''; document.getElementById('editActiveStartKm').value=t.startKm; document.getElementById('editActiveTripModal').style.display='flex';}
     function closeEditActiveTripModal(){document.getElementById('editActiveTripModal').style.display='none';}
     function saveActiveTripEdit(e){if(e)e.preventDefault(); const tId=document.getElementById('editActiveTripIdHidden').value; const t=driverTrips.find(x=>x.id===tId); if(!t)return false; cTrips.doc(t.id).update({tripNo:document.getElementById('editActiveTripNo').value,posNo:document.getElementById('editActiveTripPosNo').value,route:document.getElementById('editActiveTripRoute').value,plate:document.getElementById('editActivePlate').value.toUpperCase(),trailer:document.getElementById('editActiveTrailer').value.toUpperCase(),startKm:parseInt(document.getElementById('editActiveStartKm').value)}); closeEditActiveTripModal(); showToast('Güncellendi','success'); return false;}
@@ -4013,27 +3990,23 @@
     function deleteTrip(tripId){if(confirm("Sefer silinsin mi?")){cTrips.doc(tripId).delete(); showToast('Silindi','success');}}
     function filterTrips(){renderDashboard();}
     
-    function renderOpsActiveTrips(){const l=document.getElementById('opsActiveTripsList'); if(!l)return; l.innerHTML=''; let act=driverTrips.filter(t=>t.status==='ACTIVE'); act.forEach(t=>{let btns=`<button onclick="openEditActiveTripModal('${t.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg"><i class="fa-solid fa-pen"></i></button><button onclick="openEndTripModal('${t.id}')" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg ml-1"><i class="fa-solid fa-stop"></i></button><button onclick="deleteTrip('${t.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg ml-1"><i class="fa-solid fa-trash"></i></button>`; l.innerHTML+=`<tr class="border-b border-slate-100 hover:bg-amber-50/50"><td class="p-3 font-bold"><i class="fa-solid fa-user text-slate-300 mr-2"></i>${esc(t.driver)}</td><td class="p-3 font-bold text-indigo-600">${esc(t.tripNo)}</td><td class="p-3 font-bold text-amber-600">${esc(t.posNo || '-')}</td><td class="p-3 text-sm text-slate-600">${esc(t.route)}</td><td class="p-3 text-xs"><span class="bg-slate-100 px-2 py-1 rounded font-bold">${esc(t.plate)}</span> / ${esc(t.trailer)||'-'}</td><td class="p-3 font-bold">${t.startKm.toLocaleString()} KM</td><td class="p-3 text-right">${btns}</td></tr>`;}); if(act.length===0)l.innerHTML=`<tr><td colspan="7" class="p-4 text-center text-slate-500">Sistemde devam eden sefer yok.</td></tr>`;
-        // Mobil kartlar
-        const mc=document.getElementById('opsActiveTripsCards'); if(!mc)return;
-        mc.innerHTML='';
-        if(act.length===0){mc.innerHTML='<p class="text-center text-slate-400 text-sm py-4">Aktif sefer yok.</p>';return;}
-        act.forEach(t=>{mc.innerHTML+=`<div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <div class="flex justify-between items-start mb-2">
-                <div><p class="font-bold text-slate-800">${esc(t.driver)}</p><p class="text-xs text-indigo-600 font-bold">${esc(t.tripNo)} ${t.posNo?'· <span class="text-amber-600">'+esc(t.posNo)+'</span>':''}</p></div>
-                <span class="bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">AKTİF</span>
-            </div>
-            <div class="grid grid-cols-2 gap-1 text-xs text-slate-600 mb-3">
-                <span>🛣️ ${esc(t.route)}</span>
-                <span>🚛 ${esc(t.plate)} / ${esc(t.trailer||'-')}</span>
-                <span>📍 ${t.startKm.toLocaleString()} KM</span>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="openEditActiveTripModal('${t.id}')" class="flex-1 bg-blue-100 text-blue-700 py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-pen mr-1"></i>Düzelt</button>
-                <button onclick="openEndTripModal('${t.id}')" class="flex-1 bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-stop mr-1"></i>Bitir</button>
-                <button onclick="deleteTrip('${t.id}')" class="bg-rose-100 text-rose-600 px-3 py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-trash"></i></button>
-            </div>
-        </div>`;});}
+    function renderOpsActiveTrips(){
+        const l=document.getElementById('opsActiveTripsList'); if(!l)return;
+        l.innerHTML='';
+        const mc=document.getElementById('opsActiveTripsCards');
+        if(mc)mc.innerHTML='';
+        let act=driverTrips.filter(t=>t.status==='ACTIVE');
+        if(act.length===0){
+            l.innerHTML=`<tr><td colspan="7" class="p-4 text-center text-slate-500">Sistemde devam eden sefer yok.</td></tr>`;
+            if(mc)mc.innerHTML='<p class="text-center text-slate-400 text-sm py-4">Aktif sefer yok.</p>';
+            return;
+        }
+        act.forEach(t=>{
+            let btns=`<button onclick="openEditActiveTripModal('${t.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg"><i class="fa-solid fa-pen"></i></button><button onclick="openEndTripModal('${t.id}')" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg ml-1"><i class="fa-solid fa-stop"></i></button><button onclick="deleteTrip('${t.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg ml-1"><i class="fa-solid fa-trash"></i></button>`;
+            l.innerHTML+=`<tr class="border-b border-slate-100 hover:bg-amber-50/50"><td class="p-3 font-bold"><i class="fa-solid fa-user text-slate-300 mr-2"></i>${esc(t.driver)}</td><td class="p-3 font-bold text-indigo-600">${esc(t.tripNo)}</td><td class="p-3 font-bold text-amber-600">${esc(t.posNo||'-')}</td><td class="p-3 text-sm text-slate-600">${esc(t.route)}</td><td class="p-3 text-xs"><span class="bg-slate-100 px-2 py-1 rounded font-bold">${esc(t.plate)}</span> / ${esc(t.trailer)||'-'}</td><td class="p-3 font-bold">${t.startKm.toLocaleString()} KM</td><td class="p-3 text-right">${btns}</td></tr>`;
+            if(mc){mc.innerHTML+=`<div class="bg-amber-50 border border-amber-200 rounded-xl p-4"><div class="flex justify-between items-start mb-2"><div><p class="font-bold text-slate-800">${esc(t.driver)}</p><p class="text-xs text-indigo-600 font-bold">${esc(t.tripNo)}${t.posNo?' · <span class="text-amber-600">'+esc(t.posNo)+'</span>':''}</p></div><span class="bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">AKTİF</span></div><div class="grid grid-cols-2 gap-1 text-xs text-slate-600 mb-3"><span>🛣️ ${esc(t.route)}</span><span>🚛 ${esc(t.plate)}/${esc(t.trailer||'-')}</span><span>📍 ${t.startKm.toLocaleString()} KM</span></div><div class="flex gap-2"><button onclick="openEditActiveTripModal('${t.id}')" class="flex-1 bg-blue-100 text-blue-700 py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-pen mr-1"></i>Düzelt</button><button onclick="openEndTripModal('${t.id}')" class="flex-1 bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-stop mr-1"></i>Bitir</button><button onclick="deleteTrip('${t.id}')" class="bg-rose-100 text-rose-600 px-3 py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-trash"></i></button></div></div>`;}
+        });
+    }
     
     function renderAll(){ if(document.getElementById('panel-USERS')?.style.display==='block') renderSystemStats();
         if(!currentUser)return; const bal=getDriverBalance(currentUser); if(document.getElementById('driverNameTitle'))document.getElementById('driverNameTitle').innerText=currentUser;
@@ -4078,42 +4051,9 @@
         const fP=document.getElementById('panel-FLEET'); if(fP&&fP.style.display!=='none')renderFleetPanel();
         if(['ADMIN','OPS','PATRON','OPS_MANAGER'].includes(currentRole)){
             renderOpsActiveTrips(); const opL=document.getElementById('operationsList'); if(opL){opL.innerHTML=''; expenses.filter(e=>e.status==='PENDING_OP').forEach(e=>{let tL=e.tripId?`<span class="bg-indigo-50 border border-indigo-200 text-indigo-700 font-black text-sm px-3 py-1 rounded-lg">${esc(e.tripId)}</span>`:`<span class="text-slate-300 text-xs">—</span>`; let aB=`<button onclick="opApprove('${e.id}')" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg shadow-sm"><i class="fa-solid fa-check"></i></button><button onclick="editExpense('${e.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-pen"></i></button><button onclick="opReject('${e.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-xmark"></i></button><button onclick="deleteExpense('${e.id}')" class="bg-red-100 text-red-700 w-8 h-8 rounded-lg shadow-sm ml-1"><i class="fa-solid fa-trash"></i></button>`; opL.innerHTML+=`<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="p-4"><p class="font-bold">${esc(e.driver)}</p><p class="text-[10px] text-slate-500">${e.date}</p></td><td class="p-4"><p class="font-semibold text-sm">${catIcons[e.category]} ${e.category}</p><p class="text-xs text-slate-500">${esc(e.tripName)}</p></td><td class="p-4 text-primary text-base">${formatMoney(e.amount,e.currency)}</td><td class="p-4">${tL}</td><td class="p-4"><span class="text-slate-300 text-xs">—</span></td><td class="p-4 text-right flex justify-end gap-1">${aB}</td></tr>`;}); if(opL.innerHTML==='')opL.innerHTML=`<tr><td colspan="6" class="p-6 text-center text-slate-400 text-sm"><i class="fa-regular fa-circle-check text-2xl block mb-2 opacity-30"></i>Bekleyen masraf yok.</td></tr>`;
-            // Mobil kartlar
-            const oc=document.getElementById('operationsListCards'); if(oc){oc.innerHTML='';
-            const pending=expenses.filter(e=>e.status==='PENDING_OP');
-            if(pending.length===0){oc.innerHTML='<p class="text-center text-slate-400 text-sm py-4"><i class="fa-regular fa-circle-check mr-1"></i>Bekleyen masraf yok.</p>';}
-            else{pending.forEach(e=>{oc.innerHTML+=`<div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                <div class="flex justify-between items-start mb-2">
-                    <div><p class="font-bold text-slate-800">${esc(e.driver)}</p><p class="text-xs text-slate-400">${e.date}</p></div>
-                    <span class="text-base font-black text-primary">${formatMoney(e.amount,e.currency)}</span>
-                </div>
-                <p class="text-sm font-semibold text-slate-700 mb-1">${catIcons[e.category]||'📝'} ${e.category}</p>
-                <p class="text-xs text-slate-500 mb-3">${esc(e.tripName||'')} ${e.tripId?'· Dosya: '+esc(e.tripId):''}</p>
-                <div class="flex gap-2">
-                    <button onclick="opApprove('${e.id}')" class="flex-1 bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-check mr-1"></i>Onayla</button>
-                    <button onclick="editExpense('${e.id}')" class="bg-blue-100 text-blue-700 px-3 py-2.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-pen"></i></button>
-                    <button onclick="opReject('${e.id}')" class="bg-rose-100 text-rose-600 px-3 py-2.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-xmark"></i></button>
-                    <button onclick="deleteExpense('${e.id}')" class="bg-red-100 text-red-600 px-3 py-2.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            </div>`;});}}}
-            const apL=document.getElementById('approvedOperationsList'); if(apL){apL.innerHTML=''; expenses.filter(e=>e.status==='APPROVED').slice(0,40).forEach(e=>{let aB=`<button onclick="editExpense('${e.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg" title="Düzenle"><i class="fa-solid fa-pen"></i></button>${isAdmin()?`<button onclick="deleteExpense('${e.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg ml-1" title="Sil"><i class="fa-solid fa-trash"></i></button>`:'<span class="w-8 h-8 ml-1 inline-flex items-center justify-center text-slate-300" title="Sadece yönetici silebilir"><i class="fa-solid fa-lock text-xs"></i></span>'}`; let approvedByBadge=e.approvedBy?`<span class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fa-solid fa-user-check mr-1"></i>${esc(e.approvedBy)}</span>`:'<span class="text-slate-300 text-xs">—</span>'; apL.innerHTML+=`<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="p-4 font-bold">${esc(e.driver)}<br><span class="text-[10px] text-slate-400">${e.date}</span></td><td class="p-4 text-sm font-semibold">${catIcons[e.category]||'📝'} ${esc(e.tripName)} <span class="text-[10px] block mt-0.5">Dosya: ${esc(e.tripId)||'-'}</span></td><td class="p-4 text-emerald-600 font-bold">${formatMoney(e.amount,e.currency)}</td><td class="p-4">${approvedByBadge}</td><td class="p-4 text-right flex justify-end gap-1">${aB}</td></tr>`;}); if(apL.innerHTML==='')apL.innerHTML=`<tr><td colspan="5" class="p-4 text-center">Kayıt yok.</td></tr>`;
-            // Mobil kartlar
-            const ac=document.getElementById('approvedOperationsListCards'); if(ac){ac.innerHTML='';
-            const approved=expenses.filter(e=>e.status==='APPROVED').slice(0,40);
-            if(approved.length===0){ac.innerHTML='<p class="text-center text-slate-400 text-sm py-4">Kayıt yok.</p>';}
-            else{approved.forEach(e=>{ac.innerHTML+=`<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-                <div class="flex justify-between items-start mb-1">
-                    <div><p class="font-bold text-slate-800">${esc(e.driver)}</p><p class="text-xs text-slate-400">${e.date}</p></div>
-                    <span class="text-base font-black text-emerald-600">${formatMoney(e.amount,e.currency)}</span>
-                </div>
-                <p class="text-sm font-semibold text-slate-700 mb-1">${catIcons[e.category]||'📝'} ${e.category}</p>
-                <p class="text-xs text-slate-500 mb-2">${esc(e.tripName||'')} ${e.tripId?'· '+esc(e.tripId):''}</p>
-                ${e.approvedBy?`<p class="text-[10px] text-emerald-600 mb-2"><i class="fa-solid fa-user-check mr-1"></i>${esc(e.approvedBy)}</p>`:''}
-                <div class="flex gap-2">
-                    <button onclick="editExpense('${e.id}')" class="flex-1 bg-blue-100 text-blue-700 py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-pen mr-1"></i>Düzelt</button>
-                    ${isAdmin()?`<button onclick="deleteExpense('${e.id}')" class="bg-rose-100 text-rose-600 px-3 py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-trash"></i></button>`:''}
-                </div>
-            </div>`;});}}} renderDashboard();
+            const oc=document.getElementById('operationsListCards'); if(oc){oc.innerHTML=''; const pending=expenses.filter(e=>e.status==='PENDING_OP'); if(!pending.length){oc.innerHTML='<p class="text-center text-slate-400 text-sm py-4">Bekleyen masraf yok.</p>';} else{pending.forEach(e=>{oc.innerHTML+=`<div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm"><div class="flex justify-between items-start mb-2"><div><p class="font-bold text-slate-800">${esc(e.driver)}</p><p class="text-xs text-slate-400">${e.date}</p></div><span class="text-base font-black text-primary">${formatMoney(e.amount,e.currency)}</span></div><p class="text-sm font-semibold text-slate-700 mb-1">${catIcons[e.category]||'📝'} ${e.category}</p><p class="text-xs text-slate-500 mb-3">${esc(e.tripName||'')}${e.tripId?' · Dosya: '+esc(e.tripId):''}</p><div class="flex gap-2"><button onclick="opApprove('${e.id}')" class="flex-1 bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-check mr-1"></i>Onayla</button><button onclick="editExpense('${e.id}')" class="bg-blue-100 text-blue-700 px-3 py-2.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-pen"></i></button><button onclick="opReject('${e.id}')" class="bg-rose-100 text-rose-600 px-3 py-2.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-xmark"></i></button><button onclick="deleteExpense('${e.id}')" class="bg-red-100 text-red-600 px-3 py-2.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-trash"></i></button></div></div>`;});}}
+        }
+            const apL=document.getElementById('approvedOperationsList'); if(apL){apL.innerHTML=''; expenses.filter(e=>e.status==='APPROVED').slice(0,40).forEach(e=>{let aB=`<button onclick="editExpense('${e.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg" title="Düzenle"><i class="fa-solid fa-pen"></i></button>${isAdmin()?`<button onclick="deleteExpense('${e.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg ml-1" title="Sil"><i class="fa-solid fa-trash"></i></button>`:'<span class="w-8 h-8 ml-1 inline-flex items-center justify-center text-slate-300" title="Sadece yönetici silebilir"><i class="fa-solid fa-lock text-xs"></i></span>'}`; let approvedByBadge=e.approvedBy?`<span class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fa-solid fa-user-check mr-1"></i>${esc(e.approvedBy)}</span>`:'<span class="text-slate-300 text-xs">—</span>'; apL.innerHTML+=`<tr class="hover:bg-slate-50 border-b border-slate-100"><td class="p-4 font-bold">${esc(e.driver)}<br><span class="text-[10px] text-slate-400">${e.date}</span></td><td class="p-4 text-sm font-semibold">${catIcons[e.category]||'📝'} ${esc(e.tripName)} <span class="text-[10px] block mt-0.5">Dosya: ${esc(e.tripId)||'-'}</span></td><td class="p-4 text-emerald-600 font-bold">${formatMoney(e.amount,e.currency)}</td><td class="p-4">${approvedByBadge}</td><td class="p-4 text-right flex justify-end gap-1">${aB}</td></tr>`;}); if(apL.innerHTML==='')apL.innerHTML=`<tr><td colspan="5" class="p-4 text-center">Kayıt yok.</td></tr>`;} renderDashboard();
         }
         if(['ADMIN','PATRON','ACCOUNTING'].includes(currentRole)){
             const cL=document.getElementById('accountingCariList'); 
@@ -4697,61 +4637,26 @@
         const b=new Blob(['\uFEFF'+r.join('\n')],{type:'text/csv;charset=utf-8;'}); const l=document.createElement('a'); l.href=URL.createObjectURL(b); l.download=`Sefer_Maliyeti_${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(l); l.click(); document.body.removeChild(l); showToast('Excel İndirildi','success');
     }
     async function exportTripCostPDF(){
-        if(typeof pdfMake==='undefined'){showToast('PDF kütüphanesi yüklenmedi','error');return;}
         showToast('PDF Hazırlanıyor...','success');
-        const sD=document.getElementById('tripCostStartDate').value;
-        const eD=document.getElementById('tripCostEndDate').value;
+        document.getElementById('pdfTripCostDate').innerText=new Date().toLocaleDateString('tr-TR');
+        const tb=document.getElementById('pdfTripCostTableBody'); tb.innerHTML='';
+        const sD=document.getElementById('tripCostStartDate').value; const eD=document.getElementById('tripCostEndDate').value;
         const sV=(document.getElementById('searchTripCostInput')?.value||'').toLowerCase();
         let ct=driverTrips.filter(t=>t.status==='COMPLETED');
-        if(sD)ct=ct.filter(t=>t.endDate>=sD);
-        if(eD)ct=ct.filter(t=>t.endDate<=eD);
+        if(sD)ct=ct.filter(t=>t.endDate>=sD); if(eD)ct=ct.filter(t=>t.endDate<=eD);
         if(sV)ct=ct.filter(t=>(t.driver||'').toLowerCase().includes(sV)||(t.tripNo||'').toLowerCase().includes(sV)||(t.route||'').toLowerCase().includes(sV));
         ct.sort((a,b)=>b.endDate.localeCompare(a.endDate));
-        if(!ct.length){showToast('Kayıt yok','error');return;}
-
-        function getLogoPng(){return new Promise(resolve=>{const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="#4AA4F6"><rect x="20" y="15" width="24" height="70"/><path d="M44 55 L 75 24 H 95 L 44 75 Z"/><rect x="70" y="60" width="25" height="25"/></svg>`;const blob=new Blob([svg],{type:'image/svg+xml'});const url=URL.createObjectURL(blob);const img=new Image();img.onload=()=>{const c=document.createElement('canvas');c.width=100;c.height=100;c.getContext('2d').drawImage(img,0,0);URL.revokeObjectURL(url);resolve(c.toDataURL('image/png'));};img.onerror=()=>{URL.revokeObjectURL(url);resolve(null);};img.src=url;});}
-        const logoPng=await getLogoPng();
-
-        const rows=[[
-            {text:'Tarih',style:'th'},{text:'Sefer No',style:'th'},{text:'Poz No',style:'th'},
-            {text:'Şoför',style:'th'},{text:'Güzergah',style:'th'},
-            {text:'KM',style:'th',alignment:'right'},{text:'Toplam Masraf',style:'th',alignment:'right'},{text:'Maliyet/KM',style:'th',alignment:'right'}
-        ]];
-        let totKm=0,totCost=0;
-        ct.forEach((t,i)=>{
-            let cE=0;
-            expenses.filter(e=>e.status==='APPROVED'&&(String(e.tripId||'').trim()===String(t.tripNo||'').trim()||String(e.tripId||'').trim()===String(t.id||'').trim())).forEach(e=>{cE+=(e.currency==='EUR'?e.amount:(e.currency==='USD'?e.amount*0.9:e.amount*0.028));});
-            const cpm=t.totalKm>0?(cE/t.totalKm):0;
-            totKm+=t.totalKm; totCost+=cE;
-            const bg=i%2===0?'#F8FAFC':null;
-            rows.push([
-                {text:t.endDate||'',fontSize:8,fillColor:bg},
-                {text:String(t.tripNo||''),fontSize:8,bold:true,fillColor:bg},
-                {text:String(t.posNo||'-'),fontSize:8,bold:true,color:'#D97706',fillColor:bg},
-                {text:String(t.driver||''),fontSize:8,fillColor:bg},
-                {text:String(t.route||''),fontSize:8,fillColor:bg},
-                {text:t.totalKm.toLocaleString()+' KM',fontSize:8,alignment:'right',fillColor:bg},
-                {text:cE.toLocaleString('tr-TR',{minimumFractionDigits:2})+' €',fontSize:8,alignment:'right',bold:true,color:'#EA580C',fillColor:bg},
-                {text:cpm.toFixed(3)+' €',fontSize:8,alignment:'right',bold:true,color:cpm>0.4?'#E11D48':'#10B981',fillColor:bg}
-            ]);
-        });
-        const avgCpm=totKm>0?(totCost/totKm):0;
-        rows.push([{text:'TOPLAM',bold:true,colSpan:5,fillColor:'#1E293B',color:'#fff',fontSize:8},{},{},{},{},{text:totKm.toLocaleString()+' KM',bold:true,alignment:'right',fillColor:'#1E293B',color:'#CBD5E1',fontSize:8},{text:totCost.toLocaleString('tr-TR',{minimumFractionDigits:2})+' €',bold:true,alignment:'right',fillColor:'#1E293B',color:'#FCA5A5',fontSize:9},{text:avgCpm.toFixed(3)+' €',bold:true,alignment:'right',fillColor:'#1E293B',color:avgCpm>0.4?'#FCA5A5':'#6EE7B7',fontSize:8}]);
-
-        const hdrLeft=logoPng?{columns:[{image:logoPng,width:26,height:26,margin:[0,0,6,0]},{stack:[{text:'karekara',fontSize:16,bold:true,color:'#0F172A'},{text:'SEFER BAZLI MALİYET ANALİZİ',fontSize:7,color:'#64748B',characterSpacing:1,margin:[0,2,0,0]}]}]}:{text:'karekara',fontSize:16,bold:true,color:'#0F172A'};
-
-        pdfMake.createPdf({
-            pageSize:'A4',pageOrientation:'portrait',pageMargins:[24,24,24,40],
-            footer:(p,pages)=>({margin:[24,0,24,12],columns:[{text:'karekara — Sefer Bazlı Maliyet Analizi',fontSize:7,color:'#94A3B8'},{text:'Sayfa '+p+'/'+pages+' · '+new Date().toLocaleDateString('tr-TR'),fontSize:7,color:'#94A3B8',alignment:'right'}]}),
-            content:[
-                {columns:[hdrLeft,{stack:[{text:'MALİYET DÖKÜMÜ',fontSize:16,bold:true,color:'#10B981',alignment:'right'},{text:'Tarih: '+new Date().toLocaleDateString('tr-TR'),fontSize:9,color:'#475569',alignment:'right',margin:[0,4,0,0]},{text:ct.length+' sefer',fontSize:8,color:'#94A3B8',alignment:'right',margin:[0,2,0,0]}],width:'auto'}],margin:[0,0,0,10]},
-                {canvas:[{type:'line',x1:0,y1:0,x2:547,y2:0,lineWidth:1.5,lineColor:'#0F172A'}],margin:[0,0,0,10]},
-                {table:{headerRows:1,widths:[50,28,60,52,'*',46,54,42],body:rows},layout:{fillColor:(r)=>r===0?'#1E293B':null,hLineWidth:(i,n)=>i===0||i===1||i===n.table.body.length?1:0.5,vLineWidth:()=>0,hLineColor:()=>'#E2E8F0',paddingLeft:()=>5,paddingRight:()=>5,paddingTop:()=>5,paddingBottom:()=>5}}
-            ],
-            styles:{th:{fontSize:8,bold:true,color:'#fff',fillColor:'#1E293B'}},
-            defaultStyle:{font:'Roboto',fontSize:9}
-        }).download('Maliyet_Analizi_'+new Date().toISOString().split('T')[0]+'.pdf');
-        showToast('PDF indirildi ✓','success');
+        if(ct.length===0){tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:10px;border:1px solid #CBD5E1;">Kayıt yok.</td></tr>`;}
+        else{ct.forEach(t=>{let cE=0; expenses.filter(e=>e.status==='APPROVED'&&e.tripId===t.tripNo).forEach(e=>{cE+=(e.currency==='EUR'?e.amount:(e.currency==='USD'?e.amount*0.9:e.amount*0.028));}); let cpm=t.totalKm>0?(cE/t.totalKm):0; tb.innerHTML+=`<tr><td style="border:1px solid #CBD5E1;padding:8px;">${t.endDate}</td><td style="border:1px solid #CBD5E1;padding:8px;font-weight:bold;">${esc(t.tripNo)}</td><td style="border:1px solid #CBD5E1;padding:8px;font-weight:bold;color:#d97706;">${esc(t.posNo||'-')}</td><td style="border:1px solid #CBD5E1;padding:8px;">${esc(t.driver)}</td><td style="border:1px solid #CBD5E1;padding:8px;">${esc(t.route)}</td><td style="border:1px solid #CBD5E1;padding:8px;text-align:right;">${t.totalKm.toLocaleString()} KM</td><td style="border:1px solid #CBD5E1;padding:8px;text-align:right;font-weight:bold;color:#EA580C;">${cE.toLocaleString('tr-TR',{minimumFractionDigits:2})} €</td><td style="border:1px solid #CBD5E1;padding:8px;text-align:right;font-weight:bold;color:${cpm>0.4?'#E11D48':'#10B981'};">${cpm.toLocaleString('tr-TR',{minimumFractionDigits:3})} €</td></tr>`;});}
+        try{
+            await html2pdf().set({
+                margin:[8,8,12,8],
+                filename:'Maliyet_Analizi_'+new Date().toISOString().split('T')[0]+'.pdf',
+                image:{type:'jpeg',quality:1},
+                html2canvas:{scale:2,useCORS:true,logging:false},
+                jsPDF:{unit:'mm',format:'a4',orientation:'landscape'}
+            }).from(document.getElementById('pdfTripCostTemplate')).save();
+        }catch(err){showToast('PDF Hatası!','error');}
     }
 
     // ══════════════════════════════════════════════

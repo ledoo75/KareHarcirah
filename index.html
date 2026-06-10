@@ -1856,7 +1856,7 @@
         document.getElementById('mainHeader').classList.remove('opacity-0'); 
         document.getElementById('mainContent').classList.remove('opacity-0'); 
         
-        listeners.push(cUsers.onSnapshot(snap=>{users=snap.docs.map(d=>({id:d.id,...d.data()})); updateDriverDropdowns(); renderAll(); updateTabVisibility();})); 
+        listeners.push(cUsers.onSnapshot(snap=>{users=snap.docs.map(d=>({id:d.id,...d.data()})); updateDriverDropdowns(); renderAll(); updateTabVisibility(); fillCariTarihDrivers();})); 
         
         if(currentRole==='ADMIN'||currentRole==='PATRON'||currentRole==='OPS'||currentRole==='OPS_MANAGER'||currentRole==='ACCOUNTING'||currentRole==='FLEET'){
             listeners.push(cExpenses.orderBy('timestamp','desc').onSnapshot(s=>{expenses=s.docs.map(d=>({id:d.id,...d.data()})); renderAll();})); 
@@ -3725,11 +3725,8 @@
     
     function renderOpsActiveTrips(){const l=document.getElementById('opsActiveTripsList'); if(!l)return; l.innerHTML=''; let act=driverTrips.filter(t=>t.status==='ACTIVE'); act.forEach(t=>{let btns=`<button onclick="openEditActiveTripModal('${t.id}')" class="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg"><i class="fa-solid fa-pen"></i></button><button onclick="openEndTripModal('${t.id}')" class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg ml-1"><i class="fa-solid fa-stop"></i></button><button onclick="deleteTrip('${t.id}')" class="bg-rose-100 text-rose-700 w-8 h-8 rounded-lg ml-1"><i class="fa-solid fa-trash"></i></button>`; l.innerHTML+=`<tr class="border-b border-slate-100 hover:bg-amber-50/50"><td class="p-3 font-bold"><i class="fa-solid fa-user text-slate-300 mr-2"></i>${esc(t.driver)}</td><td class="p-3 font-bold text-indigo-600">${esc(t.tripNo)}</td><td class="p-3 font-bold text-amber-600">${esc(t.posNo || '-')}</td><td class="p-3 text-sm text-slate-600">${esc(t.route)}</td><td class="p-3 text-xs"><span class="bg-slate-100 px-2 py-1 rounded font-bold">${esc(t.plate)}</span> / ${esc(t.trailer)||'-'}</td><td class="p-3 font-bold">${t.startKm.toLocaleString()} KM</td><td class="p-3 text-right">${btns}</td></tr>`;}); if(act.length===0)l.innerHTML=`<tr><td colspan="7" class="p-4 text-center text-slate-500">Sistemde devam eden sefer yok.</td></tr>`;}
     
-    function renderAll(){ if(document.getElementById('panel-USERS')?.style.display==='block') renderSystemStats();
-        if(!currentUser)return; const bal=getDriverBalance(currentUser); if(document.getElementById('driverNameTitle'))document.getElementById('driverNameTitle').innerText=currentUser;
-        if(document.getElementById('mySafeEUR'))document.getElementById('mySafeEUR').innerText=(bal.e>=0?'+':'')+bal.e.toFixed(2)+' €';
-        if(document.getElementById('mySafeUSD'))document.getElementById('mySafeUSD').innerText=(bal.u>=0?'+':'')+bal.u.toFixed(2)+' $';
-        if(document.getElementById('mySafeTRY'))document.getElementById('mySafeTRY').innerText=(bal.t>=0?'+':'')+bal.t.toLocaleString('tr-TR')+' ₺';
+    function renderAll(){ if(document.getElementById('panel-USERS')?.style.display==='block') renderSystemStats(); updateTabVisibility();
+        if(!currentUser)return; const bal=getDriverBalance(currentUser); if(document.getElementById('driverNameTitle'))document.getElementById('driverNameTitle').innerText=currentUser;        if(document.getElementById('mySafeEUR'))document.getElementById('mySafeEUR').innerHTML=formatMoney(bal.e,'€'); if(document.getElementById('mySafeUSD'))document.getElementById('mySafeUSD').innerHTML=formatMoney(bal.u,'$'); if(document.getElementById('mySafeTRY'))document.getElementById('mySafeTRY').innerHTML=formatMoney(bal.t,'₺');
         // Aktif veya son sefer kartı
         const tripCard=document.getElementById('driverTripCard');
         if(tripCard){
@@ -3785,10 +3782,17 @@
                 dExp.forEach(x=>{if(x.currency==='EUR')eE+=x.amount;else if(x.currency==='USD')eU+=x.amount;else eT+=x.amount;});
                 const netE=aE-eE, netU=aU-eU, netT=aT-eT;
                 const hasBalance=netE!==0||netU!==0||netT!==0;
-                const isNeg=netE<0;
-                const balColor=!hasBalance?'text-slate-400':'text-white';
-                const balBg=!hasBalance?'bg-slate-100':isNeg?'bg-rose-500':'bg-emerald-500';
-                const balBorder=!hasBalance?'border-slate-200':isNeg?'border-rose-600':'border-emerald-600';
+                const isNeg=netE<0||netU<0||netT<0;
+                const thisMonth=new Date().toISOString().slice(0,7);
+                const monthExp=dExp.filter(e=>(e.date||'').startsWith(thisMonth)).reduce((s,e)=>e.currency==='EUR'?s+e.amount:s,0);
+                const monthAdv=dAdv.filter(a=>(a.date||'').startsWith(thisMonth)).reduce((s,a)=>a.currency==='EUR'?s+a.amount:s,0);
+                const tripCount=driverTrips.filter(t=>t.driver===drv&&t.status==='COMPLETED').length;
+                const pendingCount=expenses.filter(e=>e.driver===drv&&(e.status==='PENDING_OP'||e.status==='PENDING_ACC')).length;
+
+                const balColor=!hasBalance?'text-slate-400':isNeg?'text-rose-700':'text-emerald-700';
+                const balBg=!hasBalance?'bg-slate-50':isNeg?'bg-rose-50':'bg-emerald-50';
+                const balBorder=!hasBalance?'border-slate-200':isNeg?'border-rose-200':'border-emerald-200';
+
                 const row=document.createElement('tr');
                 row.className='cari-row border-b border-slate-100 hover:bg-slate-50/50';
                 row.setAttribute('data-driver',esc(drv));
@@ -3823,11 +3827,11 @@
                     </td>
                     <td class="p-4">
                         <div class="flex justify-end">
-                            <div class="${balBg} ${balBorder} border-2 rounded-xl px-4 py-2.5 text-right min-w-[110px]">
-                                <p class="text-[9px] text-white/70 font-bold uppercase mb-0.5">Net Bakiye</p>
+                            <div class="${balBg} ${balBorder} border rounded-xl px-4 py-2 text-right min-w-[100px]">
+                                <p class="text-[9px] text-slate-400 font-bold uppercase mb-0.5">Net Bakiye</p>
                                 <p class="font-black text-base ${balColor}">${netE!==0?(netE>0?'+':'')+netE.toFixed(2)+' €':''}</p>
-                                ${netU!==0?`<p class="font-black text-sm text-white/80">${netU>0?'+':''}${netU.toFixed(2)} $</p>`:''}
-                                ${netT!==0?`<p class="font-black text-sm text-white/80">${netT>0?'+':''}${netT.toLocaleString('tr-TR')} ₺</p>`:''}
+                                ${netU!==0?`<p class="font-black text-sm ${netU>0?'text-emerald-600':'text-rose-600'}">${netU>0?'+':''}${netU.toFixed(2)} $</p>`:''}
+                                ${netT!==0?`<p class="font-black text-sm ${netT>0?'text-emerald-600':'text-rose-600'}">${netT>0?'+':''}${netT.toLocaleString('tr-TR')} ₺</p>`:''}
                                 ${!hasBalance?`<p class="text-xs text-slate-400">Sıfır</p>`:''}
                             </div>
                         </div>
@@ -3836,8 +3840,7 @@
                         <div class="flex justify-end gap-1.5">
                             <button onclick="openDriverStatementModal('${esc(drv)}')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1" title="Cari Döküm"><i class="fa-solid fa-list"></i></button>
                             <button onclick="exportSingleDriverCSV('${esc(drv)}')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 px-3 py-2 rounded-lg text-xs font-bold transition" title="Excel"><i class="fa-solid fa-file-excel"></i></button>
-                            <button onclick="exportDriverSummaryPDF('${esc(drv)}')" class="bg-violet-600 hover:bg-violet-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition" title="Özet PDF"><i class="fa-solid fa-file-pdf"></i></button>
-                            <button onclick="openPdfDateModal('${esc(drv)}')" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition" title="Detaylı PDF"><i class="fa-solid fa-scroll"></i></button>
+                            <button onclick="openPdfDateModal('${esc(drv)}')" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition" title="PDF"><i class="fa-solid fa-file-pdf"></i></button>
                         </div>
                     </td>`;
                 cL.appendChild(row);

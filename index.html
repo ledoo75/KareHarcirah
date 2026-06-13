@@ -622,6 +622,41 @@
     <div class="loader-bar"><div class="loader-fill"></div></div>
 </div>
 
+<!-- Müşteri Sorgulama Modalı -->
+<div id="customerQueryModal" style="display:none;background:rgba(15,23,42,0.85);backdrop-filter:blur(6px);" class="fixed inset-0 z-50 items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[92vh] overflow-y-auto">
+        <div class="bg-slate-900 rounded-t-2xl p-5 flex items-center justify-between sticky top-0 z-10">
+            <div class="flex items-center gap-3">
+                <svg width="28" height="28" viewBox="0 0 100 100" fill="#4AA4F6"><rect x="20" y="15" width="24" height="70"/><path d="M44 55 L 75 24 H 95 L 44 75 Z"/><rect x="70" y="60" width="25" height="25"/></svg>
+                <div>
+                    <p class="text-white font-bold text-base" id="cqTitle">Sefer Sorgulama</p>
+                    <p class="text-slate-400 text-xs" id="cqSubtitle">Pozisyon veya konteyner numarası ile sorgulayın</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="flex gap-1">
+                    <button onclick="setCQLang('tr')" id="cqLangTR" class="text-xs px-2 py-1 rounded font-bold bg-blue-500 text-white">TR</button>
+                    <button onclick="setCQLang('en')" id="cqLangEN" class="text-xs px-2 py-1 rounded font-bold bg-slate-700 text-slate-300">EN</button>
+                    <button onclick="setCQLang('it')" id="cqLangIT" class="text-xs px-2 py-1 rounded font-bold bg-slate-700 text-slate-300">IT</button>
+                </div>
+                <button onclick="closeCustomerQuery()" class="text-slate-400 hover:text-white text-xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700">✕</button>
+            </div>
+        </div>
+        <div class="p-5">
+            <div class="flex gap-2 mb-4">
+                <input id="cqInput" type="text" placeholder="Pozisyon No veya Konteyner No"
+                    class="flex-1 border-2 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold uppercase outline-none focus:border-blue-400 transition"
+                    oninput="this.value=this.value.toUpperCase()"
+                    onkeydown="if(event.key==='Enter')runCustomerQuery()">
+                <button onclick="runCustomerQuery()" class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-3 rounded-xl text-sm font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-magnifying-glass"></i> Sorgula
+                </button>
+            </div>
+            <div id="cqResult"></div>
+        </div>
+    </div>
+</div>
+
 <div id="loginScreen" style="display:none;">
     <!-- Arka plan dekoratif elementler -->
     <div style="position:absolute;top:-80px;left:-80px;width:280px;height:280px;background:radial-gradient(circle,rgba(74,164,246,0.15) 0%,transparent 70%);pointer-events:none;"></div>
@@ -718,6 +753,10 @@
                     <i class="fa-solid fa-arrow-right-to-bracket" style="margin-right:8px;"></i>Giriş Yap
                 </button>
 
+                <!-- Sefer Sorgulama Butonu -->
+                <button type="button" onclick="openCustomerQuery()" style="width:100%;background:#F8FAFC;border:2px solid #E2E8F0;color:#475569;padding:13px;border-radius:14px;font-size:0.9rem;font-weight:700;cursor:pointer;margin-top:10px;">
+                    <i class="fa-solid fa-magnifying-glass" style="margin-right:8px;color:#4AA4F6;"></i>Sefer Sorgulama
+                </button>
                 <!-- Şifremi Unuttum -->
                 <div style="text-align:center;margin-top:1rem;">
                     <button type="button" onclick="openForgotPassword()" style="background:none;border:none;color:#64748B;font-size:0.8rem;cursor:pointer;text-decoration:underline;padding:4px;">
@@ -749,6 +788,44 @@
     </div>
 
     <script>
+        function _e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+        function openCustomerQuery(){var m=document.getElementById('customerQueryModal');m.style.cssText='display:flex;background:rgba(15,23,42,0.85);backdrop-filter:blur(6px);position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;padding:16px;';document.getElementById('cqInput').value='';document.getElementById('cqResult').innerHTML='';setTimeout(function(){document.getElementById('cqInput').focus();},100);}
+        function closeCustomerQuery(){document.getElementById('customerQueryModal').style.display='none';}
+        const _cqI18n={tr:{title:'Sefer Sorgulama',subtitle:'Pozisyon veya konteyner numarası ile sorgulayın',statusActive:'YOLDA',statusDone:'TESLİM EDİLDİ',labelPos:'Poz:',labelTrip:'Sefer No:',labelRoute:'Güzergah',labelDriver:'Şoför',labelPlate:'Araç',labelTrailer:'Dorse',labelKm:'Toplam KM',labelStart:'Başlangıç',labelEnd:'Teslim',labelPhone:'Şoför Tel',labelCall:'Ara',labelTimeline:'Durum Zaman Çizelgesi',stepLoad:'Yüklendi',stepOnRoute:'Yolda',stepDelivered:'Teslim',lastQuery:'Son sorgu:',totalQuery:'sorgu',shareBtn:'🔗 Paylaş',shareCopied:'✓ Kopyalandı',notFound:'Kayıt Bulunamadı',expired:'Sorgu Süresi Doldu'},en:{title:'Shipment Tracking',subtitle:'Query with position or container number',statusActive:'ON ROUTE',statusDone:'DELIVERED',labelPos:'Pos:',labelTrip:'Trip No:',labelRoute:'Route',labelDriver:'Driver',labelPlate:'Vehicle',labelTrailer:'Trailer',labelKm:'Total KM',labelStart:'Departure',labelEnd:'Delivery',labelPhone:'Driver Phone',labelCall:'Call',labelTimeline:'Status Timeline',stepLoad:'Loaded',stepOnRoute:'On Route',stepDelivered:'Delivered',lastQuery:'Last query:',totalQuery:'queries',shareBtn:'🔗 Share',shareCopied:'✓ Copied',notFound:'Not Found',expired:'Expired'},it:{title:'Tracciamento Spedizione',subtitle:'Cerca con numero posizione o container',statusActive:'IN VIAGGIO',statusDone:'CONSEGNATO',labelPos:'Pos:',labelTrip:'Nr. Viaggio:',labelRoute:'Percorso',labelDriver:'Autista',labelPlate:'Veicolo',labelTrailer:'Rimorchio',labelKm:'KM Totali',labelStart:'Partenza',labelEnd:'Consegna',labelPhone:'Tel Autista',labelCall:'Chiama',labelTimeline:'Cronologia Stato',stepLoad:'Caricato',stepOnRoute:'In Viaggio',stepDelivered:'Consegnato',lastQuery:'Ultima ricerca:',totalQuery:'ricerche',shareBtn:'🔗 Condividi',shareCopied:'✓ Copiato',notFound:'Non Trovato',expired:'Scaduto'}};
+        let _cqLang='tr',_cqLastTrip=null,_cqLastQ='',_cqQueryCount=0;
+        function setCQLang(lang){_cqLang=lang;['TR','EN','IT'].forEach(l=>{const b=document.getElementById('cqLang'+l);if(b)b.className='text-xs px-2 py-1 rounded font-bold '+(l.toLowerCase()===lang?'bg-blue-500 text-white':'bg-slate-700 text-slate-300');});const ti=document.getElementById('cqTitle');if(ti)ti.textContent=_cqI18n[lang].title;const su=document.getElementById('cqSubtitle');if(su)su.textContent=_cqI18n[lang].subtitle;}
+        function cqShareLink(){const q=_cqLastQ;if(!q)return;const url=window.location.href.split('?')[0]+'?sorgu='+encodeURIComponent(q);navigator.clipboard.writeText(url).catch(()=>{});const btn=document.getElementById('cqShareBtn');if(btn){const orig=btn.innerHTML;btn.innerHTML=_cqI18n[_cqLang].shareCopied;setTimeout(()=>btn.innerHTML=orig,2000);}}
+        async function runCustomerQuery(){
+            const q=(document.getElementById('cqInput').value||'').trim();
+            const res=document.getElementById('cqResult');
+            const L=_cqI18n[_cqLang];
+            if(!q){res.innerHTML='<p class="text-center text-slate-400 text-sm py-4">Pozisyon veya konteyner numarası girin.</p>';return;}
+            res.innerHTML='<div class="text-center py-8"><div class="w-8 h-8 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-3"></div><p class="text-slate-400 text-sm">Sorgulanıyor...</p></div>';
+            try{
+                var db2=window._kkdb;
+                if(!db2){res.innerHTML='<div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center"><p class="font-bold text-amber-600">⏳ Bağlantı hazır değil</p><p class="text-sm text-slate-500 mt-1">Lütfen 3 saniye bekleyip tekrar deneyin.</p></div>';return;}
+                let snap=await db2.collection('kare_trips').where('posNo','==',q).limit(1).get();
+                if(snap.empty)snap=await db2.collection('kare_trips').where('containerNo','==',q).limit(1).get();
+                if(snap.empty){res.innerHTML='<div class="bg-red-50 border border-red-200 rounded-xl p-5 text-center"><p class="text-4xl mb-2">🔴</p><p class="font-bold text-red-600 text-lg">'+L.notFound+'</p><p class="text-slate-400 text-sm mt-2">"'+_e(q)+'" sistemde kayıtlı değil.</p></div>';return;}
+                const t=snap.docs[0].data();_cqLastTrip=t;_cqLastQ=q;
+                const isActive=t.status==='ACTIVE',isDone=t.status==='COMPLETED';
+                if(isDone&&t.endDate){const diff=(new Date()-new Date(t.endDate+'T23:59:59'))/(1000*60*60);if(diff>12){res.innerHTML='<div class="bg-slate-50 border border-slate-200 rounded-xl p-5 text-center"><p class="text-4xl mb-2">⏰</p><p class="font-bold text-slate-600 text-lg">'+L.expired+'</p><p class="text-slate-400 text-sm mt-2">Teslimattan 12 saat sonra sorgulama kapatılır.</p></div>';return;}}
+                const now=new Date().toLocaleString('tr-TR');
+                const cntKey='kk_qcnt_'+q;let cnt=parseInt(localStorage.getItem(cntKey)||'0')+1;localStorage.setItem(cntKey,cnt);_cqQueryCount=cnt;
+                let elapsedStr='';
+                if(t.startDate){const sd=new Date(t.startDate);const ed=isDone&&t.endDate?new Date(t.endDate):new Date();const d=Math.floor((ed-sd)/(864e5));elapsedStr=isDone?d+' günde tamamlandı':d+' gündür devam ediyor';}
+                const startDT=t.startDateTime||t.startDate||null;const endDT=t.endDateTime||t.endDate||null;
+                let elapsedFull='';
+                if(startDT){const sd=new Date(startDT.length===10?startDT+'T00:00:00':startDT.replace(' ','T'));const ed=isDone&&endDT?new Date(endDT.length===10?endDT+'T00:00:00':endDT.replace(' ','T')):new Date();const dm=Math.floor((ed-sd)/60000);const dh=Math.floor(dm/60);const dd=Math.floor(dh/24);const rh=dh%24;const rm=dm%60;if(dd>0)elapsedFull=dd+'g '+rh+'sa '+rm+'dk';else if(dh>0)elapsedFull=dh+'sa '+rm+'dk';else elapsedFull=dm+'dk';}
+                function parseRC(r){if(!r)return'';const map={'TÜRKIYE':'🇹🇷','TURKEY':'🇹🇷','BULGARİSTAN':'🇧🇬','BULGARIA':'🇧🇬','SIRBİSTAN':'🇷🇸','SERBIA':'🇷🇸','SLOVENYA':'🇸🇮','SLOVENIA':'🇸🇮','İTALYA':'🇮🇹','ITALY':'🇮🇹','ALMANYA':'🇩🇪','GERMANY':'🇩🇪','AVUSTURYA':'🇦🇹','MACARİSTAN':'🇭🇺'};const up=r.toUpperCase();const found=[];for(const[k,v]of Object.entries(map)){if(up.includes(k.toUpperCase())&&!found.includes(v))found.push(v+' '+k.charAt(0)+k.slice(1).toLowerCase());}return found.length?found.join(' → '):_e(r);}
+                const rc=parseRC(t.route||'');
+                const badge=isActive?'<span class="inline-flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-full text-sm font-bold"><span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>'+L.statusActive+'</span>':isDone?'<span class="inline-flex items-center gap-2 bg-emerald-500 text-white px-4 py-2 rounded-full text-sm font-bold">✓ '+L.statusDone+'</span>':'<span class="bg-slate-400 text-white px-4 py-2 rounded-full text-sm font-bold">'+_e(t.status)+'</span>';
+                const bc=isActive?'border-amber-300':isDone?'border-emerald-300':'border-slate-200';
+                const pct=isDone?100:isActive?50:0;const pc=isDone?'bg-emerald-500':isActive?'bg-amber-500':'bg-slate-300';
+                const tl='<div class="bg-white rounded-xl p-4 mb-3 border border-slate-100"><p class="text-[10px] text-slate-400 font-bold uppercase mb-3 tracking-wider">'+L.labelTimeline+'</p><div class="flex items-start"><div class="flex flex-col items-center flex-1"><div class="w-9 h-9 rounded-full flex items-center justify-center font-bold shadow-sm '+(startDT?'bg-emerald-500 text-white':'bg-slate-100 text-slate-400')+'">✓</div><p class="text-[10px] font-bold mt-2 '+(startDT?'text-emerald-600':'text-slate-400')+'">'+L.stepLoad+'</p><p class="text-[9px] text-slate-700 font-bold mt-0.5">'+(startDT&&startDT.length>10?startDT.slice(11,16):_e(startDT||'-'))+'</p><p class="text-[9px] text-slate-400">🕐 Alınma saati</p></div><div class="flex-1 h-0.5 mt-4 '+(startDT?'bg-emerald-400':'bg-slate-200')+' mx-1"></div><div class="flex flex-col items-center flex-1"><div class="w-9 h-9 rounded-full flex items-center justify-center font-bold shadow-sm '+(isActive?'bg-amber-500 text-white':isDone?'bg-emerald-500 text-white':'bg-slate-100 text-slate-400')+'">'+(isActive?'🚛':isDone?'✓':'🚛')+'</div><p class="text-[10px] font-bold mt-2 '+(isActive?'text-amber-600':isDone?'text-emerald-600':'text-slate-400')+'">'+L.stepOnRoute+'</p><p class="text-[9px] text-amber-700 font-bold mt-0.5">'+(elapsedFull||'-')+'</p><p class="text-[9px] text-slate-400">⏱ '+(isActive?'Şu an yolda':'Geçen süre')+'</p></div><div class="flex-1 h-0.5 mt-4 '+(isDone?'bg-emerald-400':'bg-slate-200')+' mx-1"></div><div class="flex flex-col items-center flex-1"><div class="w-9 h-9 rounded-full flex items-center justify-center font-bold shadow-sm '+(isDone?'bg-emerald-500 text-white':'bg-slate-100 text-slate-400')+'">'+(isDone?'✓':'🏁')+'</div><p class="text-[10px] font-bold mt-2 '+(isDone?'text-emerald-600':'text-slate-400')+'">'+L.stepDelivered+'</p><p class="text-[9px] text-slate-700 font-bold mt-0.5">'+(endDT&&endDT.length>10?endDT.slice(11,16):_e(endDT||'-'))+'</p><p class="text-[9px] text-slate-400">'+(isDone?'🕐 Teslim saati':'⏳ Bekleniyor')+'</p></div></div>'+(isDone&&elapsedFull?'<div class="mt-3 pt-3 border-t border-slate-100 bg-emerald-50 rounded-lg p-2 text-center"><p class="text-xs font-black text-emerald-700">🏆 Toplam Süre: '+elapsedFull+'</p></div>':isActive&&elapsedFull?'<div class="mt-3 pt-3 border-t border-slate-100 bg-amber-50 rounded-lg p-2 text-center"><p class="text-xs font-black text-amber-700">🚛 Seferde: '+elapsedFull+'</p></div>':'')+'</div>';
+                res.innerHTML='<div class="border-2 '+bc+' rounded-2xl overflow-hidden"><div class="p-4"><div class="flex items-start justify-between mb-3"><div><p class="font-black text-slate-800 text-lg">'+L.labelPos+' '+_e(t.posNo||'-')+'</p>'+(t.containerNo?'<p class="text-sm font-bold text-indigo-600">📦 '+_e(t.containerNo)+'</p>':'')+'<p class="text-xs text-slate-400">'+L.labelTrip+' '+_e(t.tripNo||'-')+'</p></div>'+badge+'</div><div class="mb-4"><div class="flex justify-between text-xs text-slate-400 mb-1.5"><span>📍 '+L.stepLoad+'</span><span class="font-semibold text-slate-600">'+elapsedStr+'</span><span>🏁 '+L.stepDelivered+'</span></div><div class="w-full bg-slate-200 rounded-full h-2.5"><div class="'+pc+' h-2.5 rounded-full" style="width:'+pct+'%"></div></div><p class="text-right text-xs text-slate-400 mt-1">%'+pct+'</p></div>'+(rc?'<div class="bg-blue-50 rounded-xl p-3 mb-3 text-center"><p class="text-[10px] text-blue-400 font-bold uppercase mb-1">'+L.labelRoute+'</p><p class="text-sm font-bold text-blue-700">'+rc+'</p></div>':'')+tl+'<div class="grid grid-cols-2 gap-2 mb-3"><div class="bg-slate-50 rounded-xl p-3"><p class="text-[9px] text-slate-400 font-bold uppercase mb-1">'+L.labelDriver+'</p><p class="font-bold text-slate-700 text-sm">👤 '+_e(t.driver||'-')+'</p></div><div class="bg-slate-50 rounded-xl p-3"><p class="text-[9px] text-slate-400 font-bold uppercase mb-1">'+L.labelPlate+'</p><p class="font-bold text-slate-700 text-sm">🚛 '+_e(t.plate||'-')+'</p></div><div class="bg-slate-50 rounded-xl p-3"><p class="text-[9px] text-slate-400 font-bold uppercase mb-1">'+L.labelTrailer+'</p><p class="font-bold text-slate-700 text-sm">🚌 '+_e(t.trailer||'-')+'</p></div><div class="bg-slate-50 rounded-xl p-3"><p class="text-[9px] text-slate-400 font-bold uppercase mb-1">'+L.labelKm+'</p><p class="font-bold text-slate-700 text-sm">📍 '+(t.totalKm?parseInt(t.totalKm).toLocaleString('tr-TR')+' km':'-')+'</p></div><div class="bg-slate-50 rounded-xl p-3"><p class="text-[9px] text-slate-400 font-bold uppercase mb-1">'+L.labelStart+'</p><p class="font-bold text-amber-600 text-sm">📅 '+_e(t.startDate||'-')+'</p></div><div class="bg-slate-50 rounded-xl p-3"><p class="text-[9px] text-slate-400 font-bold uppercase mb-1">'+L.labelEnd+'</p><p class="font-bold text-emerald-600 text-sm">📅 '+_e(t.endDate||'-')+'</p></div>'+(t.driverPhone?'<div class="bg-slate-50 rounded-xl p-3 col-span-2 flex justify-between items-center"><div><p class="text-[9px] text-slate-400 font-bold uppercase mb-1">'+L.labelPhone+'</p><p class="font-bold text-slate-700 text-sm">📞 '+_e(t.driverPhone)+'</p></div><a href="tel:'+_e(t.driverPhone)+'" class="bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold">'+L.labelCall+'</a></div>':'')+'</div></div><div class="bg-slate-50 px-4 py-3 flex items-center justify-between"><p class="text-[10px] text-slate-400">'+L.lastQuery+' '+now+' · '+cnt+' '+L.totalQuery+'</p><button id="cqShareBtn" onclick="cqShareLink()" class="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-link text-blue-500 text-xs"></i> '+L.shareBtn+'</button></div></div>';
+            }catch(err){res.innerHTML='<div class="bg-red-50 border border-red-200 rounded-xl p-5 text-center"><p class="text-3xl mb-2">⚠️</p><p class="font-bold text-red-500">Bağlantı Hatası</p><p class="text-xs text-slate-400 mt-1">'+_e(err.message)+'</p></div>';}
+        }
         // Şifre göster/gizle
         function openForgotPassword(){
             document.getElementById('loginForm').style.display='none';
@@ -815,6 +892,7 @@
     </div>
     <div class="container mx-auto px-3 sm:px-4 py-1.5 flex flex-wrap gap-1 sm:gap-1.5 border-t border-slate-100" id="mainTabs">
         <button onclick="switchTab('DRIVER')" id="tab-DRIVER" class="role-btn bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md flex"><i class="fa-solid fa-truck mr-1"></i> Şoför Paneli</button>
+        <button onclick="switchTab('TRACKING')" id="tab-TRACKING" class="role-btn bg-transparent text-slate-500 px-4 py-2 rounded-xl text-sm font-semibold transition-all hidden"><i class="fa-solid fa-satellite-dish mr-1 text-emerald-500"></i> Canlı Takip</button>
         <button onclick="switchTab('OPERATIONS')" id="tab-OPERATIONS" class="role-btn bg-transparent text-slate-500 px-4 py-2 rounded-xl text-sm font-semibold transition-all hidden"><i class="fa-solid fa-list-check mr-1"></i> Operasyon</button>
         <button onclick="switchTab('ACCOUNTING')" id="tab-ACCOUNTING" class="role-btn bg-transparent text-slate-500 px-4 py-2 rounded-xl text-sm font-semibold transition-all hidden"><i class="fa-solid fa-wallet mr-1"></i> Muhasebe & Cari</button>
         <button onclick="switchTab('FLEET')" id="tab-FLEET" class="role-btn bg-transparent text-slate-500 px-4 py-2 rounded-xl text-sm font-semibold transition-all hidden"><i class="fa-solid fa-truck-moving mr-1"></i> Filo</button>
@@ -908,6 +986,31 @@
                 <div id="driverList" class="space-y-3 max-h-[50dvh] max-h-[500px] overflow-y-auto -webkit-overflow-scrolling-touch pr-2"></div>
             </div>
         </div>
+    </div>
+
+    <!-- Canlı Takip -->
+    <div id="panel-TRACKING" class="panel-section hidden-panel">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5" id="trackingSummary"></div>
+        <div class="glass-card p-4 mb-5">
+            <div class="flex flex-col gap-3">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input id="trackingSearch" type="text" placeholder="Şoför, araç, pozisyon no, güzergah..." oninput="renderTrackingPanel()" class="w-full pl-9 pr-4 py-2.5 border-2 border-slate-200 rounded-xl text-sm outline-none focus:border-blue-400 transition">
+                </div>
+                <div class="flex flex-wrap gap-2 items-center">
+                    <button onclick="setTrackingFilter('ALL',this)" id="tfilter-ALL" class="tfilter-btn bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Tümü</button>
+                    <button onclick="setTrackingFilter('ACTIVE',this)" id="tfilter-ACTIVE" class="tfilter-btn border border-slate-200 text-slate-500 px-3 py-1.5 rounded-lg text-xs font-bold">🟡 Yolda</button>
+                    <button onclick="setTrackingFilter('COMPLETED',this)" id="tfilter-COMPLETED" class="tfilter-btn border border-slate-200 text-slate-500 px-3 py-1.5 rounded-lg text-xs font-bold">✅ Teslim</button>
+                    <select id="tfilterDriver" onchange="renderTrackingPanel()" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none bg-white text-slate-600"><option value="">Tüm Şoförler</option></select>
+                    <select id="tfilterPlate" onchange="renderTrackingPanel()" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none bg-white text-slate-600"><option value="">Tüm Araçlar</option></select>
+                    <select id="tfilterDate" onchange="renderTrackingPanel()" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none bg-white text-slate-600"><option value="">Tüm Tarihler</option><option value="today">Bugün</option><option value="week">Bu Hafta</option><option value="month">Bu Ay</option></select>
+                    <button onclick="clearTrackingFilters()" class="text-slate-400 hover:text-red-400 px-2 py-1.5 text-xs"><i class="fa-solid fa-xmark"></i> Temizle</button>
+                    <button onclick="renderTrackingPanel()" class="ml-auto bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i class="fa-solid fa-rotate-right"></i> Yenile</button>
+                </div>
+                <div id="trackingFilterInfo" class="hidden text-xs text-blue-600 font-semibold"></div>
+            </div>
+        </div>
+        <div id="trackingCards" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
     </div>
 
     <div id="panel-OPERATIONS" class="panel-section hidden-panel">
@@ -1817,8 +1920,8 @@
 <script>
     const firebaseConfig={apiKey:"AIzaSyBXlr2DGdcoT8_MLzcGFHomnbZyyfuQBto",authDomain:"kare-6172d.firebaseapp.com",databaseURL:"https://kare-6172d-default-rtdb.europe-west1.firebasedatabase.app",projectId:"kare-6172d",storageBucket:"kare-6172d.firebasestorage.app",messagingSenderId:"56836825489",appId:"1:56836825489:web:0fe3464b501678b1177a30",measurementId:"G-Y637DLVD8B"};
     if(!firebase.apps.length){firebase.initializeApp(firebaseConfig);}
-    const secondaryApp=firebase.initializeApp(firebaseConfig,"Secondary");
-    const db=firebase.firestore(); const auth=firebase.auth();
+    const secondaryApp=firebase.apps.find(a=>a.name==="Secondary")||firebase.initializeApp(firebaseConfig,"Secondary");
+    const db=firebase.firestore(); window._kkdb=db; const auth=firebase.auth();
     const cUsers=db.collection('kare_users'); const cExpenses=db.collection('kare_expenses'); const cAdvances=db.collection('kare_advances'); const cTrips=db.collection('kare_trips'); const cLogs=db.collection('kare_logs'); const cVehicleCosts=db.collection('kare_vehicle_costs');
     let users=[]; let expenses=[]; let advances=[]; let driverTrips=[];
     let loggedInUser=null; let currentUser=""; let currentRole=""; 
@@ -1927,8 +2030,8 @@
     }
     
     function updateDriverDropdowns(){const uSel=document.getElementById('activeUser'); const aSel=document.getElementById('advDriver'); const si=document.getElementById('driverSearchInput'); uSel.innerHTML=''; if(aSel)aSel.innerHTML=''; if(currentRole==='DRIVER'){uSel.innerHTML=`<option value="${esc(loggedInUser.username)}">${esc(loggedInUser.username)}</option>`; uSel.disabled=true; if(si){si.value=''; si.disabled=true; si.classList.add('opacity-60');}}else{uSel.disabled=false; if(si){si.disabled=false; si.classList.remove('opacity-60');} let drvs=getDrivers(); if(drvs.length===0){uSel.innerHTML=`<option value="">Şoför Yok</option>`;} drvs.forEach(d=>{uSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`; if(aSel)aSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`;}); uSel.value=currentUser; if(si)si.value=currentUser;} if(currentRole!=='DRIVER'&&getDrivers().length>0&&!getDrivers().includes(currentUser)){currentUser=getDrivers()[0]; uSel.value=currentUser; if(si)si.value=currentUser;} fillCariTarihDrivers();}
-    function updateTabVisibility(){const defaultPerms={ADMIN:['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],PATRON:['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],OPS:['DRIVER','OPERATIONS','DASHBOARD','ANALYTICS'],OPS_MANAGER:['DRIVER','OPERATIONS','FLEET','DASHBOARD','ANALYTICS','VEHICLE_COST'],ACCOUNTING:['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],FLEET:['DRIVER','FLEET','DASHBOARD','VEHICLE_COST'],DRIVER:['DRIVER']}; let myTabs=loggedInUser.allowedTabs||defaultPerms[currentRole]||['DRIVER']; if(currentRole==='ADMIN')myTabs=defaultPerms['ADMIN'];['DRIVER','OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'].forEach(tab=>{const el=document.getElementById(`tab-${tab}`); if(el)el.style.display=myTabs.includes(tab)?'flex':'none';});}
-    function switchTab(tabId){document.querySelectorAll('.role-btn').forEach(b=>{b.classList.remove('bg-slate-800','text-white','shadow-md'); b.classList.add('bg-transparent','text-slate-500');}); const activeBtn=document.getElementById(`tab-${tabId}`); if(activeBtn){activeBtn.classList.remove('bg-transparent','text-slate-500'); activeBtn.classList.add('bg-slate-800','text-white','shadow-md');} document.querySelectorAll('.panel-section').forEach(p=>p.style.display='none'); document.getElementById(`panel-${tabId}`).style.display='block'; localStorage.setItem('kare_last_tab',tabId); renderAll(); if(tabId==='PATRON'&&['ADMIN','PATRON'].includes(currentRole))updatePatronDashboard(); if(tabId==='DRIVER'){checkActiveTrip(); renderDriverDuyurular();} if(tabId==='DASHBOARD')renderDashboard(); if(tabId==='FLEET')renderFleetPanel(); if(tabId==='ANALYTICS')renderAnalyticsTab(); if(tabId==='AUDITLOG'){auditPage=50; renderAuditLog();} if(tabId==='USERS'){setTimeout(renderSystemStats, 100);} if(tabId==='ACCOUNTING'){renderAccountingExtras(); loadDuyurular();refreshArchivePreview(); loadArchiveSummary();} if(tabId==='VEHICLE_COST'){ loadAllVcFromFirebase();const now=new Date().toISOString().slice(0,7); const si=document.getElementById('vcStartMonth'); const ei=document.getElementById('vcEndMonth'); const vm=document.getElementById('vcMonth'); if(si&&!si.value){si.value=now;} if(ei&&!ei.value){ei.value=now;} if(vm&&!vm.value){vm.value=now;} const b0=document.getElementById('vcBtn0'); if(b0){clearVcBtns(); b0.className='vc-month-btn bg-orange-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition';} updateVcMonthLabel(); loadSalaryRows(); loadHgsRows(); loadYakitRows(); renderVehicleCost();}}
+    function updateTabVisibility(){const defaultPerms={ADMIN:['DRIVER','OPERATIONS','TRACKING','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],PATRON:['DRIVER','OPERATIONS','TRACKING','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],OPS:['DRIVER','OPERATIONS','TRACKING','DASHBOARD','ANALYTICS'],OPS_MANAGER:['DRIVER','OPERATIONS','TRACKING','FLEET','DASHBOARD','ANALYTICS','VEHICLE_COST'],ACCOUNTING:['DRIVER','OPERATIONS','TRACKING','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],FLEET:['DRIVER','FLEET','TRACKING','DASHBOARD','VEHICLE_COST'],DRIVER:['DRIVER']}; let myTabs=loggedInUser.allowedTabs||defaultPerms[currentRole]||['DRIVER']; if(currentRole==='ADMIN')myTabs=defaultPerms['ADMIN'];['DRIVER','OPERATIONS','TRACKING','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'].forEach(tab=>{const el=document.getElementById(`tab-${tab}`); if(el)el.style.display=myTabs.includes(tab)?'flex':'none';});}
+    function switchTab(tabId){document.querySelectorAll('.role-btn').forEach(b=>{b.classList.remove('bg-slate-800','text-white','shadow-md'); b.classList.add('bg-transparent','text-slate-500');}); const activeBtn=document.getElementById(`tab-${tabId}`); if(activeBtn){activeBtn.classList.remove('bg-transparent','text-slate-500'); activeBtn.classList.add('bg-slate-800','text-white','shadow-md');} document.querySelectorAll('.panel-section').forEach(p=>p.style.display='none'); document.getElementById(`panel-${tabId}`).style.display='block'; localStorage.setItem('kare_last_tab',tabId); renderAll(); if(tabId==='PATRON'&&['ADMIN','PATRON'].includes(currentRole))updatePatronDashboard(); if(tabId==='DRIVER'){checkActiveTrip(); renderDriverDuyurular();} if(tabId==='DASHBOARD')renderDashboard(); if(tabId==='FLEET')renderFleetPanel(); if(tabId==='ANALYTICS')renderAnalyticsTab(); if(tabId==='AUDITLOG'){auditPage=50; renderAuditLog();} if(tabId==='TRACKING') renderTrackingPanel(); if(tabId==='USERS'){setTimeout(renderSystemStats, 100);} if(tabId==='ACCOUNTING'){renderAccountingExtras(); loadDuyurular();refreshArchivePreview(); loadArchiveSummary();} if(tabId==='VEHICLE_COST'){ loadAllVcFromFirebase();const now=new Date().toISOString().slice(0,7); const si=document.getElementById('vcStartMonth'); const ei=document.getElementById('vcEndMonth'); const vm=document.getElementById('vcMonth'); if(si&&!si.value){si.value=now;} if(ei&&!ei.value){ei.value=now;} if(vm&&!vm.value){vm.value=now;} const b0=document.getElementById('vcBtn0'); if(b0){clearVcBtns(); b0.className='vc-month-btn bg-orange-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition';} updateVcMonthLabel(); loadSalaryRows(); loadHgsRows(); loadYakitRows(); renderVehicleCost();}}
     function changeUser(){currentUser=document.getElementById('activeUser').value; renderAll(); if(currentRole!=='DRIVER')checkActiveTrip();}
     function filterCari(){let input=document.getElementById('searchCariInput').value.toLowerCase(); document.querySelectorAll('.cari-row').forEach(row=>{row.style.display=row.getAttribute('data-driver').toLowerCase().includes(input)?'':'none';});}
     
@@ -3970,6 +4073,107 @@
                 <td class="p-3 text-right text-orange-300">${estSize} KB</td>
                 <td class="p-3 text-slate-400 text-[10px]">Spark limiti: 1 GB = ${(parseFloat(estSize)/1024/1024*100).toFixed(4)}% kullanım</td>
             </tr>`;
+    }
+
+    let _trackingFilter='ALL';
+    function setTrackingFilter(val,btn){
+        _trackingFilter=val;
+        document.querySelectorAll('.tfilter-btn').forEach(b=>b.className='tfilter-btn border border-slate-200 text-slate-500 px-3 py-1.5 rounded-lg text-xs font-bold');
+        if(btn)btn.className='tfilter-btn bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold';
+        renderTrackingPanel();
+    }
+    function clearTrackingFilters(){
+        _trackingFilter='ALL';
+        ['trackingSearch','tfilterDriver','tfilterPlate','tfilterDate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+        document.querySelectorAll('.tfilter-btn').forEach((b,i)=>b.className='tfilter-btn '+(i===0?'bg-slate-800 text-white':'border border-slate-200 text-slate-500')+' px-3 py-1.5 rounded-lg text-xs font-bold');
+        renderTrackingPanel();
+    }
+    function renderTrackingPanel(){
+        const search=(document.getElementById('trackingSearch')?.value||'').toLowerCase();
+        const driverF=document.getElementById('tfilterDriver')?.value||'';
+        const plateF=document.getElementById('tfilterPlate')?.value||'';
+        const dateF=document.getElementById('tfilterDate')?.value||'';
+        const dSel=document.getElementById('tfilterDriver');
+        const pSel=document.getElementById('tfilterPlate');
+        if(dSel&&dSel.options.length<=1)[...new Set(driverTrips.map(t=>t.driver).filter(Boolean))].sort().forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;dSel.appendChild(o);});
+        if(pSel&&pSel.options.length<=1)[...new Set(driverTrips.map(t=>t.plate).filter(Boolean))].sort().forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;pSel.appendChild(o);});
+        const today=new Date().toISOString().slice(0,10);
+        const weekAgo=new Date(Date.now()-7*24*60*60*1000).toISOString().slice(0,10);
+        const monthStart=new Date().toISOString().slice(0,7);
+        const active=driverTrips.filter(t=>t.status==='ACTIVE');
+        const completed=driverTrips.filter(t=>t.status==='COMPLETED');
+        const totalKm=completed.reduce((s,t)=>s+(t.totalKm||0),0);
+        const sb=document.getElementById('trackingSummary');
+        if(sb)sb.innerHTML=`
+            <div class="bg-amber-50 border-2 border-amber-300 rounded-xl p-4 text-center cursor-pointer" onclick="setTrackingFilter('ACTIVE',document.getElementById('tfilter-ACTIVE'))">
+                <p class="text-[10px] font-bold text-amber-500 uppercase mb-1">🟡 Yolda</p>
+                <p class="text-3xl font-black text-amber-600">${active.length}</p>
+                <p class="text-xs text-amber-400">aktif sefer</p>
+            </div>
+            <div class="bg-emerald-50 border-2 border-emerald-300 rounded-xl p-4 text-center cursor-pointer" onclick="setTrackingFilter('COMPLETED',document.getElementById('tfilter-COMPLETED'))">
+                <p class="text-[10px] font-bold text-emerald-500 uppercase mb-1">✅ Teslim</p>
+                <p class="text-3xl font-black text-emerald-600">${completed.length}</p>
+                <p class="text-xs text-emerald-400">tamamlandı</p>
+            </div>
+            <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 text-center cursor-pointer" onclick="setTrackingFilter('ALL',document.getElementById('tfilter-ALL'))">
+                <p class="text-[10px] font-bold text-blue-400 uppercase mb-1">📋 Toplam</p>
+                <p class="text-3xl font-black text-blue-600">${driverTrips.length}</p>
+                <p class="text-xs text-blue-400">sefer</p>
+            </div>
+            <div class="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-4 text-center">
+                <p class="text-[10px] font-bold text-indigo-400 uppercase mb-1">📍 KM</p>
+                <p class="text-2xl font-black text-indigo-600">${totalKm.toLocaleString('tr-TR')}</p>
+                <p class="text-xs text-indigo-400">toplam</p>
+            </div>`;
+        let trips=driverTrips.filter(t=>{
+            if(_trackingFilter==='ACTIVE'&&t.status!=='ACTIVE') return false;
+            if(_trackingFilter==='COMPLETED'&&t.status!=='COMPLETED') return false;
+            if(driverF&&t.driver!==driverF) return false;
+            if(plateF&&t.plate!==plateF) return false;
+            if(dateF==='today'&&(t.startDate||'')!==today&&(t.endDate||'')!==today) return false;
+            if(dateF==='week'&&(t.startDate||'')<weekAgo&&(t.endDate||'')<weekAgo) return false;
+            if(dateF==='month'&&!(t.startDate||'').startsWith(monthStart)&&!(t.endDate||'').startsWith(monthStart)) return false;
+            if(search) return (t.driver||'').toLowerCase().includes(search)||(t.plate||'').toLowerCase().includes(search)||(t.posNo||'').toLowerCase().includes(search)||(t.route||'').toLowerCase().includes(search)||(t.tripNo||'').toString().includes(search)||(t.containerNo||'').toLowerCase().includes(search);
+            return true;
+        }).sort((a,b)=>{
+            if(a.status==='ACTIVE'&&b.status!=='ACTIVE') return -1;
+            if(b.status==='ACTIVE'&&a.status!=='ACTIVE') return 1;
+            return (b.endDate||b.startDate||'').localeCompare(a.endDate||a.startDate||'');
+        });
+        const fi=document.getElementById('trackingFilterInfo');
+        if(fi){if(search||driverF||plateF||dateF||_trackingFilter!=='ALL'){fi.textContent=trips.length+' sefer gösteriliyor';fi.classList.remove('hidden');}else fi.classList.add('hidden');}
+        const container=document.getElementById('trackingCards');
+        if(!container) return;
+        if(!trips.length){container.innerHTML='<div class="col-span-2 text-center py-12 text-slate-400"><i class="fa-solid fa-satellite-dish text-4xl mb-3 block opacity-30"></i><p>Sefer bulunamadı</p></div>';return;}
+        container.innerHTML=trips.map(t=>{
+            const isActive=t.status==='ACTIVE',isDone=t.status==='COMPLETED';
+            const expCount=expenses.filter(e=>String(e.tripId||'')==String(t.tripNo||'')&&e.status==='APPROVED').length;
+            const pendCount=expenses.filter(e=>String(e.tripId||'')==String(t.tripNo||'')&&(e.status==='PENDING_OP'||e.status==='PENDING_ACC')).length;
+            return `<div class="border-2 ${isActive?'border-amber-400':'border-emerald-300'} rounded-2xl overflow-hidden shadow-sm">
+                <div class="${isActive?'bg-amber-500':'bg-emerald-500'} px-4 py-2.5 flex items-center justify-between">
+                    <div class="flex items-center gap-2">${isActive?'<span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>':''}<span class="text-white font-bold text-sm">${isActive?'🟡 YOLDA':'✅ TESLİM EDİLDİ'}</span></div>
+                    <span class="text-white/80 text-xs font-bold">${esc(t.tripNo||'-')}</span>
+                </div>
+                <div class="bg-white p-4">
+                    <div class="flex items-start justify-between mb-3">
+                        <div><p class="font-black text-slate-800">👤 ${esc(t.driver||'-')}</p><p class="text-sm text-blue-600 font-semibold">🛣️ ${esc(t.route||'-')}</p></div>
+                        <div class="text-right">${t.posNo?'<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-bold block">'+esc(t.posNo)+'</span>':''}${t.containerNo?'<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold block mt-1">📦 '+esc(t.containerNo)+'</span>':''}</div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <div class="bg-slate-50 rounded-xl p-2.5"><p class="text-[9px] text-slate-400 uppercase mb-0.5">Araç</p><p class="font-bold text-slate-700 text-xs">🚛 ${esc(t.plate||'-')}</p></div>
+                        <div class="bg-slate-50 rounded-xl p-2.5"><p class="text-[9px] text-slate-400 uppercase mb-0.5">Dorse</p><p class="font-bold text-slate-700 text-xs">🚌 ${esc(t.trailer||'-')}</p></div>
+                        <div class="bg-slate-50 rounded-xl p-2.5"><p class="text-[9px] text-slate-400 uppercase mb-0.5">Başlangıç</p><p class="font-bold text-amber-600 text-xs">📅 ${esc(t.startDate||'-')}</p></div>
+                        <div class="bg-slate-50 rounded-xl p-2.5"><p class="text-[9px] text-slate-400 uppercase mb-0.5">${isDone?'Teslim':'Başl. KM'}</p><p class="font-bold ${isDone?'text-emerald-600':'text-slate-700'} text-xs">${isDone?'📅 '+esc(t.endDate||'-'):'📍 '+parseInt(t.startKm||0).toLocaleString()}</p></div>
+                        ${t.totalKm?`<div class="bg-slate-50 rounded-xl p-2.5 col-span-2"><p class="text-[9px] text-slate-400 uppercase mb-0.5">Toplam KM</p><p class="font-bold text-indigo-600 text-xs">📍 ${parseInt(t.totalKm).toLocaleString('tr-TR')} km</p></div>`:''}
+                    </div>
+                    <div class="flex items-center justify-between text-xs mb-3"><span class="text-slate-400">${expCount} onaylı masraf</span>${pendCount?'<span class="bg-orange-100 text-orange-600 px-2 py-0.5 rounded font-bold">'+pendCount+' bekliyor</span>':''}</div>
+                    <div class="flex gap-2">
+                        <button onclick="switchTab('DASHBOARD')" class="flex-1 bg-slate-100 text-slate-700 py-2 rounded-xl text-xs font-bold"><i class="fa-solid fa-flag-checkered mr-1"></i>Detay</button>
+                        ${isActive?`<button onclick="openEndTripModal('${t.id}')" class="flex-1 bg-emerald-500 text-white py-2 rounded-xl text-xs font-bold"><i class="fa-solid fa-stop mr-1"></i>Bitir</button>`:''}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
     }
 
     function updatePatronDashboard(){let tE=0,tU=0,tT=0,rC=0; const aTrips=driverTrips.filter(t=>t.status==='ACTIVE').length; const dL=document.getElementById('patronDriverRiskList'); dL.innerHTML=''; getDrivers().forEach(drv=>{const b=getDriverBalance(drv); tE+=b.e; tU+=b.u; tT+=b.t; if(b.e>0||b.u>0||b.t>0){let isR=(b.e>1000||b.u>1100||b.t>35000); if(isR)rC++; let det=''; if(b.e>0)det+=`<span class="text-blue-700 font-bold mr-2">${formatPdfMoney(b.e,'€')}</span>`; if(b.u>0)det+=`<span class="text-emerald-700 font-bold mr-2">${formatPdfMoney(b.u,'$')}</span>`; if(b.t>0)det+=`<span class="text-indigo-700 font-bold">${formatPdfMoney(b.t,'₺')}</span>`; let bdg=isR?`<span class="bg-red-500 text-white px-2 py-1 rounded text-[10px] font-bold">RİSK</span>`:`<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded text-[10px] font-bold">NORMAL</span>`; dL.innerHTML+=`<tr class="border-b border-slate-100 ${isR?'risk-row':'hover:bg-slate-50'}"><td class="p-3 font-bold">${esc(drv)}</td><td class="p-3 text-right">${det}</td><td class="p-3 text-center">${bdg}</td></tr>`;}}); if(dL.innerHTML==='')dL.innerHTML=`<tr><td colspan="3" class="p-4 text-center text-slate-500">Riskli personel yok.</td></tr>`; document.getElementById('patSafeEUR').innerText=formatPdfMoney(tE,'€'); document.getElementById('patSafeUSD').innerText=formatPdfMoney(tU,'$'); document.getElementById('patSafeTRY').innerText=formatPdfMoney(tT,'₺'); document.getElementById('patActiveTripsCount').innerText=aTrips; document.getElementById('patRiskyDriversCount').innerText=rC; let cM=new Date().toISOString().slice(0,7); let mE=0,mU=0,mT=0; expenses.filter(e=>e.status==='APPROVED'&&e.date&&e.date.startsWith(cM)).forEach(e=>{if(e.currency==='EUR')mE+=e.amount;else if(e.currency==='USD')mU+=e.amount;else mT+=e.amount;}); document.getElementById('patExpThisMonthEUR').innerText=formatPdfMoney(mE,'€'); document.getElementById('patExpThisMonthUSD').innerText=formatPdfMoney(mU,'$'); document.getElementById('patExpThisMonthTRY').innerText=formatPdfMoney(mT,'₺'); let vD={}; driverTrips.filter(t=>t.status==='COMPLETED').forEach(t=>{if(!vD[t.plate])vD[t.plate]={km:0,c:0}; vD[t.plate].km+=t.totalKm;}); expenses.filter(e=>e.status==='APPROVED'&&e.plaka&&(e.category==='MAZOT'||e.category==='BAKIM'||e.category==='OTOYOL')).forEach(e=>{let p=e.plaka.toUpperCase(); if(!vD[p])vD[p]={km:0,c:0}; let a=e.amount; if(e.currency==='USD')a*=0.9;else if(e.currency==='TRY')a*=0.028; vD[p].c+=a;}); const pV=document.getElementById('patronVehicleList'); pV.innerHTML=''; for(const[p,d] of Object.entries(vD)){if(d.km===0)continue; let cpm=d.c/d.km; let cC=cpm>0.4?'text-rose-600 font-bold bg-rose-50':'text-emerald-600 font-bold bg-emerald-50'; pV.innerHTML+=`<tr class="border-b border-slate-100"><td class="p-3 font-bold uppercase"><span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs">${esc(p)}</span></td><td class="p-3 text-right">${d.km.toLocaleString()} KM</td><td class="p-3 text-right">~${formatPdfMoney(d.c,'€')}</td><td class="p-3 text-right ${cC} rounded-lg">${formatPdfMoney(cpm,'€')} / KM</td></tr>`;} if(pV.innerHTML==='')pV.innerHTML=`<tr><td colspan="4" class="p-4 text-center">Veri yok.</td></tr>`; renderPatronCharts();}

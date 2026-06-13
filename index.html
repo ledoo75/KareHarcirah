@@ -886,6 +886,7 @@
             </div>
         </div>
         <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <button onclick="openGlobalQuery()" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all"><i class="fa-solid fa-magnifying-glass"></i> <span class="hidden sm:inline">Sefer Sorgula</span></button>
             <button onclick="handleLogout()" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all"><i class="fa-solid fa-power-off"></i> Çıkış</button>
             <div class="relative ml-2" id="driverSearchWrapper"><select id="activeUser" class="hidden" onchange="changeUser()"></select><div class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 flex items-center gap-2"><i class="fa-solid fa-magnifying-glass text-slate-400 text-xs"></i><input type="text" id="driverSearchInput" placeholder="Şoför ara..." autocomplete="off" class="bg-transparent text-sm font-semibold text-slate-700 outline-none w-32 sm:w-40 placeholder:font-normal placeholder:text-slate-400" oninput="filterDriverSearch()" onfocus="showDriverDropdown()" onblur="hideDriverDropdown()"></div><div id="driverDropdown" class="hidden absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 min-w-[170px] max-h-52 overflow-y-auto py-1"></div></div>
         </div>
@@ -904,6 +905,34 @@
         <button onclick="switchTab('VEHICLE_COST')" id="tab-VEHICLE_COST" class="role-btn bg-transparent text-slate-500 px-4 py-2 rounded-xl text-sm font-semibold transition-all hidden"><i class="fa-solid fa-gauge-high mr-1"></i> Araç Maliyeti</button>
     </div>
 </header>
+
+<!-- Global Sefer Sorgulama Modalı -->
+<div id="globalQueryModal" style="display:none;background:rgba(15,23,42,0.85);backdrop-filter:blur(6px);" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
+        <div class="bg-slate-900 rounded-t-2xl p-5 flex items-center justify-between sticky top-0">
+            <div class="flex items-center gap-3">
+                <svg width="26" height="26" viewBox="0 0 100 100" fill="#4AA4F6"><rect x="20" y="15" width="24" height="70"/><path d="M44 55 L 75 24 H 95 L 44 75 Z"/><rect x="70" y="60" width="25" height="25"/></svg>
+                <p class="text-white font-bold">Sefer Sorgulama</p>
+            </div>
+            <button onclick="closeGlobalQuery()" class="text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 text-xl">✕</button>
+        </div>
+        <div class="p-5">
+            <div class="flex gap-2 mb-4">
+                <div class="relative flex-1">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input id="globalQueryInput" type="text" placeholder="Pozisyon No veya Konteyner No"
+                        class="w-full pl-10 pr-4 py-3 border-2 border-slate-200 rounded-xl text-sm font-bold uppercase outline-none focus:border-blue-400 transition"
+                        oninput="this.value=this.value.toUpperCase()"
+                        onkeydown="if(event.key==='Enter')runGlobalQuery()">
+                </div>
+                <button onclick="runGlobalQuery()" class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-3 rounded-xl text-sm font-bold transition">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+            <div id="globalQueryResult"></div>
+        </div>
+    </div>
+</div>
 
 <main class="flex-grow container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl opacity-0 transition-opacity duration-1000" id="mainContent">
     <div id="panel-PATRON" class="panel-section hidden-panel">
@@ -2030,7 +2059,7 @@
     }
     
     function updateDriverDropdowns(){const uSel=document.getElementById('activeUser'); const aSel=document.getElementById('advDriver'); const si=document.getElementById('driverSearchInput'); uSel.innerHTML=''; if(aSel)aSel.innerHTML=''; if(currentRole==='DRIVER'){uSel.innerHTML=`<option value="${esc(loggedInUser.username)}">${esc(loggedInUser.username)}</option>`; uSel.disabled=true; if(si){si.value=''; si.disabled=true; si.classList.add('opacity-60');}}else{uSel.disabled=false; if(si){si.disabled=false; si.classList.remove('opacity-60');} let drvs=getDrivers(); if(drvs.length===0){uSel.innerHTML=`<option value="">Şoför Yok</option>`;} drvs.forEach(d=>{uSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`; if(aSel)aSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`;}); uSel.value=currentUser; if(si)si.value=currentUser;} if(currentRole!=='DRIVER'&&getDrivers().length>0&&!getDrivers().includes(currentUser)){currentUser=getDrivers()[0]; uSel.value=currentUser; if(si)si.value=currentUser;} fillCariTarihDrivers();}
-    function updateTabVisibility(){const defaultPerms={ADMIN:['DRIVER','OPERATIONS','TRACKING','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],PATRON:['DRIVER','OPERATIONS','TRACKING','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],OPS:['DRIVER','OPERATIONS','TRACKING','DASHBOARD','ANALYTICS'],OPS_MANAGER:['DRIVER','OPERATIONS','TRACKING','FLEET','DASHBOARD','ANALYTICS','VEHICLE_COST'],ACCOUNTING:['DRIVER','OPERATIONS','TRACKING','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],FLEET:['DRIVER','FLEET','TRACKING','DASHBOARD','VEHICLE_COST'],DRIVER:['DRIVER']}; let myTabs=loggedInUser.allowedTabs||defaultPerms[currentRole]||['DRIVER']; if(currentRole==='ADMIN')myTabs=defaultPerms['ADMIN'];['DRIVER','OPERATIONS','TRACKING','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'].forEach(tab=>{const el=document.getElementById(`tab-${tab}`); if(el)el.style.display=myTabs.includes(tab)?'flex':'none';});}
+    function updateTabVisibility(){const defaultPerms={ADMIN:['DRIVER','OPERATIONS','TRACKING','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],PATRON:['DRIVER','OPERATIONS','TRACKING','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],OPS:['DRIVER','OPERATIONS','TRACKING','DASHBOARD','ANALYTICS'],OPS_MANAGER:['DRIVER','OPERATIONS','TRACKING','FLEET','DASHBOARD','ANALYTICS','VEHICLE_COST'],ACCOUNTING:['DRIVER','OPERATIONS','TRACKING','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],FLEET:['DRIVER','FLEET','TRACKING','DASHBOARD','VEHICLE_COST'],DRIVER:['DRIVER']}; let myTabs=loggedInUser.allowedTabs||defaultPerms[currentRole]||['DRIVER']; if(currentRole==='ADMIN')myTabs=defaultPerms['ADMIN'];['DRIVER','OPERATIONS','TRACKING','QUERY','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'].forEach(tab=>{const el=document.getElementById(`tab-${tab}`); if(el)el.style.display=myTabs.includes(tab)?'flex':'none';});}
     function switchTab(tabId){document.querySelectorAll('.role-btn').forEach(b=>{b.classList.remove('bg-slate-800','text-white','shadow-md'); b.classList.add('bg-transparent','text-slate-500');}); const activeBtn=document.getElementById(`tab-${tabId}`); if(activeBtn){activeBtn.classList.remove('bg-transparent','text-slate-500'); activeBtn.classList.add('bg-slate-800','text-white','shadow-md');} document.querySelectorAll('.panel-section').forEach(p=>p.style.display='none'); document.getElementById(`panel-${tabId}`).style.display='block'; localStorage.setItem('kare_last_tab',tabId); renderAll(); if(tabId==='PATRON'&&['ADMIN','PATRON'].includes(currentRole))updatePatronDashboard(); if(tabId==='DRIVER'){checkActiveTrip(); renderDriverDuyurular();} if(tabId==='DASHBOARD')renderDashboard(); if(tabId==='FLEET')renderFleetPanel(); if(tabId==='ANALYTICS')renderAnalyticsTab(); if(tabId==='AUDITLOG'){auditPage=50; renderAuditLog();} if(tabId==='TRACKING') renderTrackingPanel(); if(tabId==='USERS'){setTimeout(renderSystemStats, 100);} if(tabId==='ACCOUNTING'){renderAccountingExtras(); loadDuyurular();refreshArchivePreview(); loadArchiveSummary();} if(tabId==='VEHICLE_COST'){ loadAllVcFromFirebase();const now=new Date().toISOString().slice(0,7); const si=document.getElementById('vcStartMonth'); const ei=document.getElementById('vcEndMonth'); const vm=document.getElementById('vcMonth'); if(si&&!si.value){si.value=now;} if(ei&&!ei.value){ei.value=now;} if(vm&&!vm.value){vm.value=now;} const b0=document.getElementById('vcBtn0'); if(b0){clearVcBtns(); b0.className='vc-month-btn bg-orange-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition';} updateVcMonthLabel(); loadSalaryRows(); loadHgsRows(); loadYakitRows(); renderVehicleCost();}}
     function changeUser(){currentUser=document.getElementById('activeUser').value; renderAll(); if(currentRole!=='DRIVER')checkActiveTrip();}
     function filterCari(){let input=document.getElementById('searchCariInput').value.toLowerCase(); document.querySelectorAll('.cari-row').forEach(row=>{row.style.display=row.getAttribute('data-driver').toLowerCase().includes(input)?'':'none';});}
@@ -4075,6 +4104,39 @@
             </tr>`;
     }
 
+    let _iqlLang='tr';
+    function setInnerCQLang(lang){
+        _iqlLang=lang;
+        ['TR','EN','IT'].forEach(l=>{const b=document.getElementById('iql'+l);if(b)b.className='text-xs px-3 py-1.5 rounded-lg font-bold '+(l.toLowerCase()===lang?'bg-blue-500 text-white':'bg-slate-200 text-slate-600');});
+    }
+    async function runInnerQuery(){
+        const q=(document.getElementById('innerQueryInput')?.value||'').trim();
+        const res=document.getElementById('innerQueryResult');
+        const L=_cqI18n[_iqlLang]||_cqI18n['tr'];
+        if(!q){if(res)res.innerHTML='<p class="text-center text-slate-400 text-sm py-4">Pozisyon veya konteyner numarası girin.</p>';return;}
+        if(res)res.innerHTML='<div class="glass-card p-8 text-center"><div class="w-8 h-8 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-3"></div><p class="text-slate-400 text-sm">Sorgulanıyor...</p></div>';
+        try{
+            let snap=await cTrips.where('posNo','==',q).limit(1).get();
+            if(snap.empty) snap=await cTrips.where('containerNo','==',q).limit(1).get();
+            if(snap.empty){if(res)res.innerHTML='<div class="glass-card p-8 text-center"><p class="text-4xl mb-3">🔴</p><p class="font-bold text-red-600 text-lg">'+L.notFound+'</p><p class="text-slate-400 text-sm mt-2">"'+esc(q)+'" sistemde kayıtlı değil.</p></div>';return;}
+            const t=snap.docs[0].data();
+            const isActive=t.status==='ACTIVE',isDone=t.status==='COMPLETED';
+            const startDT=t.startDateTime||t.startDate||null;
+            const endDT=t.endDateTime||t.endDate||null;
+            let elapsedStr='',elapsedFull='';
+            if(t.startDate){const sd=new Date(t.startDate);const ed=isDone&&t.endDate?new Date(t.endDate):new Date();const d=Math.floor((ed-sd)/(864e5));elapsedStr=isDone?d+' günde tamamlandı':d+' gündür devam ediyor';}
+            if(startDT){const sd=new Date(startDT.length===10?startDT+'T00:00:00':startDT.replace(' ','T'));const ed=isDone&&endDT?new Date(endDT.length===10?endDT+'T00:00:00':endDT.replace(' ','T')):new Date();const dm=Math.floor((ed-sd)/60000);const dh=Math.floor(dm/60);const dd=Math.floor(dh/24);const rh=dh%24;const rm=dm%60;if(dd>0)elapsedFull=dd+'g '+rh+'sa '+rm+'dk';else if(dh>0)elapsedFull=dh+'sa '+rm+'dk';else elapsedFull=dm+'dk';}
+            function parseRC(r){if(!r)return'';const map={'TÜRKIYE':'🇹🇷','TURKEY':'🇹🇷','BULGARİSTAN':'🇧🇬','BULGARIA':'🇧🇬','SIRBİSTAN':'🇷🇸','SERBIA':'🇷🇸','SLOVENYA':'🇸🇮','SLOVENIA':'🇸🇮','İTALYA':'🇮🇹','ITALY':'🇮🇹','ALMANYA':'🇩🇪','GERMANY':'🇩🇪','AVUSTURYA':'🇦🇹','MACARİSTAN':'🇭🇺'};const up=r.toUpperCase();const found=[];for(const[k,v]of Object.entries(map)){if(up.includes(k.toUpperCase())&&!found.includes(v))found.push(v+' '+k.charAt(0)+k.slice(1).toLowerCase());}return found.length?found.join(' → '):esc(r);}
+            const rc=parseRC(t.route||'');
+            const pct=isDone?100:isActive?50:0;
+            const pc=isDone?'bg-emerald-500':isActive?'bg-amber-500':'bg-slate-300';
+            const bc=isActive?'border-amber-400':isDone?'border-emerald-400':'border-slate-200';
+            const badge=isActive?'<span class="inline-flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-full font-bold"><span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>'+L.statusActive+'</span>':isDone?'<span class="inline-flex items-center gap-2 bg-emerald-500 text-white px-4 py-2 rounded-full font-bold">✓ '+L.statusDone+'</span>':'';
+            const tl='<div class="glass-card p-4 mb-4"><p class="text-[10px] text-slate-400 font-bold uppercase mb-3 tracking-wider">'+L.labelTimeline+'</p><div class="flex items-start"><div class="flex flex-col items-center flex-1"><div class="w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-sm '+(startDT?'bg-emerald-500 text-white':'bg-slate-100 text-slate-400')+'">✓</div><p class="text-[10px] font-bold mt-2 '+(startDT?'text-emerald-600':'text-slate-400')+'">'+L.stepLoad+'</p><p class="text-[9px] text-slate-700 font-bold mt-0.5">'+(startDT&&startDT.length>10?startDT.slice(11,16):'-')+'</p><p class="text-[9px] text-slate-400">🕐 Alınma saati</p></div><div class="flex-1 h-0.5 mt-5 '+(startDT?'bg-emerald-400':'bg-slate-200')+' mx-2"></div><div class="flex flex-col items-center flex-1"><div class="w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-sm '+(isActive?'bg-amber-500 text-white':isDone?'bg-emerald-500 text-white':'bg-slate-100 text-slate-400')+'">'+(isActive?'🚛':isDone?'✓':'🚛')+'</div><p class="text-[10px] font-bold mt-2 '+(isActive?'text-amber-600':isDone?'text-emerald-600':'text-slate-400')+'">'+L.stepOnRoute+'</p><p class="text-[9px] text-amber-700 font-bold mt-0.5">'+(elapsedFull||'-')+'</p><p class="text-[9px] text-slate-400">⏱ '+(isActive?'Şu an yolda':'Geçen süre')+'</p></div><div class="flex-1 h-0.5 mt-5 '+(isDone?'bg-emerald-400':'bg-slate-200')+' mx-2"></div><div class="flex flex-col items-center flex-1"><div class="w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-sm '+(isDone?'bg-emerald-500 text-white':'bg-slate-100 text-slate-400')+'">'+(isDone?'✓':'🏁')+'</div><p class="text-[10px] font-bold mt-2 '+(isDone?'text-emerald-600':'text-slate-400')+'">'+L.stepDelivered+'</p><p class="text-[9px] text-slate-700 font-bold mt-0.5">'+(endDT&&endDT.length>10?endDT.slice(11,16):'-')+'</p><p class="text-[9px] text-slate-400">'+(isDone?'🕐 Teslim saati':'⏳ Bekleniyor')+'</p></div></div>'+(isDone&&elapsedFull?'<div class="mt-3 pt-3 border-t border-slate-100 bg-emerald-50 rounded-lg p-2 text-center"><p class="text-sm font-black text-emerald-700">🏆 Toplam Süre: '+elapsedFull+'</p></div>':isActive&&elapsedFull?'<div class="mt-3 pt-3 border-t border-slate-100 bg-amber-50 rounded-lg p-2 text-center"><p class="text-sm font-black text-amber-700">🚛 Seferde: '+elapsedFull+'</p></div>':'')+'</div>';
+            if(res)res.innerHTML='<div class="border-2 '+bc+' rounded-2xl overflow-hidden mb-4"><div class="p-5"><div class="flex items-start justify-between mb-4"><div><p class="font-black text-slate-800 text-xl">'+L.labelPos+' '+esc(t.posNo||'-')+'</p>'+(t.containerNo?'<p class="text-sm font-bold text-indigo-600 mt-1">📦 '+esc(t.containerNo)+'</p>':'')+'<p class="text-xs text-slate-400 mt-1">'+L.labelTrip+' '+esc(t.tripNo||'-')+'</p></div>'+badge+'</div><div class="mb-4"><div class="flex justify-between text-xs text-slate-400 mb-2"><span>📍 '+L.stepLoad+'</span><span class="font-semibold text-slate-600">'+elapsedStr+'</span><span>🏁 '+L.stepDelivered+'</span></div><div class="w-full bg-slate-200 rounded-full h-3"><div class="'+pc+' h-3 rounded-full transition-all" style="width:'+pct+'%"></div></div><p class="text-right text-xs text-slate-400 mt-1">%'+pct+'</p></div>'+(rc?'<div class="bg-blue-50 rounded-xl p-3 mb-4 text-center"><p class="text-[10px] text-blue-400 font-bold uppercase mb-1">'+L.labelRoute+'</p><p class="font-bold text-blue-700">'+rc+'</p></div>':'')+tl+'<div class="grid grid-cols-2 gap-3"><div class="bg-slate-50 rounded-xl p-3"><p class="text-[9px] text-slate-400 font-bold uppercase mb-1">'+L.labelDriver+'</p><p class="font-bold text-slate-700">👤 '+esc(t.driver||'-')+'</p></div><div class="bg-slate-50 rounded-xl p-3"><p class="text-[9px] text-slate-400 font-bold uppercase mb-1">'+L.labelPlate+'</p><p class="font-bold text-slate-700">🚛 '+esc(t.plate||'-')+'</p></div><div class="bg-slate-50 rounded-xl p-3"><p class="text-[9px] text-slate-400 font-bold uppercase mb-1">'+L.labelTrailer+'</p><p class="font-bold text-slate-700">🚌 '+esc(t.trailer||'-')+'</p></div><div class="bg-slate-50 rounded-xl p-3"><p class="text-[9px] text-slate-400 font-bold uppercase mb-1">'+L.labelKm+'</p><p class="font-bold text-slate-700">📍 '+(t.totalKm?parseInt(t.totalKm).toLocaleString('tr-TR')+' km':'-')+'</p></div><div class="bg-slate-50 rounded-xl p-3"><p class="text-[9px] text-slate-400 font-bold uppercase mb-1">'+L.labelStart+'</p><p class="font-bold text-amber-600">📅 '+(startDT?startDT.slice(0,10):esc(t.startDate||'-'))+'</p></div><div class="bg-slate-50 rounded-xl p-3"><p class="text-[9px] text-slate-400 font-bold uppercase mb-1">'+L.labelEnd+'</p><p class="font-bold text-emerald-600">📅 '+(endDT?endDT.slice(0,10):esc(t.endDate||'-'))+'</p></div>'+(t.driverPhone?'<div class="bg-slate-50 rounded-xl p-3 col-span-2 flex justify-between items-center"><div><p class="text-[9px] text-slate-400 font-bold uppercase mb-1">'+L.labelPhone+'</p><p class="font-bold text-slate-700">📞 '+esc(t.driverPhone)+'</p></div><a href="tel:'+esc(t.driverPhone)+'" class="bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-bold">'+L.labelCall+'</a></div>':'')+'</div></div><div class="bg-slate-50 px-5 py-3 flex items-center justify-between"><p class="text-[10px] text-slate-400">'+new Date().toLocaleString('tr-TR')+'</p></div></div>';
+        }catch(err){if(res)res.innerHTML='<div class="glass-card p-6 text-center"><p class="text-2xl mb-2">⚠️</p><p class="font-bold text-red-500">Bağlantı Hatası</p><p class="text-xs text-slate-400 mt-1">'+esc(err.message)+'</p></div>';}
+    }
+
     let _trackingFilter='ALL';
     function setTrackingFilter(val,btn){
         _trackingFilter=val;
@@ -4174,6 +4236,58 @@
                 </div>
             </div>`;
         }).join('');
+    }
+
+    function openGlobalQuery(){
+        const m=document.getElementById('globalQueryModal');
+        m.style.display='flex';
+        document.getElementById('globalQueryInput').value='';
+        document.getElementById('globalQueryResult').innerHTML='';
+        setTimeout(()=>document.getElementById('globalQueryInput').focus(),100);
+    }
+    function closeGlobalQuery(){
+        document.getElementById('globalQueryModal').style.display='none';
+    }
+    async function runGlobalQuery(){
+        const q=(document.getElementById('globalQueryInput')?.value||'').trim();
+        const res=document.getElementById('globalQueryResult');
+        if(!q){res.innerHTML='<p class="text-center text-slate-400 text-sm py-4">Pozisyon veya konteyner numarası girin.</p>';return;}
+        res.innerHTML='<div class="text-center py-8"><div class="w-8 h-8 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-3"></div><p class="text-slate-400 text-sm">Sorgulanıyor...</p></div>';
+        try{
+            let snap=await cTrips.where('posNo','==',q).limit(1).get();
+            if(snap.empty) snap=await cTrips.where('containerNo','==',q).limit(1).get();
+            if(snap.empty){res.innerHTML='<div class="bg-red-50 border border-red-200 rounded-xl p-5 text-center"><p class="text-4xl mb-2">🔴</p><p class="font-bold text-red-600 text-lg">Kayıt Bulunamadı</p><p class="text-slate-400 text-sm mt-2">"'+esc(q)+'" sistemde kayıtlı değil.</p></div>';return;}
+            const t=snap.docs[0].data();
+            const isActive=t.status==='ACTIVE',isDone=t.status==='COMPLETED';
+            const startDT=t.startDateTime||t.startDate||null;
+            const endDT=t.endDateTime||t.endDate||null;
+            let elapsedFull='';
+            if(startDT){const sd=new Date(startDT.length===10?startDT+'T00:00:00':startDT.replace(' ','T'));const ed=isDone&&endDT?new Date(endDT.length===10?endDT+'T00:00:00':endDT.replace(' ','T')):new Date();const dm=Math.floor((ed-sd)/60000);const dh=Math.floor(dm/60);const dd=Math.floor(dh/24);const rh=dh%24;const rm=dm%60;if(dd>0)elapsedFull=dd+'g '+rh+'sa '+rm+'dk';else if(dh>0)elapsedFull=dh+'sa '+rm+'dk';else elapsedFull=dm+'dk';}
+            const badge=isActive?'<span class="inline-flex items-center gap-1.5 bg-amber-500 text-white px-3 py-1.5 rounded-full text-xs font-bold"><span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>YOLDA</span>':isDone?'<span class="inline-flex items-center gap-1.5 bg-emerald-500 text-white px-3 py-1.5 rounded-full text-xs font-bold">✓ TESLİM EDİLDİ</span>':'';
+            const bc=isActive?'border-amber-300':isDone?'border-emerald-300':'border-slate-200';
+            const pct=isDone?100:isActive?50:0;
+            const pc=isDone?'bg-emerald-500':isActive?'bg-amber-500':'bg-slate-300';
+            res.innerHTML=`<div class="border-2 ${bc} rounded-xl overflow-hidden">
+                <div class="p-4">
+                    <div class="flex justify-between items-start mb-3">
+                        <div><p class="font-black text-slate-800 text-base">Poz: ${esc(t.posNo||'-')}</p>${t.containerNo?'<p class="text-xs font-bold text-indigo-600">📦 '+esc(t.containerNo)+'</p>':''}<p class="text-xs text-slate-400">Sefer: ${esc(t.tripNo||'-')}</p></div>
+                        ${badge}
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-2 mb-3"><div class="${pc} h-2 rounded-full" style="width:${pct}%"></div></div>
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <div class="bg-slate-50 rounded-lg p-2"><p class="text-[9px] text-slate-400 uppercase mb-0.5">Şoför</p><p class="font-bold text-slate-700 text-xs">👤 ${esc(t.driver||'-')}</p></div>
+                        <div class="bg-slate-50 rounded-lg p-2"><p class="text-[9px] text-slate-400 uppercase mb-0.5">Araç</p><p class="font-bold text-slate-700 text-xs">🚛 ${esc(t.plate||'-')}</p></div>
+                        <div class="bg-slate-50 rounded-lg p-2"><p class="text-[9px] text-slate-400 uppercase mb-0.5">Başlangıç</p><p class="font-bold text-amber-600 text-xs">📅 ${startDT?startDT.slice(0,10):esc(t.startDate||'-')}</p></div>
+                        <div class="bg-slate-50 rounded-lg p-2"><p class="text-[9px] text-slate-400 uppercase mb-0.5">Teslim</p><p class="font-bold text-emerald-600 text-xs">📅 ${endDT?endDT.slice(0,10):esc(t.endDate||'-')}</p></div>
+                        ${elapsedFull?`<div class="bg-slate-50 rounded-lg p-2 col-span-2"><p class="text-[9px] text-slate-400 uppercase mb-0.5">Geçen Süre</p><p class="font-bold ${isActive?'text-amber-600':'text-emerald-600'} text-xs">⏱ ${elapsedFull}${isDone?' (toplam)':' yolda'}</p></div>`:''}
+                        ${t.driverPhone?`<div class="bg-slate-50 rounded-lg p-2 col-span-2 flex justify-between items-center"><div><p class="text-[9px] text-slate-400 uppercase mb-0.5">Şoför Tel</p><p class="font-bold text-slate-700 text-xs">📞 ${esc(t.driverPhone)}</p></div><a href="tel:${esc(t.driverPhone)}" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Ara</a></div>`:''}
+                    </div>
+                </div>
+                <div class="bg-slate-50 px-4 py-2 text-right">
+                    <button onclick="closeGlobalQuery();switchTab('TRACKING');setTimeout(()=>{const i=document.getElementById('trackingSearch');if(i){i.value='${esc(q)}';renderTrackingPanel();}},100);" class="text-blue-500 text-xs font-bold hover:underline">Detaylı Görüntüle →</button>
+                </div>
+            </div>`;
+        }catch(err){res.innerHTML='<div class="bg-red-50 border border-red-200 rounded-xl p-4 text-center"><p class="font-bold text-red-500">Hata</p><p class="text-xs text-slate-400">'+esc(err.message)+'</p></div>';}
     }
 
     function updatePatronDashboard(){let tE=0,tU=0,tT=0,rC=0; const aTrips=driverTrips.filter(t=>t.status==='ACTIVE').length; const dL=document.getElementById('patronDriverRiskList'); dL.innerHTML=''; getDrivers().forEach(drv=>{const b=getDriverBalance(drv); tE+=b.e; tU+=b.u; tT+=b.t; if(b.e>0||b.u>0||b.t>0){let isR=(b.e>1000||b.u>1100||b.t>35000); if(isR)rC++; let det=''; if(b.e>0)det+=`<span class="text-blue-700 font-bold mr-2">${formatPdfMoney(b.e,'€')}</span>`; if(b.u>0)det+=`<span class="text-emerald-700 font-bold mr-2">${formatPdfMoney(b.u,'$')}</span>`; if(b.t>0)det+=`<span class="text-indigo-700 font-bold">${formatPdfMoney(b.t,'₺')}</span>`; let bdg=isR?`<span class="bg-red-500 text-white px-2 py-1 rounded text-[10px] font-bold">RİSK</span>`:`<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded text-[10px] font-bold">NORMAL</span>`; dL.innerHTML+=`<tr class="border-b border-slate-100 ${isR?'risk-row':'hover:bg-slate-50'}"><td class="p-3 font-bold">${esc(drv)}</td><td class="p-3 text-right">${det}</td><td class="p-3 text-center">${bdg}</td></tr>`;}}); if(dL.innerHTML==='')dL.innerHTML=`<tr><td colspan="3" class="p-4 text-center text-slate-500">Riskli personel yok.</td></tr>`; document.getElementById('patSafeEUR').innerText=formatPdfMoney(tE,'€'); document.getElementById('patSafeUSD').innerText=formatPdfMoney(tU,'$'); document.getElementById('patSafeTRY').innerText=formatPdfMoney(tT,'₺'); document.getElementById('patActiveTripsCount').innerText=aTrips; document.getElementById('patRiskyDriversCount').innerText=rC; let cM=new Date().toISOString().slice(0,7); let mE=0,mU=0,mT=0; expenses.filter(e=>e.status==='APPROVED'&&e.date&&e.date.startsWith(cM)).forEach(e=>{if(e.currency==='EUR')mE+=e.amount;else if(e.currency==='USD')mU+=e.amount;else mT+=e.amount;}); document.getElementById('patExpThisMonthEUR').innerText=formatPdfMoney(mE,'€'); document.getElementById('patExpThisMonthUSD').innerText=formatPdfMoney(mU,'$'); document.getElementById('patExpThisMonthTRY').innerText=formatPdfMoney(mT,'₺'); let vD={}; driverTrips.filter(t=>t.status==='COMPLETED').forEach(t=>{if(!vD[t.plate])vD[t.plate]={km:0,c:0}; vD[t.plate].km+=t.totalKm;}); expenses.filter(e=>e.status==='APPROVED'&&e.plaka&&(e.category==='MAZOT'||e.category==='BAKIM'||e.category==='OTOYOL')).forEach(e=>{let p=e.plaka.toUpperCase(); if(!vD[p])vD[p]={km:0,c:0}; let a=e.amount; if(e.currency==='USD')a*=0.9;else if(e.currency==='TRY')a*=0.028; vD[p].c+=a;}); const pV=document.getElementById('patronVehicleList'); pV.innerHTML=''; for(const[p,d] of Object.entries(vD)){if(d.km===0)continue; let cpm=d.c/d.km; let cC=cpm>0.4?'text-rose-600 font-bold bg-rose-50':'text-emerald-600 font-bold bg-emerald-50'; pV.innerHTML+=`<tr class="border-b border-slate-100"><td class="p-3 font-bold uppercase"><span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs">${esc(p)}</span></td><td class="p-3 text-right">${d.km.toLocaleString()} KM</td><td class="p-3 text-right">~${formatPdfMoney(d.c,'€')}</td><td class="p-3 text-right ${cC} rounded-lg">${formatPdfMoney(cpm,'€')} / KM</td></tr>`;} if(pV.innerHTML==='')pV.innerHTML=`<tr><td colspan="4" class="p-4 text-center">Veri yok.</td></tr>`; renderPatronCharts();}

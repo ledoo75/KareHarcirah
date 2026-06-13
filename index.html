@@ -2021,8 +2021,19 @@ setTimeout(function(){
         setTimeout(()=>{
             const splash=document.getElementById('splashScreen'); 
             splash.style.opacity='0'; 
-            setTimeout(()=>{splash.style.display='none';},800);
-        },2500); 
+            setTimeout(()=>{
+                splash.style.display='none';
+                const lg=document.getElementById('loginScreen');
+                if(lg&&(lg.style.display==='none'||!lg.style.display)){lg.style.display='flex';}
+            },800);
+        },2500);
+        // 5 saniye fallback
+        setTimeout(()=>{
+            const splash=document.getElementById('splashScreen');
+            const lg=document.getElementById('loginScreen');
+            if(splash)splash.style.display='none';
+            if(lg&&(lg.style.display==='none'||!lg.style.display))lg.style.display='flex';
+        },5000);
         auth.onAuthStateChanged(user=>{
             if(user){
                 cUsers.doc(user.uid).get().then(doc=>{
@@ -2032,7 +2043,11 @@ setTimeout(function(){
                         setupApp(loggedInUser);
                     }else{auth.signOut();}
                 });
-            }else{document.getElementById('loginScreen').style.display='flex';}
+            }else{
+                const splash=document.getElementById('splashScreen');
+                if(splash)splash.style.display='none';
+                document.getElementById('loginScreen').style.display='flex';
+            }
         });
     };
     

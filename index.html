@@ -648,7 +648,7 @@
                     class="flex-1 border-2 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold uppercase outline-none focus:border-blue-400 transition"
                     oninput="this.value=this.value.toUpperCase()"
                     onkeydown="if(event.key==='Enter')runCustomerQuery()">
-                <button onclick="runCustomerQuery()" class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-3 rounded-xl text-sm font-bold flex items-center gap-2">
+                <button id="cqSearchBtn" onclick="runCustomerQuery()" class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-3 rounded-xl text-sm font-bold flex items-center gap-2">
                     <i class="fa-solid fa-magnifying-glass"></i> Sorgula
                 </button>
             </div>
@@ -791,9 +791,9 @@
         function _e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
         function openCustomerQuery(){var m=document.getElementById('customerQueryModal');m.style.cssText='display:flex;background:rgba(15,23,42,0.85);backdrop-filter:blur(6px);position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;padding:16px;';document.getElementById('cqInput').value='';document.getElementById('cqResult').innerHTML='';setTimeout(function(){document.getElementById('cqInput').focus();},100);}
         function closeCustomerQuery(){document.getElementById('customerQueryModal').style.display='none';}
-        const _cqI18n={tr:{title:'Sefer Sorgulama',subtitle:'Pozisyon veya konteyner numarası ile sorgulayın',statusActive:'YOLDA',statusDone:'TESLİM EDİLDİ',labelPos:'Poz:',labelTrip:'Sefer No:',labelRoute:'Güzergah',labelDriver:'Şoför',labelPlate:'Araç',labelTrailer:'Dorse',labelKm:'Toplam KM',labelStart:'Başlangıç',labelEnd:'Teslim',labelPhone:'Şoför Tel',labelCall:'Ara',labelTimeline:'Durum Zaman Çizelgesi',stepLoad:'Yüklendi',stepOnRoute:'Yolda',stepDelivered:'Teslim',lastQuery:'Son sorgu:',totalQuery:'sorgu',shareBtn:'🔗 Paylaş',shareCopied:'✓ Kopyalandı',notFound:'Kayıt Bulunamadı',expired:'Sorgu Süresi Doldu'},en:{title:'Shipment Tracking',subtitle:'Query with position or container number',statusActive:'ON ROUTE',statusDone:'DELIVERED',labelPos:'Pos:',labelTrip:'Trip No:',labelRoute:'Route',labelDriver:'Driver',labelPlate:'Vehicle',labelTrailer:'Trailer',labelKm:'Total KM',labelStart:'Departure',labelEnd:'Delivery',labelPhone:'Driver Phone',labelCall:'Call',labelTimeline:'Status Timeline',stepLoad:'Loaded',stepOnRoute:'On Route',stepDelivered:'Delivered',lastQuery:'Last query:',totalQuery:'queries',shareBtn:'🔗 Share',shareCopied:'✓ Copied',notFound:'Not Found',expired:'Expired'},it:{title:'Tracciamento Spedizione',subtitle:'Cerca con numero posizione o container',statusActive:'IN VIAGGIO',statusDone:'CONSEGNATO',labelPos:'Pos:',labelTrip:'Nr. Viaggio:',labelRoute:'Percorso',labelDriver:'Autista',labelPlate:'Veicolo',labelTrailer:'Rimorchio',labelKm:'KM Totali',labelStart:'Partenza',labelEnd:'Consegna',labelPhone:'Tel Autista',labelCall:'Chiama',labelTimeline:'Cronologia Stato',stepLoad:'Caricato',stepOnRoute:'In Viaggio',stepDelivered:'Consegnato',lastQuery:'Ultima ricerca:',totalQuery:'ricerche',shareBtn:'🔗 Condividi',shareCopied:'✓ Copiato',notFound:'Non Trovato',expired:'Scaduto'}};
+        const _cqI18n={tr:{title:'Sefer Sorgulama',subtitle:'Pozisyon veya konteyner numarası ile sorgulayın',placeholder:'Pozisyon No veya Konteyner No',btnSearch:'Sorgula',statusActive:'YOLDA',statusDone:'TESLİM EDİLDİ',labelPos:'Poz:',labelTrip:'Sefer No:',labelRoute:'Güzergah',labelDriver:'Şoför',labelPlate:'Araç',labelTrailer:'Dorse',labelKm:'Toplam KM',labelStart:'Başlangıç',labelEnd:'Teslim',labelPhone:'Şoför Tel',labelCall:'Ara',labelTimeline:'Durum Zaman Çizelgesi',stepLoad:'Yüklendi',stepOnRoute:'Yolda',stepDelivered:'Teslim',lastQuery:'Son sorgu:',totalQuery:'sorgu',shareBtn:'🔗 Paylaş',shareCopied:'✓ Kopyalandı',notFound:'Kayıt Bulunamadı',expired:'Sorgu Süresi Doldu'},en:{title:'Shipment Tracking',subtitle:'Query with position or container number',placeholder:'Position No or Container No',btnSearch:'Search',statusActive:'ON ROUTE',statusDone:'DELIVERED',labelPos:'Pos:',labelTrip:'Trip No:',labelRoute:'Route',labelDriver:'Driver',labelPlate:'Vehicle',labelTrailer:'Trailer',labelKm:'Total KM',labelStart:'Departure',labelEnd:'Delivery',labelPhone:'Driver Phone',labelCall:'Call',labelTimeline:'Status Timeline',stepLoad:'Loaded',stepOnRoute:'On Route',stepDelivered:'Delivered',lastQuery:'Last query:',totalQuery:'queries',shareBtn:'🔗 Share',shareCopied:'✓ Copied',notFound:'Not Found',expired:'Expired'},it:{title:'Tracciamento Spedizione',subtitle:'Cerca con numero posizione o container',placeholder:'Nr. Posizione o Nr. Container',btnSearch:'Cerca',statusActive:'IN VIAGGIO',statusDone:'CONSEGNATO',labelPos:'Pos:',labelTrip:'Nr. Viaggio:',labelRoute:'Percorso',labelDriver:'Autista',labelPlate:'Veicolo',labelTrailer:'Rimorchio',labelKm:'KM Totali',labelStart:'Partenza',labelEnd:'Consegna',labelPhone:'Tel Autista',labelCall:'Chiama',labelTimeline:'Cronologia Stato',stepLoad:'Caricato',stepOnRoute:'In Viaggio',stepDelivered:'Consegnato',lastQuery:'Ultima ricerca:',totalQuery:'ricerche',shareBtn:'🔗 Condividi',shareCopied:'✓ Copiato',notFound:'Non Trovato',expired:'Scaduto'}};
         let _cqLang='tr',_cqLastTrip=null,_cqLastQ='',_cqQueryCount=0;
-        function setCQLang(lang){_cqLang=lang;['TR','EN','IT'].forEach(l=>{const b=document.getElementById('cqLang'+l);if(b)b.className='text-xs px-2 py-1 rounded font-bold '+(l.toLowerCase()===lang?'bg-blue-500 text-white':'bg-slate-700 text-slate-300');});const ti=document.getElementById('cqTitle');if(ti)ti.textContent=_cqI18n[lang].title;const su=document.getElementById('cqSubtitle');if(su)su.textContent=_cqI18n[lang].subtitle;}
+        function setCQLang(lang){_cqLang=lang;const L=_cqI18n[lang];['TR','EN','IT'].forEach(l=>{const b=document.getElementById('cqLang'+l);if(b)b.className='text-xs px-2 py-1 rounded font-bold '+(l.toLowerCase()===lang?'bg-blue-500 text-white':'bg-slate-700 text-slate-300');});const ti=document.getElementById('cqTitle');if(ti)ti.textContent=L.title;const su=document.getElementById('cqSubtitle');if(su)su.textContent=L.subtitle;const inp=document.getElementById('cqInput');if(inp)inp.placeholder=L.placeholder;const btn=document.getElementById('cqSearchBtn');if(btn)btn.innerHTML='<i class="fa-solid fa-magnifying-glass"></i> '+L.btnSearch;if(_cqLastQ)runCustomerQuery();}
         function cqShareLink(){const q=_cqLastQ;if(!q)return;const url=window.location.href.split('?')[0]+'?sorgu='+encodeURIComponent(q);navigator.clipboard.writeText(url).catch(()=>{});const btn=document.getElementById('cqShareBtn');if(btn){const orig=btn.innerHTML;btn.innerHTML=_cqI18n[_cqLang].shareCopied;setTimeout(()=>btn.innerHTML=orig,2000);}}
         async function runCustomerQuery(){
             const q=(document.getElementById('cqInput').value||'').trim();
@@ -1632,7 +1632,16 @@
     </div>
 
     <div id="panel-AUDITLOG" class="panel-section hidden-panel">
-        <div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"><div><h2 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-shield-halved text-indigo-500 mr-2"></i>Sistem Audit Log</h2></div><div class="flex gap-2 flex-wrap"><button onclick="exportAuditCSV()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2"><i class="fa-solid fa-download"></i> CSV İndir</button><button onclick="clearAuditLogs()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2"><i class="fa-solid fa-trash"></i> Logları Temizle</button></div></div>
+        <div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"><div><h2 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-shield-halved text-indigo-500 mr-2"></i>Sistem Audit Log</h2></div><div class="flex gap-2 flex-wrap"><button onclick="loadSecuritySessions()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2"><i class="fa-solid fa-user-shield"></i> Oturum Güvenliği</button><button onclick="exportAuditCSV()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2"><i class="fa-solid fa-download"></i> CSV İndir</button><button onclick="clearAuditLogs()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2"><i class="fa-solid fa-trash"></i> Logları Temizle</button></div></div>
+
+        <!-- Oturum Güvenliği Paneli -->
+        <div id="securitySessionsBox" class="hidden glass-card p-5 mb-5 border-l-4 border-amber-500">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-user-shield text-amber-500"></i> Oturum Güvenliği</h3>
+                <button onclick="document.getElementById('securitySessionsBox').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+            </div>
+            <div id="securitySessionsList"><p class="text-slate-400 text-sm">Yükleniyor...</p></div>
+        </div>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
             <div class="glass-card p-4 border-l-4 border-indigo-500"><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Toplam İşlem</p><p class="text-2xl font-black text-indigo-700" id="auditStatTotal">0</p></div>
             <div class="glass-card p-4 border-l-4 border-emerald-500"><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Bugün</p><p class="text-2xl font-black text-emerald-700" id="auditStatToday">0</p></div>
@@ -2032,6 +2041,34 @@
         
         setupAuditLogListener(); 
         addLog('Kullanıcı Giriş Yaptı',user.username,0,'','auth',{category:'auth',severity:'low',detail:`${user.username} sisteme girdi`,affected:user.username}); 
+        // Güvenlik: IP, tarayıcı, cihaz, saat kaydı
+        (async()=>{
+            try{
+                const ua=navigator.userAgent;
+                const br=ua.includes('Chrome')?'Chrome':ua.includes('Safari')?'Safari':ua.includes('Firefox')?'Firefox':ua.includes('Edge')?'Edge':'Diğer';
+                const device=navigator.maxTouchPoints>0?'📱 Mobil':'🖥️ Masaüstü';
+                const now=new Date();
+                const hour=now.getHours();
+                const isSuspicious=hour>=0&&hour<6;
+                let ip='Bilinmiyor';
+                try{const r=await fetch('https://api.ipify.org?format=json');const d=await r.json();ip=d.ip||'Bilinmiyor';}catch(e){}
+                const sessionData={
+                    username:user.username, role:user.role, ip, browser:br, device,
+                    loginTime:now.toISOString(), loginTimeLocal:now.toLocaleString('tr-TR'),
+                    isSuspicious, userAgent:ua.substring(0,150),
+                    timestamp:firebase.firestore.FieldValue.serverTimestamp()
+                };
+                await db.collection('kare_sessions').add(sessionData);
+                if(isSuspicious){
+                    addLog('⚠️ Şüpheli Giriş - Gece Yarısı',user.username,0,'','auth',{
+                        category:'auth',severity:'critical',
+                        detail:`Gece ${now.toTimeString().slice(0,5)}'de giriş! IP: ${ip} | ${br} | ${device}`,
+                        affected:user.username
+                    });
+                }
+                await cUsers.doc(user.uid).update({lastLoginTime:now.toISOString(),lastLoginIP:ip,lastLoginBrowser:br,lastLoginDevice:device});
+            }catch(e){console.log('Session log:',e);}
+        })();
         
         let rolesMap={'ADMIN':['YÖNETİCİ MODU','text-rose-500'],'OPS':['OPERASYON MODU','text-emerald-600'],'OPS_MANAGER':['OPS MÜDÜR MODU','text-teal-600'],'ACCOUNTING':['MUHASEBE MODU','text-blue-600'],'FLEET':['FİLO YÖNETİM MODU','text-cyan-600'],'PATRON':['PATRON MODU','text-amber-500']}; 
         if(rolesMap[currentRole]){
@@ -2328,6 +2365,51 @@
     function renderAuditLog(){const fU=document.getElementById('auditFilterUser')?.value||''; const fC=document.getElementById('auditFilterCategory')?.value||''; const fS=document.getElementById('auditFilterStart')?.value||''; const fE=document.getElementById('auditFilterEnd')?.value||''; const fQ=(document.getElementById('auditFilterSearch')?.value||'').toLowerCase(); const uSel=document.getElementById('auditFilterUser'); if(uSel){const cur=uSel.value; const acts=[...new Set(auditLogs.map(l=>l.actor).filter(Boolean))].sort(); uSel.innerHTML='<option value="">Tümü</option>'+acts.map(a=>`<option value="${esc(a)}" ${a===cur?'selected':''}>${esc(a)}</option>`).join('');} let filtered=auditLogs.filter(l=>{if(fU&&l.actor!==fU)return false; if(fC&&l.category!==fC)return false; if(fS&&l.isoDate&&l.isoDate<fS)return false; if(fE&&l.isoDate&&l.isoDate>fE)return false; if(fQ){const h=[l.actor,l.action,l.detail,l.affected,l.driver,l.status].join(' ').toLowerCase(); if(!h.includes(fQ))return false;} return true;}); const shown=filtered.slice(0,auditPage); const tbody=document.getElementById('auditLogTable'); tbody.innerHTML=''; if(shown.length===0){tbody.innerHTML=`<tr><td colspan="7" class="p-8 text-center text-slate-400">Kayıt yok.</td></tr>`;}else{shown.forEach(l=>{const cM=AUDIT_CATEGORY_META[l.category]||AUDIT_CATEGORY_META.system; const sM=SEVERITY_META[l.severity]||SEVERITY_META.medium; const amt=l.amount?`<span class="font-bold">${parseFloat(l.amount).toLocaleString('tr-TR')}</span> ${l.currency||''}`:'-'; const bg=l.severity==='critical'?'bg-rose-50':''; const ts=l.isoDate?`${l.isoDate} ${l.isoTime||''}`:l.date; tbody.innerHTML+=`<tr class="${bg} border-b border-slate-100"><td class="p-3 text-xs">${ts}</td><td class="p-3 font-bold">${esc(l.actor||'-')}</td><td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${cM.color}">${cM.label}</span></td><td class="p-3 text-sm">${esc(l.detail||l.action)}</td><td class="p-3 text-xs">${esc(l.affected||'-')}</td><td class="p-3 text-right">${amt}</td><td class="p-3 text-center"><span class="px-2 py-0.5 rounded text-[10px] ${sM.color}">${sM.label}</span></td></tr>`;});} document.getElementById('auditLogCount').innerText=`${shown.length} / ${filtered.length}`; document.getElementById('auditLoadMore').classList.toggle('hidden',shown.length>=filtered.length);}
     function loadMoreAuditLogs(){auditPage+=50; renderAuditLog();}
     function clearAuditFilters(){document.getElementById('auditFilterUser').value=''; document.getElementById('auditFilterCategory').value=''; document.getElementById('auditFilterStart').value=''; document.getElementById('auditFilterEnd').value=''; document.getElementById('auditFilterSearch').value=''; auditPage=50; renderAuditLog();}
+    async function loadSecuritySessions(){
+        const box=document.getElementById('securitySessionsBox');
+        const list=document.getElementById('securitySessionsList');
+        box.classList.remove('hidden');
+        list.innerHTML='<p class="text-slate-400 text-sm">Yükleniyor...</p>';
+        try{
+            const snap=await db.collection('kare_sessions').orderBy('timestamp','desc').limit(100).get();
+            if(snap.empty){list.innerHTML='<p class="text-slate-400 text-sm">Henüz oturum kaydı yok.</p>';return;}
+            const sessions=snap.docs.map(d=>({id:d.id,...d.data()}));
+            const now=new Date();
+            const active=sessions.filter(s=>{if(!s.loginTime)return false;return(now-new Date(s.loginTime))<8*60*60*1000;});
+            const suspicious=sessions.filter(s=>s.isSuspicious);
+            list.innerHTML=`
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div class="bg-blue-50 rounded-xl p-3 text-center">
+                        <p class="text-2xl font-black text-blue-600">${sessions.length}</p>
+                        <p class="text-xs text-blue-400 font-bold">Toplam Oturum</p>
+                    </div>
+                    <div class="bg-emerald-50 rounded-xl p-3 text-center">
+                        <p class="text-2xl font-black text-emerald-600">${active.length}</p>
+                        <p class="text-xs text-emerald-400 font-bold">Aktif (8sa)</p>
+                    </div>
+                    <div class="bg-rose-50 rounded-xl p-3 text-center">
+                        <p class="text-2xl font-black text-rose-600">${suspicious.length}</p>
+                        <p class="text-xs text-rose-400 font-bold">⚠️ Şüpheli</p>
+                    </div>
+                </div>
+                <div class="space-y-2 max-h-72 overflow-y-auto">
+                    ${sessions.map(s=>`
+                        <div class="flex items-start justify-between p-3 rounded-xl border ${s.isSuspicious?'border-rose-200 bg-rose-50':'border-slate-100 bg-white'}">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 flex-wrap mb-1">
+                                    <span class="font-bold text-slate-800 text-sm">${esc(s.username||'-')}</span>
+                                    <span class="text-[10px] px-2 py-0.5 rounded font-bold ${s.role==='ADMIN'?'bg-rose-100 text-rose-700':'bg-slate-100 text-slate-600'}">${esc(s.role||'-')}</span>
+                                    ${s.isSuspicious?'<span class="text-[10px] bg-rose-500 text-white px-2 py-0.5 rounded font-bold animate-pulse">⚠️ Şüpheli</span>':''}
+                                    ${active.find(a=>a.id===s.id)?'<span class="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded font-bold">● Aktif</span>':''}
+                                </div>
+                                <p class="text-xs text-slate-500">🕐 ${esc(s.loginTimeLocal||s.loginTime||'-')}</p>
+                                <p class="text-xs text-slate-400">🌐 ${esc(s.ip||'Bilinmiyor')} · ${esc(s.browser||'-')} · ${esc(s.device||'-')}</p>
+                            </div>
+                        </div>`).join('')}
+                </div>`;
+        }catch(e){list.innerHTML='<p class="text-red-400 text-sm">Hata: '+esc(e.message)+'</p>';}
+    }
+
     function exportAuditCSV(){const rows=[['Tarih','Saat','Yapan','Rol','Kategori','Islem','Etkilenen','Tutar','Para Birimi','Onem'].join(';')]; auditLogs.forEach(l=>{rows.push([l.isoDate||'',l.isoTime||'',`"${l.actor||''}"`,l.actorRole||'',l.category||'',`"${(l.detail||l.action||'').replace(/"/g,"'")}"`,`"${l.affected||l.driver||''}"`,l.amount||'',l.currency||'',l.severity||''].join(';'));}); const blob=new Blob(["\uFEFF"+rows.join("\n")],{type:'text/csv;charset=utf-8;'}); const link=document.createElement('a'); link.href=URL.createObjectURL(blob); link.download=`AuditLog_${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link); showToast('İndirildi','success');}
     
     function opApprove(id){if(currentRole==='ACCOUNTING'&&currentUser!=='Tanju'){showToast('Yetkisiz','error'); return;} const e=expenses.find(x=>x.id===id); cExpenses.doc(id).update({status:'APPROVED',tripId:e?e.tripId:'',approvedBy:loggedInUser?loggedInUser.username:currentUser,approvedAt:new Date().toISOString()}); addLog('Masraf Onaylandı',e?e.driver:'',e?e.amount:0,e?e.currency:'','approved',{category:'expense',severity:'medium',detail:`${e?e.tripName:''} masrafı onaylandı`,affected:e?e.driver:''}); showToast('Onaylandı','success');}

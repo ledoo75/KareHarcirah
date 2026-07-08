@@ -6613,32 +6613,49 @@
             navigator.serviceWorker.register('service-worker.js').catch(err=>console.log(err));
         });
     }
-
 // =================================═════════════════════
-//   KAREKARA SÜRÜCÜ İZİN SİSTEMİ (DİJİTAL İMZA & RESMİ PDF ENTEGRASYONLU v3)
+//   KAREKARA SÜRÜCÜ İZİN SİSTEMİ (ŞİFRESİZ DİREKT İMZA GİRİŞLİ v4)
 // =================================═════════════════════
 (function() {
     const cLeaves = firebase.firestore().collection('kare_leaves');
     let leaves = [];
 
-    // URL parametresini kontrol et: Eğer "?izin_imza=ID" parametresi varsa sistemi imza moduna geçir
+    // URL parametresini kontrol et
     const urlParams = new URLSearchParams(window.location.search);
-    const targetLeaveId = urlModelCheck();
+    const targetLeaveId = urlParams.get('izin_imza');
 
-    function urlParam(name) {
-        const results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
-        return results ? decodeURIComponent(results[1]) : null;
+    if (targetLeaveId) {
+        // Şifre sorma ekranını, splash ekranını ve tır animasyonunu CSS !important ile kesin olarak engelliyoruz
+        const style = document.createElement('style');
+        style.innerHTML = `
+            #loginScreen, #splashScreen, #truckIntro, #mainHeader, #mainContent, .modal, .modal-overlay {
+                display: none !important;
+                opacity: 0 !important;
+                visibility: hidden !important;
+                pointer-events: none !important;
+                z-index: -9999 !important;
+            }
+            #publicSignatureContainer {
+                display: flex !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                z-index: 99999 !important;
+                background-color: #0f172a !important;
+            }
+            body {
+                overflow: auto !important;
+                position: relative !important;
+                height: auto !important;
+            }
+        `;
+        document.head.appendChild(style);
     }
 
-    function urlModelCheck() {
-        return urlParam('izin_imza');
-    }
-
-    // 2. HTML Arayüzünü otomatik oluştur ve "panel-USERS" içerisine yerleştir (Normal yönetim ekranı için)
+    // HTML Arayüzünü otomatik oluştur ve "panel-USERS" içerisine yerleştir
     document.addEventListener("DOMContentLoaded", function() {
         if (targetLeaveId) {
-            // İmzalama modundaysak yönetim ekranlarını ve splash screenleri gizleyip temiz imza sayfasını yükle
-            setTimeout(injectPublicSignatureScreen, 300);
+            // İmzalama modundaysak yönetim ekranlarını bloke edip temiz imza sayfasını yükle
+            injectPublicSignatureScreen();
             return;
         }
 
@@ -6650,7 +6667,7 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                     <div>
                         <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-calendar-check text-emerald-500"></i> Sürücü İzin Yönetimi</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">Sürücülerin izin planlarını düzenleyin, personellere imza için link gönderin ve çakışmaları anlık izleyin.</p>
+                        <p class="text-xs text-slate-500 mt-0.5">Sürücülerin izin ve tatil planlarını düzenleyin, Excel'den yükleyin ve çakışmaları otomatik izleyin. (Kayıtlı şoförlerden bağımsızdır)</p>
                     </div>
                     <div class="flex gap-2 flex-wrap">
                         <button onclick="downloadLeaveTemplate()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-download"></i> Şablon İndir</button>
@@ -7014,7 +7031,6 @@
         } catch(e) { showToast('Hata: '+e.message,'error'); }
     };
 
-    // İmzalama Linkini Kopyalama Aracı
     window.copySignatureLink = function(id) {
         const link = window.location.href.split('?')[0] + '?izin_imza=' + id;
         navigator.clipboard.writeText(link).then(() => {
@@ -7024,7 +7040,6 @@
         });
     };
 
-    // Tabloya Çizdirme & Link Paylaşım Butonları Entegrasyonu
     window.renderLeaves = function() {
         const tbody = document.getElementById('leaveTableBody');
         if(!tbody) return;
@@ -7086,7 +7101,7 @@
                 <td class="p-2.5 px-3 text-right">
                     <div class="flex gap-1 justify-end">
                         <button onclick="copySignatureLink('${l.id}')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" title="İmza Linkini Kopyala"><i class="fa-solid fa-link"></i> Paylaş</button>
-                        ${l.signature ? `<button onclick="downloadSignedLeavePDF('${l.id}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" title="İmzalı Resmi İzin Kağıdı PDF'ini İndir"><i class="fa-solid fa-file-pdf"></i> PDF</button>` : ''}
+                        ${l.signature ? `<button onclick="downloadSignedLeavePDF('${l.id}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" title="Resmi PDF İndir"><i class="fa-solid fa-file-pdf"></i> PDF</button>` : ''}
                         <button onclick="deleteLeave('${l.id}', '${esc(l.driver)}', '${l.startDate}', '${l.endDate}')" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-2 py-1 rounded text-[10px] font-bold transition">Sil</button>
                     </div>
                 </td>
@@ -7094,14 +7109,12 @@
         }).join('');
     };
 
-    // 6. SÜRÜCÜ İÇİN HERHANGİ BİR ŞİFRE GEREKTİRMEYEN GENEL İMZALAMA EKRANI
+    // Sürücü İmza Toplama Ekranı Kurulumu
     function injectPublicSignatureScreen() {
-        // Tüm ana ekranları ve login kutularını gizle
         ['splashScreen', 'truckIntro', 'loginScreen', 'mainHeader', 'mainContent'].forEach(id => {
             const el = document.getElementById(id); if (el) el.style.display = 'none';
         });
 
-        // İmza ekranı konteyneri oluştur
         const container = document.createElement('div');
         container.id = 'publicSignatureContainer';
         container.className = 'min-h-screen bg-slate-900 flex items-center justify-center p-4 text-slate-100';
@@ -7130,13 +7143,13 @@
                             <div><p class="text-slate-400 text-xs">Toplam İzin:</p><p class="font-black text-indigo-600" id="pubDuration"></p></div>
                             <div><p class="text-slate-400 text-xs">Başlangıç:</p><p class="font-bold text-slate-700" id="pubStart"></p></div>
                             <div><p class="text-slate-400 text-xs">Mazeret / Tür:</p><p class="font-semibold text-slate-700" id="pubDesc"></p></div>
-                            <div class="col-span-2 border-t border-slate-200 pt-2"><p class="text-slate-400 text-xs">Bitiş ve İşbaşı Tarihi:</p><p class="font-bold text-emerald-600" id="pubEnd"></p></div>
+                            <div class="col-span-2 border-t border-slate-200 pt-2"><p class="text-slate-400 text-xs">Bitiş Tarihi:</p><p class="font-bold text-emerald-600" id="pubEnd"></p></div>
                         </div>
                     </div>
 
                     <div class="space-y-1.5">
                         <label class="text-xs font-bold text-slate-500 uppercase block">Adınız Soyadınız (Doğrulama)</label>
-                        <input type="text" id="pubSignerName" required placeholder="Adınızı ve Soyadınızı Yazın" class="input-style border border-slate-200 focus:border-emerald-500 focus:ring-emerald-200">
+                        <input type="text" id="pubSignerName" required placeholder="Adınızı ve Soyadınızı Yazın" class="input-style border border-slate-200 focus:border-emerald-500">
                     </div>
 
                     <div class="space-y-1.5">
@@ -7162,7 +7175,7 @@
         `;
         document.body.appendChild(container);
 
-        // Firebase'den izni oku
+        // Firebase'den ilgili izni çek
         cLeaves.doc(targetLeaveId).get().then(doc => {
             document.getElementById('pubLoading').style.display = 'none';
             if (doc.exists) {
@@ -7174,211 +7187,181 @@
                 document.getElementById('pubDesc').innerText = l.description || 'Yıllık İzin';
                 document.getElementById('pubDuration').innerText = getLeaveDurationDays(l.startDate, l.endDate) + ' Gün';
                 document.getElementById('pubSignerName').value = l.driver;
-
-                initSignaturePad();
+                initCanvas();
             } else {
-                document.getElementById('pubLoading').innerHTML = `<p class="text-rose-500 font-bold">Geçersiz veya silinmiş bir izin linki!</p>`;
+                document.getElementById('pubLoading').innerHTML = '<span class="text-rose-500 font-bold">Kayıt Bulunamadı veya İzin Silinmiş!</span>';
             }
         }).catch(err => {
-            document.getElementById('pubLoading').innerHTML = `<p class="text-rose-500 font-bold">Bağlantı Hatası: ${err.message}</p>`;
+            document.getElementById('pubLoading').innerHTML = '<span class="text-rose-500 font-bold">Bağlantı Hatası: ' + esc(err.message) + '</span>';
         });
     }
 
-    // Islak İmza Canvas Çizim Algoritması (Mobil Dokunmatik Duyarlı)
-    let drawing = false;
-    let canvas, ctx;
-
-    function initSignaturePad() {
+    // Dokunmatik uyumlu çizim tahtası (Canvas) kurulumu
+    let canvas, ctx, drawing = false;
+    function initCanvas() {
         canvas = document.getElementById('signatureCanvas');
         if (!canvas) return;
-        
-        // Canvas çözünürlüğünü netleştirelim
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width;
-        canvas.height = rect.height;
-
         ctx = canvas.getContext('2d');
-        ctx.strokeStyle = '#0F172A';
-        ctx.lineWidth = 3.5;
+        
+        // Boyutlandırma
+        const rect = canvas.parentNode.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height || 176;
+
+        ctx.strokeStyle = '#020617';
+        ctx.lineWidth = 3;
         ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
 
-        function getPos(e) {
-            const r = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: clientX - r.left, y: clientY - r.top };
-        }
+        // Fare olayları
+        canvas.addEventListener('mousedown', e => { drawing = true; draw(e); });
+        canvas.addEventListener('mousemove', draw);
+        window.addEventListener('mouseup', () => drawing = false);
 
-        function startDrawing(e) {
+        // Dokunmatik olaylar (Mobil korumalı)
+        canvas.addEventListener('touchstart', e => {
             drawing = true;
-            const pos = getPos(e);
-            ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);
-        }
-
-        function draw(e) {
-            if (!drawing) return;
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
             e.preventDefault();
-            const pos = getPos(e);
-            ctx.lineTo(pos.x, pos.y);
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', e => {
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+            e.preventDefault();
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', () => drawing = false);
+    }
+
+    function draw(e) {
+        if (!drawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        if (e.type === 'mousedown') {
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
             ctx.stroke();
         }
-
-        function stopDrawing() { drawing = false; }
-
-        canvas.addEventListener('mousedown', startDrawing);
-        canvas.addEventListener('mousemove', draw);
-        window.addEventListener('mouseup', stopDrawing);
-
-        canvas.addEventListener('touchstart', startDrawing);
-        canvas.addEventListener('touchmove', draw);
-        canvas.addEventListener('touchend', stopDrawing);
     }
 
     window.clearSignatureCanvas = function() {
-        if (canvas && ctx) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
+        if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
     };
 
-    // Sürücü Onaylama ve PDF Alma Tetikleyicisi
+    // Dijital İmzayı Kaydet
     window.submitDigitalSignature = async function() {
         const signerName = document.getElementById('pubSignerName').value.trim();
-        if (!signerName) { alert('Lütfen ad soyad kısmını onaylayın!'); return; }
+        if (!signerName) { alert("Lütfen adınızı ve soyadınızı yazın."); return; }
+        
+        // Boş tuval kontrolü
+        const buffer = new Uint32Array(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
+        const isBlank = !buffer.some(color => color !== 0);
+        if (isBlank) { alert("Lütfen imza alanına imzanızı çizin."); return; }
 
-        // Boş imza koruması
-        const blank = document.createElement('canvas');
-        blank.width = canvas.width; blank.height = canvas.height;
-        if (canvas.toDataURL() === blank.toDataURL()) {
-            alert('Lütfen imza alanını imzalamadan onaylamayınız!');
-            return;
-        }
-
-        const signatureBase64 = canvas.toDataURL();
-        const signedAtStr = new Date().toISOString();
+        const sigData = canvas.toDataURL('image/png');
 
         try {
-            document.getElementById('pubMainForm').classList.add('opacity-40');
-            // Firebase veritabanına sürücü imzasını base64 görsel olarak kaydet
+            document.getElementById('pubMainForm').classList.add('hidden');
+            document.getElementById('pubLoading').style.display = 'block';
+            document.getElementById('pubLoading').innerHTML = '<p class="text-slate-500 text-sm animate-pulse">İmzanız sunucuya yükleniyor...</p>';
+
+            // Belgeyi güncelle (Sadece izin kimliğine göre)
             await cLeaves.doc(targetLeaveId).update({
-                signature: signatureBase64,
-                signedByName: signerName,
-                signedAt: signedAtStr
+                signature: sigData,
+                signedAt: new Date().toISOString(),
+                driver: signerName // Sürücü ismini günceller
             });
 
-            // Başarılı ekranına geçir
-            document.getElementById('pubMainForm').style.display = 'none';
+            document.getElementById('pubLoading').style.display = 'none';
             document.getElementById('pubSuccess').classList.remove('hidden');
 
-            // İmzalanmış PDF belgesini otomatik oluştur ve indir
-            downloadSignedLeavePDF(targetLeaveId, {
-                id: targetLeaveId,
+            // Başarılı olduğunda otomatik PDF dökümünü indir
+            downloadSignedLeavePDFDirectly({
                 driver: signerName,
-                signature: signatureBase64,
-                signedAt: signedAtStr
+                startDate: document.getElementById('pubStart').innerText,
+                endDate: document.getElementById('pubEnd').innerText,
+                description: document.getElementById('pubDesc').innerText,
+                signature: sigData
             });
 
-        } catch(e) {
-            alert('Onaylama sırasında bir hata oluştu: ' + e.message);
-            document.getElementById('pubMainForm').classList.remove('opacity-40');
+        } catch (e) {
+            alert("İmza kaydedilemedi: " + e.message);
+            document.getElementById('pubMainForm').classList.remove('hidden');
+            document.getElementById('pubLoading').style.display = 'none';
         }
     };
 
-    // 7. YÖNETİCİ VEYA SÜRÜCÜ İÇİN RESMİ PDF İZİN FORMU OLUŞTURUCU (pdfMake ENTEGRASYONLU)
-    window.downloadSignedLeavePDF = async function(id, loadedData = null) {
-        let l = loadedData;
-        if (!l) {
-            // Eğer veritabanından çekilmemişse yönetim tablosundan indirirken çekelim
-            const doc = await cLeaves.doc(id).get();
-            if (!doc.exists) return;
-            l = doc.data();
-            l.id = doc.id;
-        }
-
-        const totalDays = getLeaveDurationDays(l.startDate, l.endDate);
-        const signedDateStr = l.signedAt ? new Date(l.signedAt).toLocaleDateString('tr-TR') : new Date().toLocaleDateString('tr-TR');
-
+    // Sürücüye imzadan hemen sonra doğrudan indirtilen PDF fonksiyonu
+    function downloadSignedLeavePDFDirectly(l) {
+        const today = new Date().toLocaleDateString('tr-TR');
         const docDefinition = {
             pageSize: 'A4',
-            pageMargins: [40, 40, 40, 40],
-            defaultStyle: { font: 'Roboto', fontSize: 10, lineHeight: 1.4 },
+            pageMargins: [30, 30, 30, 40],
+            defaultStyle: { font: 'Roboto', fontSize: 8.5, lineHeight: 1.35 },
             content: [
-                // Başlık Bölümü
-                {
-                    columns: [
-                        {
-                            stack: [
-                                { text: 'karekara', fontSize: 24, bold: true, color: '#10B981', characterSpacing: -1 },
-                                { text: 'ULUSLARARASI LOJİSTİK VE FİLO YÖNETİMİ', fontSize: 7, color: '#64748B', characterSpacing: 1.5, margin: [0, 2, 0, 0] }
-                            ], width: '*'
-                        },
-                        {
-                            stack: [
-                                { text: 'PERSONEL İZİN FORMU', fontSize: 13, bold: true, color: '#0F172A', alignment: 'right' },
-                                { text: 'Form No: KK-IZN/' + l.id.substring(0,6).toUpperCase(), fontSize: 8, color: '#94A3B8', alignment: 'right' }
-                            ], width: 'auto'
-                        }
-                    ], margin: [0, 0, 0, 15]
-                },
-                { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1.5, lineColor: '#10B981' }], margin: [0, 0, 0, 20] },
-
-                // Resmi Bildirim Metni
+                { text: 'karekara — FİLO & HARCIRAH YÖNETİMİ', fontSize: 14, bold: true, color: '#0F172A' },
+                { text: 'RESMİ İZİN BELGESİ (İMZALANDI)', fontSize: 11, bold: true, color: '#10B981', margin: [0, 4, 0, 12] },
+                { canvas: [{ type: 'rect', x: 0, y: 0, w: 535, h: 2, color: '#10B981' }], margin: [0, 0, 0, 15] },
                 { text: 'KAREKARA LOJİSTİK MÜDÜRLÜĞÜ\'NE', style: 'subheader', bold: true, margin: [0, 0, 0, 10] },
-                {
-                    text: [
-                        'Aşağıda bilgileri yer alan personelin, belirtilen tarihler arasında izinli sayılmasını; izninin bitimini takip eden ilk iş gününde işbaşı yapacağını beyan ve taahhüt ederim. İşbu form sürücünün beyanı ve dijital rızası doğrultusunda sisteme mühürlenmiştir.'
-                    ], margin: [0, 0, 0, 20], color: '#334155'
-                },
-
-                // Bilgi Tablosu
+                { text: 'Aşağıda bilgileri yer alan personelin, belirtilen tarihler arasında izinli sayılmasını beyan ederim.', margin: [0, 0, 0, 15] },
                 {
                     table: {
                         widths: [130, '*'],
                         body: [
-                            [{ text: 'PERSONEL ADI SOYADI', fillColor: '#F1F5F9', bold: true, margin: [8, 6, 8, 6] }, { text: l.driver, margin: [8, 6, 8, 6] }],
-                            [{ text: 'İZİN BAŞLANGIÇ TARİHİ', fillColor: '#F1F5F9', bold: true, margin: [8, 6, 8, 6] }, { text: l.startDate, margin: [8, 6, 8, 6] }],
-                            [{ text: 'İZİN BİTİŞ TARİHİ', fillColor: '#F1F5F9', bold: true, margin: [8, 6, 8, 6] }, { text: l.endDate, margin: [8, 6, 8, 6] }],
-                            [{ text: 'TOPLAM İZİN SÜRESİ', fillColor: '#F1F5F9', bold: true, margin: [8, 6, 8, 6] }, { text: totalDays + ' GÜN', bold: true, color: '#10B981', margin: [8, 6, 8, 6] }],
-                            [{ text: 'MAZERET / İZİN TÜRÜ', fillColor: '#F1F5F9', bold: true, margin: [8, 6, 8, 6] }, { text: l.description || 'Yıllık İzin', margin: [8, 6, 8, 6] }],
-                            [{ text: 'İLAN/İMZA TARİHİ', fillColor: '#F1F5F9', bold: true, margin: [8, 6, 8, 6] }, { text: signedDateStr, margin: [8, 6, 8, 6] }]
+                            [{ text: 'PERSONEL ADI', fillColor: '#F1F5F9', bold: true }, { text: l.driver }],
+                            [{ text: 'İZİN BAŞLANGIÇ', fillColor: '#F1F5F9', bold: true }, { text: l.startDate }],
+                            [{ text: 'İZİN BİTİŞ', fillColor: '#F1F5F9', bold: true }, { text: l.endDate }],
+                            [{ text: 'MAZERET / AÇIKLAMA', fillColor: '#F1F5F9', bold: true }, { text: l.description }],
+                            [{ text: 'İMZA TARİHİ', fillColor: '#F1F5F9', bold: true }, { text: today }]
                         ]
-                    },
-                    layout: {
-                        hLineWidth: () => 0.5, vLineWidth: () => 0.5,
-                        hLineColor: () => '#E2E8F0', vLineColor: () => '#E2E8F0'
-                    },
-                    margin: [0, 0, 0, 30]
+                    }, margin: [0, 0, 0, 30]
                 },
-
-                // İmza Alanları
                 {
                     columns: [
                         {
                             stack: [
-                                { text: 'İZİN TALEP EDEN SÜRÜCÜ', bold: true, alignment: 'center', margin: [0, 0, 0, 5] },
-                                { text: 'Dijital İmzalandı (' + signedDateStr + ')', fontSize: 7, color: '#94A3B8', alignment: 'center', margin: [0, 0, 0, 10] },
-                                l.signature ? { image: l.signature, width: 140, height: 75, alignment: 'center' } : { text: 'İMZA BULUNAMADI', italics: true, color: '#94A3B8', alignment: 'center', margin: [0, 20, 0, 20] },
-                                { text: l.driver, bold: true, alignment: 'center', margin: [0, 10, 0, 0] }
-                            ], width: '50%'
+                                { text: 'İZİN TALEBİ YAPAN PERSONEL', bold: true, alignment: 'center', margin: [0, 0, 0, 10] },
+                                { image: l.signature, width: 130, height: 70, alignment: 'center' },
+                                { text: l.driver, bold: true, alignment: 'center', margin: [0, 8, 0, 0] }
+                            ]
                         },
                         {
                             stack: [
-                                { text: 'FİRMA YETKİLİSİ ONAY / KAŞE', bold: true, alignment: 'center', margin: [0, 0, 0, 5] },
-                                { text: 'karekara Operasyon Yönetimi', fontSize: 7, color: '#94A3B8', alignment: 'center', margin: [0, 0, 0, 30] },
-                                { canvas: [{ type: 'rect', x: 20, y: 0, w: 180, h: 55, r: 4, lineColor: '#E2E8F0' }] },
-                                { text: 'Kaşe & İmza', fontSize: 8, alignment: 'center', color: '#94A3B8', margin: [0, 5, 0, 0] }
-                            ], width: '50%'
+                                { text: 'ŞİRKET ONAYI / KAŞE', bold: true, alignment: 'center', margin: [0, 0, 0, 10] },
+                                { canvas: [{ type: 'rect', x: 30, y: 0, w: 160, h: 50, r: 4, lineColor: '#E2E8F0' }] }
+                            ]
                         }
                     ]
                 }
             ]
         };
+        pdfMake.createPdf(docDefinition).download(`Resmi_Izin_Formu_${l.driver.replace(/\s+/g,'_')}.pdf`);
+    }
 
-        pdfMake.createPdf(docDefinition).download(`KareKara_Izin_Belgesi_${l.driver.replace(/\s+/g,'_')}.pdf`);
-        showToast('Resmi İzin Belgesi PDF Olarak İndirildi ✓','success');
+    // Tablodan yönetici tıkladığında indirilen imzalı resmi PDF
+    window.downloadSignedLeavePDF = async function(id) {
+        const doc = await cLeaves.doc(id).get();
+        if (doc.exists) {
+            const data = doc.data();
+            data.id = doc.id;
+            downloadSignedLeavePDFDirectly(data);
+        }
     };
 
+    // Şablon Excel İndir
     window.downloadLeaveTemplate = function() {
         if(typeof XLSX==='undefined'){showToast('XLSX yüklenmedi','error');return;}
         const headers = [['Sürücü', 'Başlangıç Tarihi', 'Bitiş Tarihi', 'Açıklama']];
@@ -7394,6 +7377,7 @@
         showToast('Şablon Excel dosyası indirildi ✓','success');
     };
 
+    // Kayıtlı İzinleri Excel Olarak Yedekle
     window.exportLeavesExcel = function() {
         if(typeof XLSX==='undefined'){showToast('XLSX yüklenmedi','error');return;}
         if(!leaves.length) { showToast('Dışa aktarılacak izin kaydı yok!','error'); return; }
@@ -7408,7 +7392,7 @@
             'Oluşturulma Tarihi': l.createdAt || ''
         }));
         const ws = XLSX.utils.json_to_sheet(rows);
-        ws['!cols'] = [{wch:20},{wch:18},{wch:18},{wch:15},{wch:24},{wch:15},{wch:15},{wch:24}];
+        ws['!cols'] = [{wch:20},{wch:18},{wch:18},{wch:24},{wch:15},{wch:15},{wch:24}];
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Kayıtlı İzinler');
         XLSX.writeFile(wb, `KareKara_Aktif_Izinler_${new Date().toISOString().split('T')[0]}.xlsx`);

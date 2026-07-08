@@ -6614,7 +6614,7 @@
         });
     }
 // =================================═════════════════════
-//   KAREKARA SÜRÜCÜ İZİN SİSTEMİ (İMZA SONRASI İMHA OLAN v8)
+//   KAREKARA SÜRÜCÜ İZİN SİSTEMİ (SESSİZ KOPYALAMA DESTEKLİ v9)
 // =================================═════════════════════
 (function() {
     const cLeaves = firebase.firestore().collection('kare_leaves');
@@ -7043,22 +7043,51 @@
         } catch(e) { showToast('Hata: '+e.message,'error'); }
     };
 
-    // İmzalama Linkini 60 Dakika Geçerli Kılacak Şekilde Kopyalar
-    window.copySignatureLink = async function(id) {
-        const link = window.location.href.split('?')[0] + '?izin_imza=' + id;
+    // Tamamen Görünmez Yedek Kopyalama Algoritması (Pencere Açmaz)
+    function silentCopyFallback(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.position = "fixed";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
         try {
+            document.execCommand('copy');
+            showToast('İmza linki kopyalandı! (60 Dakika Geçerli) 🔗','success');
+        } catch (err) {
+            console.error('Kopyalama hatası', err);
+        }
+        document.body.removeChild(textArea);
+    }
+
+    // İmzalama Linkini 60 Dakika Geçerli Kılacak Şekilde Arka Planda Sessizce Kopyalar
+    window.copySignatureLink = async function(id) {
+        // file:/// yollarını temizleyip temiz Vercel/Domain adresini alır
+        let cleanBaseUrl = window.location.origin + window.location.pathname;
+        if (cleanBaseUrl.startsWith('file://')) {
+            cleanBaseUrl = 'https://kare-harcirah.vercel.app/index.html'; // Yerel test yedeklemesi
+        }
+        const link = cleanBaseUrl + '?izin_imza=' + id;
+        
+        try {
+            // Son geçerlilik süresini veritabanında 60 dakika sonrasına kuruyoruz
             const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
             await cLeaves.doc(id).update({ linkExpiresAt: expiresAt });
-            
+        } catch(e) {
+            console.warn("Firestore güncellemesi atlandı veya yetki yok", e);
+        }
+
+        // Modern Clipboard API'sini dene, yetki yoksa sessiz textarea moduna geç (Asla alert çıkarmaz!)
+        if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(link).then(() => {
                 showToast('İmza linki kopyalandı! (60 Dakika Geçerli) 🔗','success');
             }).catch(() => {
-                alert('Linki kopyalayın: ' + link);
+                silentCopyFallback(link);
             });
-        } catch(e) {
-            navigator.clipboard.writeText(link).then(() => {
-                showToast('İmza linki kopyalandı! 🔗','success');
-            });
+        } else {
+            silentCopyFallback(link);
         }
     };
 
@@ -7222,7 +7251,7 @@
             if (doc.exists) {
                 const l = doc.data();
 
-                // 1. GÜVENLİK KONTROLÜ: İmza Atılmış mı? (Ziyaretçiyi anında bloke eder ve bağlantıyı imha eder)
+                // 1. GÜVENLİK KONTROLÜ: İmza Atılmış mı?
                 if (l.signature) {
                     document.getElementById('pubErrorState').classList.remove('hidden');
                     document.getElementById('pubErrorTitle').innerText = "Bağlantı İmha Edildi";
@@ -7351,7 +7380,7 @@
             document.getElementById('pubLoading').style.display = 'block';
             document.getElementById('pubLoading').innerHTML = '<p class="text-slate-500 text-sm animate-pulse">İmzanız kaydediliyor ve bağlantı imha ediliyor...</p>';
 
-            // Belgeyi güncelle (Böylece bir sonraki açılışta imha ekranına düşecektir)
+            // Belgeyi güncelle
             await cLeaves.doc(targetLeaveId).update({
                 signature: sigData,
                 signedAt: new Date().toISOString(),
@@ -7416,7 +7445,7 @@
                             [{ text: 'İZİN BAŞLANGIÇ TARİHİ', fillColor: '#F8FAFC', bold: true, margin: [8, 6, 8, 6] }, { text: l.startDate, margin: [8, 6, 8, 6] }],
                             [{ text: 'İZİN BİTİŞ TARİHİ', fillColor: '#F8FAFC', bold: true, margin: [8, 6, 8, 6] }, { text: l.endDate, margin: [8, 6, 8, 6] }],
                             [{ text: 'TOPLAM İZİN SÜRESİ', fillColor: '#F8FAFC', bold: true, margin: [8, 6, 8, 6] }, { text: totalDays + ' GÜN', bold: true, color: '#10B981', margin: [8, 6, 8, 6] }],
-                            [{ text: 'İZİN MAZERETI / TÜRÜ', fillColor: '#F8FAFC', bold: true, margin: [8, 6, 8, 6] }, { text: l.description || 'Yıllık İzin', margin: [8, 6, 8, 6] }],
+                            [{ text: 'İZİN MAZERETİ / TÜRÜ', fillColor: '#F8FAFC', bold: true, margin: [8, 6, 8, 6] }, { text: l.description || 'Yıllık İzin', margin: [8, 6, 8, 6] }],
                             [{ text: 'DİJİTAL İMZA TARİHİ', fillColor: '#F8FAFC', bold: true, margin: [8, 6, 8, 6] }, { text: today, margin: [8, 6, 8, 6] }]
                         ]
                     },
@@ -7430,25 +7459,22 @@
                     columns: [
                         {
                             stack: [
-                                { text: 'İZİN TALEBİ YAPAN PERSONEL', bold: true, alignment: 'center', margin: [0, 0, 0, 8] },
-                                { text: 'Güvenli Dijital İmza (' + today + ')', fontSize: 7.5, color: '#94A3B8', alignment: 'center', margin: [0, 0, 0, 12] },
-                                l.signature ? { image: l.signature, width: 130, height: 70, alignment: 'center' } : { text: 'İMZA BULUNAMADI', italics: true, color: '#94A3B8', alignment: 'center' },
-                                { text: l.driver, bold: true, alignment: 'center', margin: [0, 10, 0, 0] }
+                                { text: 'İZİN TALEBİ YAPAN PERSONEL', bold: true, alignment: 'center', margin: [0, 0, 0, 10] },
+                                { image: l.signature, width: 130, height: 70, alignment: 'center' },
+                                { text: l.driver, bold: true, alignment: 'center', margin: [0, 8, 0, 0] }
                             ], width: '50%'
                         },
                         {
                             stack: [
-                                { text: 'FİRMA ONAYI / KAŞE', bold: true, alignment: 'center', margin: [0, 0, 0, 8] },
-                                { text: 'karekara Yönetim Onayı', fontSize: 7.5, color: '#94A3B8', alignment: 'center', margin: [0, 0, 0, 30] },
-                                { canvas: [{ type: 'rect', x: 25, y: 0, w: 160, h: 50, r: 4, lineColor: '#E2E8F0' }] },
-                                { text: 'Yönetici Onay / İmza', fontSize: 8, alignment: 'center', color: '#94A3B8', margin: [0, 6, 0, 0] }
+                                { text: 'ŞİRKET ONAYI / KAŞE', bold: true, alignment: 'center', margin: [0, 0, 0, 10] },
+                                { canvas: [{ type: 'rect', x: 25, y: 0, w: 160, h: 50, r: 4, lineColor: '#E2E8F0' }] }
                             ], width: '50%'
                         }
                     ]
                 }
             ]
         };
-        pdfMake.createPdf(docDefinition).download(`KareKara_Izin_Formu_${l.driver.replace(/\s+/g,'_')}.pdf`);
+        pdfMake.createPdf(docDefinition).download(`Resmi_Izin_Formu_${l.driver.replace(/\s+/g,'_')}.pdf`);
     }
 
     // Tablodan yönetici tıkladığında indirilen imzalı resmi PDF

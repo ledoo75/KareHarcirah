@@ -6613,6 +6613,502 @@
             navigator.serviceWorker.register('service-worker.js').catch(err=>console.log(err));
         });
     }
+// =================================═════════════════════
+//   KAREKARA SÜRÜCÜ İZİN SİSTEMİ (İLERİ VERSİYON - ANALİTİK UYARILI)
+// =================================═════════════════════
+(function() {
+    // 1. Firebase koleksiyonu ve durum değişkeni
+    const cLeaves = firebase.firestore().collection('kare_leaves');
+    let leaves = [];
+
+    // 2. HTML Arayüzünü otomatik oluştur ve "panel-USERS" içerisine yerleştir
+    document.addEventListener("DOMContentLoaded", function() {
+        const usersPanel = document.getElementById('panel-USERS');
+        if (usersPanel) {
+            const card = document.createElement('div');
+            card.className = "glass-card p-5 border-l-4 border-emerald-500 lg:col-span-3 mt-6";
+            card.innerHTML = `
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-calendar-check text-emerald-500"></i> Sürücü İzin Yönetimi</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Sürücülerin izin ve tatil planlarını düzenleyin, Excel'den yükleyin ve çakışmaları otomatik izleyin. (Kayıtlı şoförlerden bağımsızdır)</p>
+                    </div>
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="downloadLeaveTemplate()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-download"></i> Şablon İndir</button>
+                        <label class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                            <i class="fa-solid fa-file-excel"></i> Excel'den Yükle
+                            <input type="file" id="leaveExcelInput" accept=".xlsx, .xls" class="hidden" onchange="importLeaveExcel(event)">
+                        </label>
+                        <button onclick="exportLeavesExcel()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-file-export"></i> Dışa Aktar</button>
+                    </div>
+                </div>
+
+                <!-- Manuel Hızlı Giriş (Serbest metin girişli ve otomatik tamamlama önerili) -->
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Hızlı İzin Tanımla</p>
+                    <form id="manualLeaveForm" onsubmit="addManualLeave(event); return false;" class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                        <div>
+                            <input type="text" id="leaveDriver" list="leaveDriverDatalist" required placeholder="Personel / Şoför Adı Yazın" class="w-full input-style text-xs font-bold">
+                            <datalist id="leaveDriverDatalist"></datalist>
+                        </div>
+                        <input type="date" id="leaveStart" required class="input-style text-xs" title="Başlangıç Tarihi">
+                        <input type="date" id="leaveEnd" required class="input-style text-xs" title="Bitiş Tarihi">
+                        <div class="flex gap-1.5">
+                            <input type="text" id="leaveDesc" placeholder="Açıklama / İzin Türü" class="input-style text-xs flex-1">
+                            <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 rounded-lg text-xs font-bold shrink-0"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Anlık Çakışma Uyarı Paneli -->
+                <div id="leaveConflictAlerts" class="hidden bg-rose-50 border border-rose-200 text-rose-800 rounded-xl p-4 mb-4">
+                    <div class="flex gap-2 items-start">
+                        <i class="fa-solid fa-triangle-exclamation text-rose-500 text-lg mt-0.5 shrink-0"></i>
+                        <div class="flex-1">
+                            <p class="font-bold text-sm">⚠️ Çakışma / Çift İzin Kaydı Engellendi!</p>
+                            <p class="text-xs opacity-90 mb-2">Girilen tarihlerde çakışan izin kayıtları listelenmektedir:</p>
+                            <ul id="leaveConflictList" class="list-disc pl-4 text-xs font-semibold space-y-1"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- İzin Listesi Tablosu -->
+                <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-60 overflow-y-auto">
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-slate-800 text-white font-bold uppercase sticky top-0">
+                            <tr>
+                                <th class="p-2.5 px-3">Sürücü / Personel</th>
+                                <th class="p-2.5 px-3">Başlangıç</th>
+                                <th class="p-2.5 px-3">Bitiş</th>
+                                <th class="p-2.5 px-3">Açıklama</th>
+                                <th class="p-2.5 px-3 text-center">Durum</th>
+                                <th class="p-2.5 px-3 text-right">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaveTableBody" class="divide-y divide-slate-100 bg-white text-slate-700">
+                            <tr><td colspan="6" class="p-4 text-center text-slate-400">Yükleniyor...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            usersPanel.appendChild(card);
+            if (leaves.length > 0) renderLeaves();
+        }
+    });
+
+    // 3. setupApp fonksiyonunu dinleyerek Firestore entegrasyonunu başlatıyoruz
+    const originalSetupApp = window.setupApp;
+    window.setupApp = function(user) {
+        if (originalSetupApp) originalSetupApp(user);
+        
+        if (!window._leavesListenerActive) {
+            window._leavesListenerActive = true;
+            cLeaves.orderBy('startDate','asc').onSnapshot(snap => {
+                leaves = snap.docs.map(d => ({id:d.id, ...d.data()}));
+                renderLeaves();
+                updateDriverDropdowns();
+            }, err => console.error("İzin verileri çekilemedi:", err));
+        }
+    };
+
+    // 4. updateDriverDropdowns fonksiyonunu dinleyerek öneri datalistini dolduruyoruz
+    const originalUpdateDriverDropdowns = window.updateDriverDropdowns;
+    window.updateDriverDropdowns = function() {
+        if (originalUpdateDriverDropdowns) originalUpdateDriverDropdowns();
+        const dl = document.getElementById('leaveDriverDatalist');
+        if (dl) {
+            dl.innerHTML = '';
+            getDrivers().forEach(d => {
+                dl.innerHTML += `<option value="${esc(d)}">`;
+            });
+        }
+    };
+
+    // 5. Harf/Karakter toleranslı ve Tarih Formatı bağımsız koruma fonksiyonları
+    function normalizeTurkishStr(str) {
+        if (!str) return '';
+        return str.trim()
+            .replace(/İ/g, 'i')
+            .replace(/I/g, 'i')
+            .replace(/ı/g, 'i')
+            .replace(/ö/g, 'o')
+            .replace(/Ö/g, 'o')
+            .replace(/ü/g, 'u')
+            .replace(/Ü/g, 'u')
+            .replace(/ç/g, 'c')
+            .replace(/Ç/g, 'c')
+            .replace(/ğ/g, 'g')
+            .replace(/Ğ/g, 'g')
+            .replace(/ş/g, 's')
+            .replace(/Ş/g, 's')
+            .toLowerCase();
+    }
+
+    // Herhangi bir tarih formatını sayısal milisaniyeye (Zaman Damgası) çevirir
+    function getMidnightTimestamp(val) {
+        if (!val) return 0;
+        val = String(val).trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+            return new Date(val + 'T00:00:00').getTime();
+        }
+        const dmy = val.match(/^(\d{1,2})[\.\/-](\d{1,2})[\.\/-](\d{4})$/);
+        if (dmy) {
+            const formatted = `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`;
+            return new Date(formatted + 'T00:00:00').getTime();
+        }
+        return new Date(val).getTime() || 0;
+    }
+
+    // İki tarih arasındaki toplam gün sayısını bulur (Sınırlar dahil)
+    function getLeaveDurationDays(start, end) {
+        const s = getMidnightTimestamp(start);
+        const e = getMidnightTimestamp(end);
+        if (!s || !e || e < s) return 0;
+        return Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
+    }
+
+    // İki tarih aralığının kesiştiği çakışan gün sayısını hesaplar
+    function getOverlapDays(start1, end1, start2, end2) {
+        const s1 = getMidnightTimestamp(start1);
+        const e1 = getMidnightTimestamp(end1);
+        const s2 = getMidnightTimestamp(start2);
+        const e2 = getMidnightTimestamp(end2);
+
+        const overlapStart = Math.max(s1, s2);
+        const overlapEnd = Math.min(e1, e2);
+
+        if (overlapEnd >= overlapStart) {
+            return Math.ceil((overlapEnd - overlapStart) / (1000 * 60 * 60 * 24)) + 1;
+        }
+        return 0;
+    }
+
+    // Gelen tarihi YYYY-MM-DD standart formatına dönüştürür
+    function formatDateStandard(val) {
+        if (!val) return '';
+        val = String(val).trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+        const dmy = val.match(/^(\d{1,2})[\.\/-](\d{1,2})[\.\/-](\d{4})$/);
+        if (dmy) {
+            return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`;
+        }
+        return val;
+    }
+
+    // Gelişmiş Çakışma Kontrolü (Aynı kişi engeli ve Farklı kişi uyarısı)
+    window.checkLeaveConflict = function(driver, startDate, endDate, ignoreId = null) {
+        const normDriver = normalizeTurkishStr(driver);
+        const startTs = getMidnightTimestamp(startDate);
+        const endTs = getMidnightTimestamp(endDate);
+
+        if (!normDriver || !startTs || !endTs) return null;
+
+        // 1. Kademe: Aynı kişinin izinlerinde çakışma var mı? (Kesin Engel)
+        const sameDriverConflict = leaves.find(l => {
+            if (l.id === ignoreId) return false;
+            if (normalizeTurkishStr(l.driver) !== normDriver) return false;
+            
+            const lStartTs = getMidnightTimestamp(l.startDate);
+            const lEndTs = getMidnightTimestamp(l.endDate);
+            return (lStartTs <= endTs) && (lEndTs >= startTs);
+        });
+
+        if (sameDriverConflict) {
+            return { type: 'SAME_DRIVER', record: sameDriverConflict };
+        }
+
+        // 2. Kademe: Farklı bir kişi aynı tarihte izinli mi? (SOFT - Eşzamanlı Uyarı)
+        const otherDriverConflict = leaves.find(l => {
+            if (l.id === ignoreId) return false;
+            if (normalizeTurkishStr(l.driver) === normDriver) return false;
+            
+            const lStartTs = getMidnightTimestamp(l.startDate);
+            const lEndTs = getMidnightTimestamp(l.endDate);
+            return (lStartTs <= endTs) && (lEndTs >= startTs);
+        });
+
+        if (otherDriverConflict) {
+            return { type: 'OTHER_DRIVER', record: otherDriverConflict };
+        }
+
+        return null;
+    };
+
+    // Manuel Hızlı İzin Ekleme
+    window.addManualLeave = async function(event) {
+        if(event) event.preventDefault();
+        const driver = document.getElementById('leaveDriver').value.trim();
+        const startDate = formatDateStandard(document.getElementById('leaveStart').value);
+        const endDate = formatDateStandard(document.getElementById('leaveEnd').value);
+        const description = document.getElementById('leaveDesc').value.trim() || 'Yıllık İzin';
+
+        if(!driver) { showToast('Lütfen şoför/personel adı yazın!','error'); return; }
+        if(!startDate || !endDate) { showToast('Tarihler boş olamaz!','error'); return; }
+        
+        const startTs = getMidnightTimestamp(startDate);
+        const endTs = getMidnightTimestamp(endDate);
+        if(endTs < startTs) { showToast('Bitiş tarihi başlangıçtan küçük olamaz!','error'); return; }
+
+        const conflict = checkLeaveConflict(driver, startDate, endDate);
+        const alertBox = document.getElementById('leaveConflictAlerts');
+        const conflictList = document.getElementById('leaveConflictList');
+
+        if(conflict) {
+            if (conflict.type === 'SAME_DRIVER') {
+                // Aynı kişi çakışması: Kesin bloklama
+                const totalDuration = getLeaveDurationDays(conflict.record.startDate, conflict.record.endDate);
+                const overlap = getOverlapDays(startDate, endDate, conflict.record.startDate, conflict.record.endDate);
+                if(conflictList) {
+                    conflictList.innerHTML = `<li>Giriş Engellendi: <b>${esc(driver)}</b> zaten bu tarihlerde izinli! (Mevcut Kayıt: ${conflict.record.startDate} - ${conflict.record.endDate} arası [${totalDuration} gün] | Kesişen Çakışma: <b>${overlap} gün</b>)</li>`;
+                }
+                if(alertBox) alertBox.classList.remove('hidden');
+                showToast('Hata: Aynı personelin izinleri çakışıyor!','error');
+                alert(`⚠️ KAYIT ENGELLENDİ:\n\n${driver} isimli personelin zaten ${conflict.record.startDate} / ${conflict.record.endDate} tarihleri arasında izin kaydı bulunuyor.`);
+                return;
+            } else if (conflict.type === 'OTHER_DRIVER') {
+                // Farklı kişi çakışması: Uyarı ve onay alma (Kesişen gün sayısını söyler)
+                const otherDuration = getLeaveDurationDays(conflict.record.startDate, conflict.record.endDate);
+                const overlap = getOverlapDays(startDate, endDate, conflict.record.startDate, conflict.record.endDate);
+                
+                const confirmSave = confirm(`⚠️ EŞZAMANLI İZİN UYARISI:\n\nBelirttiğiniz tarihlerde (${startDate} - ${endDate}) zaten başka bir personel olan "${conflict.record.driver}" izinli görünüyor!\n\n• ${conflict.record.driver} İzin Süresi: ${otherDuration} Gün\n• Kesişen Çakışan Gün: ${overlap} GÜN!\n\nİki personelin aynı tarihte izinli olmasını onaylıyor musunuz?`);
+                if (!confirmSave) {
+                    if (conflictList) {
+                        conflictList.innerHTML = `<li>İşlem İptal Edildi: Aynı tarihlerde <b>${esc(conflict.record.driver)}</b> izinli olduğu için <b>${esc(driver)}</b> kaydı açılmadı.</li>`;
+                    }
+                    if (alertBox) alertBox.classList.remove('hidden');
+                    return;
+                }
+            }
+        }
+
+        try {
+            document.getElementById('leaveConflictAlerts').classList.add('hidden');
+            await cLeaves.add({
+                driver, startDate, endDate, description,
+                createdAt: new Date().toISOString(),
+                createdBy: loggedInUser?.username || currentUser
+            });
+            document.getElementById('manualLeaveForm').reset();
+            showToast('İzin başarıyla kaydedildi ✓','success');
+            
+            await db.collection('kare_logs').add({
+                action: 'İZİN_EKLEME', user: currentUser,
+                details: `${driver} için yeni izin eklendi: ${startDate} / ${endDate}`,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch(e) { showToast('Hata: '+e.message,'error'); }
+    };
+
+    // Excel'den toplu içe aktarma
+    window.importLeaveExcel = async function(event) {
+        const file = event.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet, {defval: ''});
+
+                if(!json.length) { showToast('Excel boş!','error'); return; }
+
+                const headers = Object.keys(json[0]);
+                const mapKey = (aliases) => headers.find(h => aliases.some(alias => h.toLowerCase().trim().includes(alias.toLowerCase()))) || '';
+
+                const driverKey = mapKey(['şoför', 'sürücü', 'personel', 'ad', 'driver', 'name']);
+                const startKey = mapKey(['başlangıç', 'baslangic', 'start', 'giriş', 'giris']);
+                const endKey = mapKey(['bitiş', 'bitis', 'end', 'çıkış', 'cikis']);
+                const descKey = mapKey(['açıklama', 'aciklama', 'tip', 'type', 'description', 'izin türü', 'izin turu']);
+
+                if(!driverKey || !startKey || !endKey) {
+                    alert("Sütun başlıkları anlaşılamadı. Excel'inizde 'Sürücü', 'Başlangıç' ve 'Bitiş' sütunları mutlaka bulunmalıdır.");
+                    event.target.value = ''; return;
+                }
+
+                const conflicts = [];
+                const toSave = [];
+
+                json.forEach((row, index) => {
+                    const driver = String(row[driverKey]).trim();
+                    if(!driver) return;
+
+                    const startDate = formatDateStandard(row[startKey]);
+                    const endDate = formatDateStandard(row[endKey]);
+                    const description = descKey ? String(row[descKey]).trim() : 'Excel İçe Aktarma';
+
+                    if(!startDate || !endDate) return;
+
+                    const localConflict = toSave.find(x => 
+                        x.driver.toLowerCase() === driver.toLowerCase() && 
+                        (getMidnightTimestamp(x.startDate) <= getMidnightTimestamp(endDate)) && 
+                        (getMidnightTimestamp(x.endDate) >= getMidnightTimestamp(startDate))
+                    );
+
+                    const dbConflict = checkLeaveConflict(driver, startDate, endDate);
+
+                    if (dbConflict) {
+                        if (dbConflict.type === 'SAME_DRIVER') {
+                            conflicts.push(`Satır ${index+2}: <b>${esc(driver)}</b> ismi <b>${startDate} - ${endDate}</b> tarihinde çakışıyor! İçeride kayıtlı aynı isim bu tarihte zaten izinli.`);
+                        } else {
+                            // Diğer şoförle çakışma: Bilgi uyarısı ve kesişen gün sayısı
+                            const overlap = getOverlapDays(startDate, endDate, dbConflict.record.startDate, dbConflict.record.endDate);
+                            toSave.push({ driver, startDate, endDate, description, createdAt: new Date().toISOString(), createdBy: loggedInUser?.username || currentUser });
+                            conflicts.push(`ℹ️ Satır ${index+2}: <b>${esc(driver)}</b> yüklendi ancak aynı tarihlerde izinli olan <b>${esc(dbConflict.record.driver)}</b> ile <b>${overlap} gün</b> çakışma mevcut.`);
+                        }
+                    } else if (localConflict) {
+                        conflicts.push(`Satır ${index+2}: <b>${esc(driver)}</b> ismi Excel tablosunda mükerrer yüklendi (${startDate} - ${endDate}).`);
+                    } else {
+                        toSave.push({ driver, startDate, endDate, description, createdAt: new Date().toISOString(), createdBy: loggedInUser?.username || currentUser });
+                    }
+                });
+
+                const alertBox = document.getElementById('leaveConflictAlerts');
+                const conflictList = document.getElementById('leaveConflictList');
+                if(conflicts.length > 0) {
+                    if(conflictList) conflictList.innerHTML = conflicts.map(c => `<li>${c}</li>`).join('');
+                    if(alertBox) alertBox.classList.remove('hidden');
+                } else {
+                    if(alertBox) alertBox.classList.add('hidden');
+                }
+
+                if(toSave.length > 0) {
+                    const batch = db.batch();
+                    toSave.forEach(item => {
+                        const ref = cLeaves.doc();
+                        batch.set(ref, item);
+                    });
+                    await batch.commit();
+                    showToast(`${toSave.length} adet izin kaydı başarıyla aktarıldı ✓`,'success');
+
+                    await db.collection('kare_logs').add({
+                        action: 'İZİN_EXCEL_YÜKLEME', user: currentUser,
+                        details: `Excel'den ${toSave.length} adet izin toplu aktarıldı.`,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+            } catch(err) { alert("Okuma hatası: " + err.message); }
+            event.target.value = '';
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
+    // İzin Kaydı Silme
+    window.deleteLeave = async function(id, driver, sD, eD) {
+        if(!confirm(`${driver} isimli personelin ${sD} - ${eD} tarihleri arasındaki izin kaydı silinecek. Emin misiniz?`)) return;
+        try {
+            await cLeaves.doc(id).delete();
+            showToast('Kayıt silindi','success');
+            await db.collection('kare_logs').add({
+                action: 'İZİN_SİLME', user: currentUser,
+                details: `${driver} izin kaydı silindi (${sD} - ${eD}).`,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch(e) { showToast('Hata: '+e.message,'error'); }
+    };
+
+    // Tabloya Çizdirme & Detaylı Analitik Çakışma Hesaplama Sürümü
+    window.renderLeaves = function() {
+        const tbody = document.getElementById('leaveTableBody');
+        if(!tbody) return;
+        if(!leaves.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Sistemde kayıtlı izin bulunmuyor.</td></tr>';
+            return;
+        }
+        const today = new Date().toISOString().split('T')[0];
+        
+        tbody.innerHTML = leaves.map(l => {
+            const isActive = today >= l.startDate && today <= l.endDate;
+            const isFuture = today < l.startDate;
+            const currentDuration = getLeaveDurationDays(l.startDate, l.endDate);
+            
+            // Bu satırın çakıştığı TÜM diğer satırları tespit et (Kendisi hariç)
+            const lStartTs = getMidnightTimestamp(l.startDate);
+            const lEndTs = getMidnightTimestamp(l.endDate);
+            const overlappingRecords = leaves.filter(other => {
+                if (other.id === l.id) return false;
+                const oStartTs = getMidnightTimestamp(other.startDate);
+                const oEndTs = getMidnightTimestamp(other.endDate);
+                return (lStartTs <= oEndTs) && (lEndTs >= oStartTs);
+            });
+
+            let statusBdg = isActive 
+                ? '<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold animate-pulse">🟢 İZİNLİ (AKTİF)</span>'
+                : isFuture 
+                ? '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">🔵 GELECEK</span>'
+                : '<span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px] font-bold">⚪ GEÇMİŞ</span>';
+
+            // Çakışan tüm isimleri ve çakışma detaylarını dinamik olarak listeler
+            let overlapWarning = '';
+            let rowBg = '';
+            if (overlappingRecords.length > 0) {
+                rowBg = 'bg-amber-50/20'; // Çakışan tüm satırları sarıya boyar
+                overlapWarning = overlappingRecords.map(other => {
+                    const overlapDays = getOverlapDays(l.startDate, l.endDate, other.startDate, other.endDate);
+                    return `<div class="text-[9px] text-amber-700 font-semibold mt-1 bg-amber-100/60 border border-amber-200 rounded px-1.5 py-0.5 inline-flex items-center gap-1">
+                        <i class="fa-solid fa-triangle-exclamation mr-1 text-amber-500"></i>
+                        <span>Aynı tarihte <b>${esc(other.driver)}</b> de izinli! (Kesişen: <b>${overlapDays} Gün</b>)</span>
+                    </div>`;
+                }).join('<br>');
+            }
+
+            return `<tr class="hover:bg-slate-50 border-b border-slate-100 ${rowBg}">
+                <td class="p-2.5 px-3">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <span class="font-bold text-slate-800 text-sm">${esc(l.driver)}</span>
+                        <span class="bg-indigo-50 border border-indigo-100 text-indigo-700 text-[9px] font-black px-1.5 py-0.5 rounded-full">${currentDuration} Gün İzin</span>
+                    </div>
+                    ${overlapWarning ? `<div class="mt-1 space-y-0.5">${overlapWarning}</div>` : ''}
+                </td>
+                <td class="p-2.5 px-3 font-semibold text-slate-600">${l.startDate}</td>
+                <td class="p-2.5 px-3 font-semibold text-slate-600">${l.endDate}</td>
+                <td class="p-2.5 px-3 text-slate-500">${esc(l.description || '—')}</td>
+                <td class="p-2.5 px-3 text-center">${statusBdg}</td>
+                <td class="p-2.5 px-3 text-right">
+                    <button onclick="deleteLeave('${l.id}', '${esc(l.driver)}', '${l.startDate}', '${l.endDate}')" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-2 py-1 rounded text-[10px] font-bold transition">Sil</button>
+                </td>
+            </tr>`;
+        }).join('');
+    };
+
+    // Şablon Excel İndir
+    window.downloadLeaveTemplate = function() {
+        if(typeof XLSX==='undefined'){showToast('XLSX yüklenmedi','error');return;}
+        const headers = [['Sürücü', 'Başlangıç Tarihi', 'Bitiş Tarihi', 'Açıklama']];
+        const dummyData = [
+            ['Ahmet Yılmaz', '2026-07-10', '2026-07-17', 'Yıllık İzin'],
+            ['Mehmet Kaya', '2026-08-01', '2026-08-05', 'Rapor']
+        ];
+        const ws = XLSX.utils.aoa_to_sheet([...headers, ...dummyData]);
+        ws['!cols'] = [{wch:20},{wch:18},{wch:18},{wch:24}];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'İzin Şablonu');
+        XLSX.writeFile(wb, 'KareKara_Izin_Yukleme_Sablonu.xlsx');
+        showToast('Şablon Excel dosyası indirildi ✓','success');
+    };
+
+    // Kayıtlı İzinleri Excel Olarak Yedekle
+    window.exportLeavesExcel = function() {
+        if(typeof XLSX==='undefined'){showToast('XLSX yüklenmedi','error');return;}
+        if(!leaves.length) { showToast('Dışa aktarılacak izin kaydı yok!','error'); return; }
+        const rows = leaves.map(l => ({
+            'Sürücü / Şoför': l.driver,
+            'Başlangıç Tarihi': l.startDate,
+            'Bitiş Tarihi': l.endDate,
+            'İzin Süresi (Gün)': getLeaveDurationDays(l.startDate, l.endDate),
+            'Açıklama': l.description || '',
+            'Oluşturan': l.createdBy || '',
+            'Oluşturulma Tarihi': l.createdAt || ''
+        }));
+        const ws = XLSX.utils.json_to_sheet(rows);
+        ws['!cols'] = [{wch:20},{wch:18},{wch:18},{wch:15},{wch:24},{wch:15},{wch:24}];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Kayıtlı İzinler');
+        XLSX.writeFile(wb, `KareKara_Aktif_Izinler_${new Date().toISOString().split('T')[0]}.xlsx`);
+        showToast('İzin kayıtları dışa aktarıldı ✓','success');
+    };
+})();
 </script>
 </body>
 </html>

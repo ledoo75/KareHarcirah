@@ -6614,19 +6614,18 @@
         });
     }
 // =================================═════════════════════
-//   KAREKARA SÜRÜCÜ İZİN SİSTEMİ (TC NO & DÜZENLEME DESTEKLİ v10)
+//   KAREKARA SÜRÜCÜ İZİN SİSTEMİ (BULLETPROOF KOPYALAMA v11)
 // =================================═════════════════════
 (function() {
     const cLeaves = firebase.firestore().collection('kare_leaves');
     let leaves = [];
-    let editLeaveId = null; // Düzenleme modundaki kaydın ID'si
+    let editLeaveId = null;
 
     // URL parametresini kontrol et
     const urlParams = new URLSearchParams(window.location.search);
     const targetLeaveId = urlParams.get('izin_imza');
 
     if (targetLeaveId) {
-        // Ekranları bloke etme ve parıldayan (yanıp sönen) buton CSS kuralları
         const style = document.createElement('style');
         style.innerHTML = `
             #loginScreen, #splashScreen, #truckIntro, #mainHeader, #mainContent, .modal, .modal-overlay {
@@ -6679,8 +6678,8 @@
             card.innerHTML = `
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                     <div>
-                        <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid :fa-calendar-check text-emerald-500"></i> Sürücü İzin Yönetimi</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">Sürücülerin izin planlarını düzenleyin, Excel'den yükleyin, çakışmaları izleyin ve imzalandıktan sonra kendini imha eden linkler paylaşın.</p>
+                        <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="fa-solid fa-calendar-check text-emerald-500"></i> Sürücü İzin Yönetimi</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Sürücülerin izin planlarını düzenleyin, Excel'den yükleyin, çakışmaları izleyin ve süreli tek kullanımlık linkler üretin.</p>
                     </div>
                     <div class="flex gap-2 flex-wrap">
                         <button onclick="downloadLeaveTemplate()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-download"></i> Şablon İndir</button>
@@ -6692,7 +6691,7 @@
                     </div>
                 </div>
 
-                <!-- Manuel Hızlı Giriş & Düzenleme Formu -->
+                <!-- Manuel Hızlı Giriş -->
                 <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4">
                     <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2" id="leaveFormTitle">Hızlı İzin Tanımla</p>
                     <form id="manualLeaveForm" onsubmit="addManualLeave(event); return false;" class="grid grid-cols-1 sm:grid-cols-5 gap-2">
@@ -6850,7 +6849,6 @@
 
         if (!normDriver || !startTs || !endTs) return null;
 
-        // 1. Kademe: Aynı kişinin izinlerinde çakışma var mı?
         const sameDriverConflict = leaves.find(l => {
             if (l.id === ignoreId) return false;
             if (normalizeTurkishStr(l.driver) !== normDriver) return false;
@@ -6864,7 +6862,6 @@
             return { type: 'SAME_DRIVER', record: sameDriverConflict };
         }
 
-        // 2. Kademe: Farklı bir kişi aynı tarihte izinli mi? (SOFT - Eşzamanlı Uyarı)
         const otherDriverConflict = leaves.find(l => {
             if (l.id === ignoreId) return false;
             if (normalizeTurkishStr(l.driver) === normDriver) return false;
@@ -6881,7 +6878,6 @@
         return null;
     };
 
-    // Manuel İzin Ekleme ve Güncelleme Tetikleyicisi
     window.addManualLeave = async function(event) {
         if(event) event.preventDefault();
         const tcNo = document.getElementById('leaveTc').value.trim();
@@ -6897,7 +6893,6 @@
         const endTs = getMidnightTimestamp(endDate);
         if(endTs < startTs) { showToast('Bitiş tarihi başlangıçtan küçük olamaz!','error'); return; }
 
-        // Düzenleme modunda kendi ID'sini çakışma kontrolünden muaf tutar (editLeaveId parametresiyle)
         const conflict = checkLeaveConflict(driver, startDate, endDate, editLeaveId);
         const alertBox = document.getElementById('leaveConflictAlerts');
         const conflictList = document.getElementById('leaveConflictList');
@@ -6932,7 +6927,6 @@
             document.getElementById('leaveConflictAlerts').classList.add('hidden');
             
             if (editLeaveId) {
-                // Güncelleme Modu
                 const existing = leaves.find(x => x.id === editLeaveId);
                 let updateData = {
                     tcNo, driver, startDate, endDate, description,
@@ -6940,14 +6934,13 @@
                     lastEditedBy: loggedInUser?.username || currentUser
                 };
                 
-                // Eğer imza atılmış bir kayıtta isim veya tarih değişirse imzayı sıfırla
                 if (existing && existing.signature && (existing.driver !== driver || existing.startDate !== startDate || existing.endDate !== endDate)) {
                     if (confirm("⚠️ DİKKAT: İzin sahibi veya tarihleri değiştirdiniz. Güvenlik nedeniyle sürücünün mevcut dijital imzası silinecektir. Onaylıyor musunuz?")) {
                         updateData.signature = firebase.firestore.FieldValue.delete();
                         updateData.signedAt = firebase.firestore.FieldValue.delete();
                         updateData.signedByName = firebase.firestore.FieldValue.delete();
                     } else {
-                        return; // Güncellemeyi iptal et
+                        return;
                     }
                 }
 
@@ -6955,7 +6948,6 @@
                 showToast('İzin başarıyla güncellendi ✓','success');
                 cancelLeaveEdit();
             } else {
-                // Yeni Kayıt Ekleme
                 await cLeaves.add({
                     tcNo, driver, startDate, endDate, description,
                     createdAt: new Date().toISOString(),
@@ -6973,7 +6965,6 @@
         } catch(e) { showToast('Hata: '+e.message,'error'); }
     };
 
-    // İzin Düzenleme Modunu Açan Fonksiyon
     window.editLeave = function(id) {
         const l = leaves.find(x => x.id === id);
         if (!l) return;
@@ -6981,20 +6972,17 @@
         editLeaveId = id;
         document.getElementById('leaveFormTitle').innerHTML = `<i class="fa-solid fa-pen text-amber-500 animate-pulse"></i> Sürücü İznini Düzenle (Değişiklik Yapılıyor)`;
         
-        // Form alanlarını doldur
         document.getElementById('leaveTc').value = l.tcNo || '';
         document.getElementById('leaveDriver').value = l.driver;
         document.getElementById('leaveStart').value = l.startDate;
         document.getElementById('leaveEnd').value = l.endDate;
         document.getElementById('leaveDesc').value = l.description || '';
 
-        // Form kaydetme butonunu disket simgesiyle güncelle
         const submitBtn = document.getElementById('leaveSubmitBtn');
         submitBtn.className = "bg-amber-500 hover:bg-amber-600 text-white px-3 rounded-lg text-xs font-bold shrink-0";
         submitBtn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i>`;
         submitBtn.title = "Değişiklikleri Kaydet";
 
-        // Varsa eski iptal butonunu sil, yenisini ekle
         let cancelBtn = document.getElementById('leaveCancelBtn');
         if (!cancelBtn) {
             cancelBtn = document.createElement('button');
@@ -7007,11 +6995,9 @@
             document.getElementById('leaveActionBtnContainer').appendChild(cancelBtn);
         }
 
-        // Form alanına yumuşak geçiş yap
         document.getElementById('manualLeaveForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
-    // Düzenleme Modundan Çıkma/İptal Etme
     window.cancelLeaveEdit = function() {
         editLeaveId = null;
         document.getElementById('manualLeaveForm').reset();
@@ -7028,7 +7014,6 @@
         if (cancelBtn) cancelBtn.remove();
     };
 
-    // Excel'den toplu içe aktarma
     window.importLeaveExcel = async function(event) {
         const file = event.target.files[0];
         if(!file) return;
@@ -7053,7 +7038,7 @@
                 const descKey = mapKey(['açıklama', 'aciklama', 'tip', 'type', 'description', 'izin türü', 'izin turu']);
 
                 if(!driverKey || !startKey || !endKey) {
-                    alert("Sütun başlıkları anlaşılamadı. Excel'inizde en azından 'Sürücü', 'Başlangıç' ve 'Bitiş' sütunları bulunmalıdır.");
+                    alert("Sütun başlıkları anlaşılamadı. Excel'inizde 'Sürücü', 'Başlangıç' ve 'Bitiş' sütunları mutlaka bulunmalıdır.");
                     event.target.value = ''; return;
                 }
 
@@ -7081,7 +7066,7 @@
 
                     if (dbConflict) {
                         if (dbConflict.type === 'SAME_DRIVER') {
-                            conflicts.push(`Satır ${index+2}: <b>${esc(driver)}</b> ismi <b>${startDate} - ${endDate}</b> tarihinde çakışıyor! İçeride kayıtlı isim bu tarihte zaten izinli.`);
+                            conflicts.push(`Satır ${index+2}: <b>${esc(driver)}</b> ismi <b>${startDate} - ${endDate}</b> tarihinde çakışıyor! İçeride kayıtlı aynı isim bu tarihte zaten izinli.`);
                         } else {
                             const overlap = getOverlapDays(startDate, endDate, dbConflict.record.startDate, dbConflict.record.endDate);
                             toSave.push({ tcNo, driver, startDate, endDate, description, createdAt: new Date().toISOString(), createdBy: loggedInUser?.username || currentUser });
@@ -7124,40 +7109,68 @@
         reader.readAsArrayBuffer(file);
     };
 
-    // Sessiz kopyalama desteği
+    window.deleteLeave = async function(id, driver, sD, eD) {
+        if(!confirm(`${driver} isimli personelin ${sD} - ${eD} tarihleri arasındaki izin kaydı silinecek. Emin misiniz?`)) return;
+        try {
+            await cLeaves.doc(id).delete();
+            showToast('Kayıt silindi','success');
+            await db.collection('kare_logs').add({
+                action: 'İZİN_SİLME', user: currentUser,
+                details: `${driver} izin kaydı silindi (${sD} - ${eD}).`,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch(e) { showToast('Hata: '+e.message,'error'); }
+    };
+
+    // Tamamen Görünmez ve Mobil Uyumlu Kopyalama Yedek Algoritması (Bypass Alerts)
     function silentCopyFallback(text) {
         const textArea = document.createElement("textarea");
         textArea.value = text;
+        textArea.style.position = "fixed";
         textArea.style.top = "0";
         textArea.style.left = "0";
-        textArea.style.position = "fixed";
+        textArea.style.width = "2em";
+        textArea.style.height = "2em";
+        textArea.style.padding = "0";
+        textArea.style.border = "none";
+        textArea.style.outline = "none";
+        textArea.style.boxShadow = "none";
+        textArea.style.background = "transparent";
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
+        
+        // iOS Seçim Düzeltmesi
+        if (navigator.userAgent.match(/ipad|ipod|iphone/i)) {
+            const range = document.createRange();
+            range.selectNodeContents(textArea);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            textArea.setSelectionRange(0, 999999);
+        }
+
         try {
-            document.execCommand('copy');
-            showToast('İmza linki kopyalandı! (60 Dakika Geçerli) 🔗','success');
+            const successful = document.execCommand('copy');
+            if (successful) {
+                showToast('İmza linki kopyalandı! (60 Dakika Geçerli) 🔗','success');
+            }
         } catch (err) {
             console.error('Kopyalama hatası', err);
         }
         document.body.removeChild(textArea);
     }
 
-    // Link paylaşım üreticisi
-    window.copySignatureLink = async function(id) {
+    // Link Paylaşım Tetikleyicisi (Senkron Yapı - Odak Kaybını Engeller)
+    window.copySignatureLink = function(id) {
+        // file:// uzantılarını temizleyerek tam Vercel/Web domain url'sini elde eder
         let cleanBaseUrl = window.location.origin + window.location.pathname;
-        if (cleanBaseUrl.startsWith('file://')) {
+        if (cleanBaseUrl.startsWith('file://') || cleanBaseUrl.includes('index%20kopyası')) {
             cleanBaseUrl = 'https://kare-harcirah.vercel.app/index.html';
         }
         const link = cleanBaseUrl + '?izin_imza=' + id;
-        
-        try {
-            const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-            await cLeaves.doc(id).update({ linkExpiresAt: expiresAt });
-        } catch(e) {
-            console.warn("Firestore güncellemesi atlandı veya yetki yok", e);
-        }
 
+        // 1. KOPYALAMAYI TIKLAMA ANINDA ANINDA BAŞLAT (Tarayıcı Güvenlik Kuralı Engeli Aşılır)
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(link).then(() => {
                 showToast('İmza linki kopyalandı! (60 Dakika Geçerli) 🔗','success');
@@ -7167,9 +7180,14 @@
         } else {
             silentCopyFallback(link);
         }
+
+        // 2. VERİTABANI GÜNCELLEMESİNİ ARKA PLANDA SESSİZCE YAP (Süreyi 60 dakikaya ayarlar)
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+        cLeaves.doc(id).update({ linkExpiresAt: expiresAt }).catch(err => {
+            console.warn("Firestore güncellemesi gecikmeli yapıldı veya atlandı", err);
+        });
     };
 
-    // Tabloya Çizdirme Entegrasyonu
     window.renderLeaves = function() {
         const tbody = document.getElementById('leaveTableBody');
         if(!tbody) return;
@@ -7216,7 +7234,7 @@
                 }).join('<br>');
             }
 
-            const tcText = l.tcNo ? `<span class="text-[10px] text-slate-400 font-semibold">TC: ${esc(l.tcNo)}</span>` : '<span class="text-[10px] text-slate-300">TC Belirtilmemiş</span>';
+            const tcText = l.tcNo ? `<span class="text-[10px] text-slate-400 font-semibold">TC: ${esc(l.tcNo)}</span>` : '<span class="text-[10px] text-slate-300 font-medium">TC Belirtilmemiş</span>';
 
             return `<tr class="hover:bg-slate-50 border-b border-slate-100 ${rowBg}">
                 <td class="p-2.5 px-3">
@@ -7235,7 +7253,7 @@
                 <td class="p-2.5 px-3 text-center">${statusBdg}</td>
                 <td class="p-2.5 px-3 text-right">
                     <div class="flex gap-1 justify-end">
-                        <button onclick="editLeave('${l.id}')" class="bg-amber-50 text-amber-600 hover:bg-amber-100 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" title="İzni Düzelt / Değişiklik Yap"><i class="fa-solid fa-pen"></i> Düzenle</button>
+                        <button onclick="editLeave('${l.id}')" class="bg-amber-50 text-amber-600 hover:bg-amber-100 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" title="İzni Düzelt / Düzenle"><i class="fa-solid fa-pen"></i> Düzenle</button>
                         <button onclick="copySignatureLink('${l.id}')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" title="İmza Linkini Kopyala"><i class="fa-solid fa-link"></i> Paylaş</button>
                         ${l.signature ? `<button onclick="downloadSignedLeavePDF('${l.id}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" title="Resmi PDF İndir"><i class="fa-solid fa-file-pdf"></i> PDF</button>` : ''}
                         <button onclick="deleteLeave('${l.id}', '${esc(l.driver)}', '${l.startDate}', '${l.endDate}')" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-2 py-1 rounded text-[10px] font-bold transition">Sil</button>
@@ -7327,7 +7345,7 @@
         `;
         document.body.appendChild(container);
 
-        // Firebase'den izni çek
+        // Firebase'den ilgili izni çek
         cLeaves.doc(targetLeaveId).get().then(doc => {
             document.getElementById('pubLoading').style.display = 'none';
             if (doc.exists) {
@@ -7467,7 +7485,7 @@
             document.getElementById('pubLoading').style.display = 'none';
             document.getElementById('pubSuccess').classList.remove('hidden');
 
-            // Başarılı olduğunda otomatik PDF dökümünü indir (TC No içerir)
+            // Başarılı olduğunda otomatik PDF dökümünü indir
             downloadSignedLeavePDFDirectly({
                 tcNo: document.getElementById('pubDriverTc').innerText,
                 driver: signerName,
@@ -7484,7 +7502,6 @@
         }
     };
 
-    // Sürücüye imzadan hemen sonra doğrudan indirtilen PDF fonksiyonu (TC No ve Şık Lojistik Tasarımı İçerir)
     function downloadSignedLeavePDFDirectly(l) {
         const today = new Date().toLocaleDateString('tr-TR');
         const totalDays = getLeaveDurationDays(l.startDate, l.endDate);

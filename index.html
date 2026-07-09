@@ -921,6 +921,7 @@
         <button onclick="switchTab('PATRON')" id="tab-PATRON" class="role-btn bg-transparent text-slate-500 px-4 py-2 rounded-xl text-sm font-semibold transition-all hidden"><i class="fa-solid fa-building-columns mr-1"></i> Patron Özeti</button>
         <button onclick="switchTab('ANALYTICS')" id="tab-ANALYTICS" class="role-btn bg-transparent text-slate-500 px-4 py-2 rounded-xl text-sm font-semibold transition-all hidden"><i class="fa-solid fa-chart-column mr-1"></i> Raporlar & Analiz</button>
         <button onclick="switchTab('USERS')" id="tab-USERS" class="role-btn bg-transparent text-slate-500 px-4 py-2 rounded-xl text-sm font-semibold transition-all hidden"><i class="fa-solid fa-gear mr-1"></i> Ayarlar</button>
+        <button onclick="switchTab('SURUCU_IZIN')" id="tab-SURUCU_IZIN" class="role-btn bg-transparent text-slate-500 px-4 py-2 rounded-xl text-sm font-semibold transition-all hidden"><i class="fa-solid fa-calendar-check mr-1"></i> Sürücü İzin</button>
         <button onclick="switchTab('AUDITLOG')" id="tab-AUDITLOG" class="role-btn bg-transparent text-slate-500 px-4 py-2 rounded-xl text-sm font-semibold transition-all hidden"><i class="fa-solid fa-shield-halved mr-1"></i> Audit Log</button>
         <button onclick="switchTab('VEHICLE_COST')" id="tab-VEHICLE_COST" class="role-btn bg-transparent text-slate-500 px-4 py-2 rounded-xl text-sm font-semibold transition-all hidden"><i class="fa-solid fa-gauge-high mr-1"></i> Araç Maliyeti</button>
     </div>
@@ -1676,6 +1677,10 @@
 
     </div>
 
+    <div id="panel-SURUCU_IZIN" class="panel-section hidden-panel">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" id="surucuIzinGrid"></div>
+    </div>
+
     <div id="panel-AUDITLOG" class="panel-section hidden-panel">
         <div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"><div><h2 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-shield-halved text-indigo-500 mr-2"></i>Sistem Audit Log</h2></div><div class="flex gap-2 flex-wrap"><button onclick="exportAuditCSV()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2"><i class="fa-solid fa-file-excel"></i> XLSX İndir</button><button onclick="clearAuditLogs()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2"><i class="fa-solid fa-trash"></i> Logları Temizle</button></div></div>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
@@ -2105,7 +2110,7 @@
     }
     
     function updateDriverDropdowns(){const uSel=document.getElementById('activeUser'); const aSel=document.getElementById('advDriver'); const si=document.getElementById('driverSearchInput'); uSel.innerHTML=''; if(aSel)aSel.innerHTML=''; if(currentRole==='DRIVER'){uSel.innerHTML=`<option value="${esc(loggedInUser.username)}">${esc(loggedInUser.username)}</option>`; uSel.disabled=true; if(si){si.value=''; si.disabled=true; si.classList.add('opacity-60');}}else{uSel.disabled=false; if(si){si.disabled=false; si.classList.remove('opacity-60');} let drvs=getDrivers(); if(drvs.length===0){uSel.innerHTML=`<option value="">Şoför Yok</option>`;} drvs.forEach(d=>{uSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`; if(aSel)aSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`;}); uSel.value=currentUser; if(si)si.value=currentUser;} if(currentRole!=='DRIVER'&&getDrivers().length>0&&!getDrivers().includes(currentUser)){currentUser=getDrivers()[0]; uSel.value=currentUser; if(si)si.value=currentUser;} fillCariTarihDrivers();}
-    function updateTabVisibility(){const defaultPerms={ADMIN:['DRIVER','OPERATIONS','TRACKING','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],PATRON:['DRIVER','OPERATIONS','TRACKING','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],OPS:['DRIVER','OPERATIONS','TRACKING','DASHBOARD','ANALYTICS'],OPS_MANAGER:['DRIVER','OPERATIONS','TRACKING','FLEET','DASHBOARD','ANALYTICS','VEHICLE_COST'],ACCOUNTING:['DRIVER','OPERATIONS','TRACKING','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],FLEET:['DRIVER','FLEET','TRACKING','DASHBOARD','VEHICLE_COST'],DRIVER:['DRIVER']}; let myTabs=loggedInUser.allowedTabs||defaultPerms[currentRole]||['DRIVER']; if(currentRole==='ADMIN')myTabs=defaultPerms['ADMIN'];['DRIVER','OPERATIONS','TRACKING','QUERY','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'].forEach(tab=>{const el=document.getElementById(`tab-${tab}`); if(el)el.style.display=myTabs.includes(tab)?'flex':'none';});}
+    function updateTabVisibility(){const defaultPerms={ADMIN:['DRIVER','OPERATIONS','TRACKING','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST','SURUCU_IZIN'],PATRON:['DRIVER','OPERATIONS','TRACKING','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST','SURUCU_IZIN'],OPS:['DRIVER','OPERATIONS','TRACKING','DASHBOARD','ANALYTICS'],OPS_MANAGER:['DRIVER','OPERATIONS','TRACKING','FLEET','DASHBOARD','ANALYTICS','VEHICLE_COST'],ACCOUNTING:['DRIVER','OPERATIONS','TRACKING','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST','SURUCU_IZIN'],FLEET:['DRIVER','FLEET','TRACKING','DASHBOARD','VEHICLE_COST'],DRIVER:['DRIVER']}; let myTabs=loggedInUser.allowedTabs||defaultPerms[currentRole]||['DRIVER']; if(currentRole==='ADMIN')myTabs=defaultPerms['ADMIN'];['DRIVER','OPERATIONS','TRACKING','QUERY','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST','SURUCU_IZIN'].forEach(tab=>{const el=document.getElementById(`tab-${tab}`); if(el)el.style.display=myTabs.includes(tab)?'flex':'none';});}
     function switchTab(tabId){document.querySelectorAll('.role-btn').forEach(b=>{b.classList.remove('bg-slate-800','text-white','shadow-md'); b.classList.add('bg-transparent','text-slate-500');}); const activeBtn=document.getElementById(`tab-${tabId}`); if(activeBtn){activeBtn.classList.remove('bg-transparent','text-slate-500'); activeBtn.classList.add('bg-slate-800','text-white','shadow-md');} document.querySelectorAll('.panel-section').forEach(p=>p.style.display='none'); document.getElementById(`panel-${tabId}`).style.display='block'; localStorage.setItem('kare_last_tab',tabId); renderAll(); if(tabId==='PATRON'&&['ADMIN','PATRON'].includes(currentRole))updatePatronDashboard(); if(tabId==='DRIVER'){checkActiveTrip(); renderDriverDuyurular();} if(tabId==='DASHBOARD')renderDashboard(); if(tabId==='FLEET')renderFleetPanel(); if(tabId==='ANALYTICS')renderAnalyticsTab(); if(tabId==='AUDITLOG'){auditPage=50; renderAuditLog();} if(tabId==='TRACKING') renderTrackingPanel(); if(tabId==='USERS'){setTimeout(renderSystemStats, 100);} if(tabId==='ACCOUNTING'){renderAccountingExtras(); loadDuyurular();refreshArchivePreview(); loadArchiveSummary();} if(tabId==='VEHICLE_COST'){ loadAllVcFromFirebase();const now=new Date().toISOString().slice(0,7); const si=document.getElementById('vcStartMonth'); const ei=document.getElementById('vcEndMonth'); const vm=document.getElementById('vcMonth'); if(si&&!si.value){si.value=now;} if(ei&&!ei.value){ei.value=now;} if(vm&&!vm.value){vm.value=now;} const b0=document.getElementById('vcBtn0'); if(b0){clearVcBtns(); b0.className='vc-month-btn bg-orange-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition';} updateVcMonthLabel(); loadSalaryRows(); loadHgsRows(); loadYakitRows(); renderVehicleCost();}}
     function changeUser(){currentUser=document.getElementById('activeUser').value; renderAll(); if(currentRole!=='DRIVER')checkActiveTrip();}
     function filterCari(){let input=document.getElementById('searchCariInput').value.toLowerCase(); document.querySelectorAll('.cari-row').forEach(row=>{row.style.display=row.getAttribute('data-driver').toLowerCase().includes(input)?'':'none';});}
@@ -2257,6 +2262,7 @@
         {id:'USERS',       label:'Ayarlar',         icon:'fa-gear'},
         {id:'AUDITLOG',    label:'Audit Log',       icon:'fa-shield-halved'},
         {id:'VEHICLE_COST',label:'Araç Maliyeti',   icon:'fa-gauge-high'},
+        {id:'SURUCU_IZIN', label:'Sürücü İzin Yönetimi', icon:'fa-calendar-check'},
     ];
     let _permActive = new Set();
 
@@ -2288,11 +2294,11 @@
         document.getElementById('permUserId').value=u.id;
         document.getElementById('permUserName').innerText=u.username;
         const defaultPerms={
-            ADMIN:['OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],
-            PATRON:['OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],
+            ADMIN:['OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST','SURUCU_IZIN'],
+            PATRON:['OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST','SURUCU_IZIN'],
             OPS:['OPERATIONS','DASHBOARD','ANALYTICS'],
             OPS_MANAGER:['OPERATIONS','FLEET','DASHBOARD','ANALYTICS','VEHICLE_COST'],
-            ACCOUNTING:['OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST'],
+            ACCOUNTING:['OPERATIONS','ACCOUNTING','FLEET','DASHBOARD','PATRON','ANALYTICS','USERS','AUDITLOG','VEHICLE_COST','SURUCU_IZIN'],
             FLEET:['FLEET','DASHBOARD','VEHICLE_COST'],
             DRIVER:[]
         };
@@ -6620,6 +6626,31 @@
     const cLeaves = firebase.firestore().collection('kare_leaves');
     let leaves = [];
     let editLeaveId = null;
+    let leaveStatusFilter = 'ALL';
+
+    window.setLeaveStatusFilter = function(filter) {
+        leaveStatusFilter = filter;
+        document.querySelectorAll('.leave-filter-btn').forEach(b => {
+            if (b.dataset.filter === filter) {
+                b.className = 'leave-filter-btn bg-slate-800 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold transition';
+            } else {
+                b.className = 'leave-filter-btn bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg text-[10px] font-bold transition';
+            }
+        });
+        renderLeaves();
+    };
+
+    // İzin türüne göre renkli rozet üretir (Açıklama metnindeki anahtar kelimelere göre)
+    function getLeaveTypeBadge(description) {
+        const d = normalizeTurkishStr(description || '');
+        if (!d) return { label: 'Belirtilmemiş', cls: 'bg-slate-100 text-slate-500' };
+        if (d.includes('ucretsiz')) return { label: 'Ücretsiz İzin', cls: 'bg-slate-200 text-slate-700' };
+        if (d.includes('rapor') || d.includes('saglik') || d.includes('hastalik')) return { label: 'Rapor / Sağlık', cls: 'bg-rose-100 text-rose-700' };
+        if (d.includes('dogum') || d.includes('analik')) return { label: 'Doğum İzni', cls: 'bg-purple-100 text-purple-700' };
+        if (d.includes('mazeret')) return { label: 'Mazeret İzni', cls: 'bg-amber-100 text-amber-700' };
+        if (d.includes('yillik')) return { label: 'Yıllık İzin', cls: 'bg-emerald-100 text-emerald-700' };
+        return { label: description, cls: 'bg-indigo-100 text-indigo-700' };
+    }
 
     // URL parametresini kontrol et
     const urlParams = new URLSearchParams(window.location.search);
@@ -6664,17 +6695,17 @@
         document.head.appendChild(style);
     }
 
-    // HTML Arayüzünü otomatik oluştur ve "panel-USERS" içerisine yerleştir
+    // HTML Arayüzünü otomatik oluştur ve "panel-SURUCU_IZIN" içerisine yerleştir
     document.addEventListener("DOMContentLoaded", function() {
         if (targetLeaveId) {
             injectPublicSignatureScreen();
             return;
         }
 
-        const usersPanel = document.getElementById('panel-USERS');
+        const usersPanel = document.getElementById('surucuIzinGrid');
         if (usersPanel) {
             const card = document.createElement('div');
-            card.className = "glass-card p-5 border-l-4 border-emerald-500 lg:col-span-3 mt-6";
+            card.className = "glass-card p-5 border-l-4 border-emerald-500 lg:col-span-3";
             card.innerHTML = `
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                     <div>
@@ -6688,6 +6719,26 @@
                             <input type="file" id="leaveExcelInput" accept=".xlsx, .xls" class="hidden" onchange="importLeaveExcel(event)">
                         </label>
                         <button onclick="exportLeavesExcel()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-file-export"></i> Dışa Aktar</button>
+                    </div>
+                </div>
+
+                <!-- Özet İstatistik Kartları -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4" id="leaveStatsGrid">
+                    <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-center">
+                        <p class="text-lg font-black text-emerald-700" id="leaveStatActive">0</p>
+                        <p class="text-[10px] font-bold text-emerald-600 uppercase">Şu An İzinde</p>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-2.5 text-center">
+                        <p class="text-lg font-black text-blue-700" id="leaveStatFuture">0</p>
+                        <p class="text-[10px] font-bold text-blue-600 uppercase">Gelecek İzin</p>
+                    </div>
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-center">
+                        <p class="text-lg font-black text-amber-700" id="leaveStatMonthDays">0</p>
+                        <p class="text-[10px] font-bold text-amber-600 uppercase">Bu Ay Toplam Gün</p>
+                    </div>
+                    <div class="bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-center">
+                        <p class="text-lg font-black text-slate-700" id="leaveStatTotal">0</p>
+                        <p class="text-[10px] font-bold text-slate-500 uppercase">Toplam Kayıt</p>
                     </div>
                 </div>
 
@@ -6720,6 +6771,20 @@
                             <p class="text-xs opacity-90 mb-2">Girilen tarihlerde ilgili sürücü için zaten aktif bir izin kaydı bulunmaktadır:</p>
                             <ul id="leaveConflictList" class="list-disc pl-4 text-xs font-semibold space-y-1"></ul>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Arama ve Durum Filtreleri -->
+                <div class="flex flex-col sm:flex-row gap-2 sm:items-center justify-between mb-3">
+                    <div class="relative w-full sm:w-64">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="leaveSearchInput" placeholder="Personel / TC ile ara..." oninput="renderLeaves()" class="w-full input-style text-xs pl-8">
+                    </div>
+                    <div class="flex gap-1.5 flex-wrap" id="leaveStatusFilterBar">
+                        <button type="button" onclick="setLeaveStatusFilter('ALL')" data-filter="ALL" class="leave-filter-btn bg-slate-800 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold transition">Tümü</button>
+                        <button type="button" onclick="setLeaveStatusFilter('ACTIVE')" data-filter="ACTIVE" class="leave-filter-btn bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg text-[10px] font-bold transition">Aktif</button>
+                        <button type="button" onclick="setLeaveStatusFilter('FUTURE')" data-filter="FUTURE" class="leave-filter-btn bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg text-[10px] font-bold transition">Gelecek</button>
+                        <button type="button" onclick="setLeaveStatusFilter('PAST')" data-filter="PAST" class="leave-filter-btn bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg text-[10px] font-bold transition">Geçmiş</button>
                     </div>
                 </div>
 
@@ -6832,9 +6897,27 @@
     }
 
     function formatDateStandard(val) {
-        if (!val) return '';
+        if (val === null || val === undefined || val === '') return '';
+
+        // Excel'in gerçek tarih hücresi olarak okuduğu değerler (cellDates:true ile JS Date gelir).
+        // Türkçe Excel'de tarihler dd.mm.yyyy biçiminde görünse de SheetJS bunları UTC bazlı Date objesine çevirir,
+        // bu yüzden yerel saat dilimi kaymasını önlemek için UTC alan getter'ları kullanılır.
+        if (val instanceof Date && !isNaN(val.getTime())) {
+            const y = val.getUTCFullYear();
+            const m = String(val.getUTCMonth() + 1).padStart(2, '0');
+            const d = String(val.getUTCDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        // cellDates uygulanmamış ham Excel seri tarih numarası (ör. 46000) gelirse
+        if (typeof val === 'number' && typeof XLSX !== 'undefined' && XLSX.SSF && XLSX.SSF.parse_date_code) {
+            const parsed = XLSX.SSF.parse_date_code(val);
+            if (parsed) return `${parsed.y}-${String(parsed.m).padStart(2, '0')}-${String(parsed.d).padStart(2, '0')}`;
+        }
+
         val = String(val).trim();
         if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+        // Türkiye Excel/metin formatı: gg.aa.yyyy, gg/aa/yyyy veya gg-aa-yyyy
         const dmy = val.match(/^(\d{1,2})[\.\/-](\d{1,2})[\.\/-](\d{4})$/);
         if (dmy) {
             return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`;
@@ -7188,16 +7271,65 @@
         });
     };
 
+    // Üst kısımdaki özet istatistik kartlarını (aktif/gelecek/bu ay/toplam) günceller
+    function updateLeaveStats() {
+        const elActive = document.getElementById('leaveStatActive');
+        if (!elActive) return; // panel henüz DOM'a eklenmemiş
+        const today = new Date().toISOString().split('T')[0];
+        const curMonth = today.slice(0, 7);
+
+        let activeCount = 0, futureCount = 0, monthDays = 0;
+        leaves.forEach(l => {
+            const isActive = today >= l.startDate && today <= l.endDate;
+            const isFuture = today < l.startDate;
+            if (isActive) activeCount++;
+            if (isFuture) futureCount++;
+            if ((l.startDate || '').slice(0, 7) === curMonth || (l.endDate || '').slice(0, 7) === curMonth) {
+                monthDays += getLeaveDurationDays(l.startDate, l.endDate);
+            }
+        });
+
+        elActive.innerText = activeCount;
+        document.getElementById('leaveStatFuture').innerText = futureCount;
+        document.getElementById('leaveStatMonthDays').innerText = monthDays;
+        document.getElementById('leaveStatTotal').innerText = leaves.length;
+    }
+
     window.renderLeaves = function() {
         const tbody = document.getElementById('leaveTableBody');
         if(!tbody) return;
+
+        updateLeaveStats();
+
         if(!leaves.length) {
             tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Sistemde kayıtlı izin bulunmuyor.</td></tr>';
             return;
         }
         const today = new Date().toISOString().split('T')[0];
-        
-        tbody.innerHTML = leaves.map(l => {
+
+        // Arama ve durum filtresini uygula (alttaki `leaves` verisini bozmadan, sadece görünümü filtreler)
+        const searchInput = document.getElementById('leaveSearchInput');
+        const searchTerm = normalizeTurkishStr(searchInput ? searchInput.value : '');
+        const displayLeaves = leaves.filter(l => {
+            if (searchTerm) {
+                const haystack = normalizeTurkishStr(l.driver || '') + ' ' + (l.tcNo || '');
+                if (!haystack.includes(searchTerm)) return false;
+            }
+            if (leaveStatusFilter !== 'ALL') {
+                const isActive = today >= l.startDate && today <= l.endDate;
+                const isFuture = today < l.startDate;
+                const status = isActive ? 'ACTIVE' : (isFuture ? 'FUTURE' : 'PAST');
+                if (status !== leaveStatusFilter) return false;
+            }
+            return true;
+        });
+
+        if (!displayLeaves.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Arama / filtre kriterine uyan izin kaydı bulunamadı.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = displayLeaves.map(l => {
             const isActive = today >= l.startDate && today <= l.endDate;
             const isFuture = today < l.startDate;
             const currentDuration = getLeaveDurationDays(l.startDate, l.endDate);
@@ -7249,7 +7381,7 @@
                 </td>
                 <td class="p-2.5 px-3 font-semibold text-slate-600">${l.startDate}</td>
                 <td class="p-2.5 px-3 font-semibold text-slate-600">${l.endDate}</td>
-                <td class="p-2.5 px-3 text-slate-500">${esc(l.description || '—')}</td>
+                <td class="p-2.5 px-3 text-slate-500">${(() => { const tb = getLeaveTypeBadge(l.description); return `<span class="${tb.cls} px-2 py-0.5 rounded text-[10px] font-bold">${esc(tb.label)}</span>`; })()}</td>
                 <td class="p-2.5 px-3 text-center">${statusBdg}</td>
                 <td class="p-2.5 px-3 text-right">
                     <div class="flex gap-1 justify-end">
@@ -7589,10 +7721,10 @@
     // Şablon Excel İndir (TC No Kolonu Eklendi)
     window.downloadLeaveTemplate = function() {
         if(typeof XLSX==='undefined'){showToast('XLSX yüklenmedi','error');return;}
-        const headers = [['TC Kimlik No', 'Sürücü', 'Başlangıç Tarihi', 'Bitiş Tarihi', 'Açıklama']];
+        const headers = [['TC Kimlik No', 'Sürücü', 'Başlangıç Tarihi (gg.aa.yyyy)', 'Bitiş Tarihi (gg.aa.yyyy)', 'Açıklama']];
         const dummyData = [
-            ['12345678901', 'Ahmet Yılmaz', '2026-07-10', '2026-07-17', 'Yıllık İzin'],
-            ['98765432109', 'Mehmet Kaya', '2026-08-01', '2026-08-05', 'Rapor']
+            ['12345678901', 'Ahmet Yılmaz', '10.07.2026', '17.07.2026', 'Yıllık İzin'],
+            ['98765432109', 'Mehmet Kaya', '01.08.2026', '05.08.2026', 'Rapor']
         ];
         const ws = XLSX.utils.aoa_to_sheet([...headers, ...dummyData]);
         ws['!cols'] = [{wch:15},{wch:20},{wch:18},{wch:18},{wch:24}];

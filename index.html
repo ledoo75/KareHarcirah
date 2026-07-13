@@ -6627,6 +6627,12 @@
     let leaves = [];
     let editLeaveId = null;
     let leaveStatusFilter = 'ALL';
+    let openConflictIds = new Set();
+
+    window.toggleLeaveConflictDetails = function(id) {
+        if (openConflictIds.has(id)) openConflictIds.delete(id); else openConflictIds.add(id);
+        renderLeaves();
+    };
 
     window.setLeaveStatusFilter = function(filter) {
         leaveStatusFilter = filter;
@@ -6788,8 +6794,8 @@
                     </div>
                 </div>
 
-                <!-- İzin Listesi Tablosu -->
-                <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-60 overflow-y-auto">
+                <!-- İzin Listesi Tablosu (Masaüstü) -->
+                <div class="hidden md:block overflow-x-auto border border-slate-200 rounded-xl max-h-60 overflow-y-auto">
                     <table class="w-full text-xs text-left">
                         <thead class="bg-slate-800 text-white font-bold uppercase sticky top-0">
                             <tr>
@@ -6805,6 +6811,11 @@
                             <tr><td colspan="6" class="p-4 text-center text-slate-400">Yükleniyor...</td></tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- İzin Listesi Kartları (Mobil) -->
+                <div id="leaveMobileList" class="md:hidden space-y-2 max-h-96 overflow-y-auto pr-0.5">
+                    <p class="p-4 text-center text-slate-400 text-xs">Yükleniyor...</p>
                 </div>
             `;
             usersPanel.appendChild(card);
@@ -6945,17 +6956,17 @@
             return { type: 'SAME_DRIVER', record: sameDriverConflict };
         }
 
-        const otherDriverConflict = leaves.find(l => {
+        const otherDriverConflicts = leaves.filter(l => {
             if (l.id === ignoreId) return false;
             if (normalizeTurkishStr(l.driver) === normDriver) return false;
-            
+
             const lStartTs = getMidnightTimestamp(l.startDate);
             const lEndTs = getMidnightTimestamp(l.endDate);
             return (lStartTs <= endTs) && (lEndTs >= startTs);
         });
 
-        if (otherDriverConflict) {
-            return { type: 'OTHER_DRIVER', record: otherDriverConflict };
+        if (otherDriverConflicts.length > 0) {
+            return { type: 'OTHER_DRIVER', record: otherDriverConflicts[0], records: otherDriverConflicts };
         }
 
         return null;
@@ -6992,13 +7003,18 @@
                 alert(`⚠️ KAYIT ENGELLENDİ:\n\n${driver} isimli personelin zaten ${conflict.record.startDate} / ${conflict.record.endDate} tarihleri arasında izin kaydı bulunuyor.`);
                 return;
             } else if (conflict.type === 'OTHER_DRIVER') {
-                const otherDuration = getLeaveDurationDays(conflict.record.startDate, conflict.record.endDate);
-                const overlap = getOverlapDays(startDate, endDate, conflict.record.startDate, conflict.record.endDate);
-                
-                const confirmSave = confirm(`⚠️ EŞZAMANLI İZİN UYARISI:\n\nBelirttiğiniz tarihlerde (${startDate} - ${endDate}) zaten başka bir personel olan "${conflict.record.driver}" izinli görünüyor!\n\n• ${conflict.record.driver} İzin Süresi: ${otherDuration} Gün\n• Kesişen Çakışan Gün: ${overlap} GÜN!\n\nİki personelin aynı tarihte izinli olmasını onaylıyor musunuz?`);
+                const allConflicts = conflict.records || [conflict.record];
+                const namesLine = allConflicts.map(r => `"${r.driver}"`).join(', ');
+                const detailLines = allConflicts.map(r => {
+                    const dur = getLeaveDurationDays(r.startDate, r.endDate);
+                    const ov = getOverlapDays(startDate, endDate, r.startDate, r.endDate);
+                    return `• ${r.driver} (${r.startDate} - ${r.endDate}) İzin Süresi: ${dur} Gün | Kesişen Çakışan Gün: ${ov} GÜN`;
+                }).join('\n');
+
+                const confirmSave = confirm(`⚠️ EŞZAMANLI İZİN UYARISI:\n\nBelirttiğiniz tarihlerde (${startDate} - ${endDate}) zaten ${allConflicts.length} personel izinli görünüyor: ${namesLine}\n\n${detailLines}\n\nBu personellerin aynı tarihte izinli olmasını onaylıyor musunuz?`);
                 if (!confirmSave) {
                     if (conflictList) {
-                        conflictList.innerHTML = `<li>İşlem İptal Edildi: Aynı tarihlerde <b>${esc(conflict.record.driver)}</b> izinli olduğu için <b>${esc(driver)}</b> kaydı açılmadı.</li>`;
+                        conflictList.innerHTML = `<li>İşlem İptal Edildi: Aynı tarihlerde <b>${allConflicts.map(r => esc(r.driver)).join(', ')}</b> izinli olduğu için <b>${esc(driver)}</b> kaydı açılmadı.</li>`;
                     }
                     if (alertBox) alertBox.classList.remove('hidden');
                     return;
@@ -7031,7 +7047,9 @@
                 showToast('İzin başarıyla güncellendi ✓','success');
                 cancelLeaveEdit();
             } else {
-                await cLeaves.add({
+                const newLeaveRef = cLeaves.doc();
+                openConflictIds.add(newLeaveRef.id);
+                await newLeaveRef.set({
                     tcNo, driver, startDate, endDate, description,
                     createdAt: new Date().toISOString(),
                     createdBy: loggedInUser?.username || currentUser
@@ -7151,9 +7169,13 @@
                         if (dbConflict.type === 'SAME_DRIVER') {
                             conflicts.push(`Satır ${index+2}: <b>${esc(driver)}</b> ismi <b>${startDate} - ${endDate}</b> tarihinde çakışıyor! İçeride kayıtlı aynı isim bu tarihte zaten izinli.`);
                         } else {
-                            const overlap = getOverlapDays(startDate, endDate, dbConflict.record.startDate, dbConflict.record.endDate);
+                            const allConflicts = dbConflict.records || [dbConflict.record];
+                            const namesWithDays = allConflicts.map(r => {
+                                const ov = getOverlapDays(startDate, endDate, r.startDate, r.endDate);
+                                return `<b>${esc(r.driver)}</b> (${ov} gün)`;
+                            }).join(', ');
                             toSave.push({ tcNo, driver, startDate, endDate, description, createdAt: new Date().toISOString(), createdBy: loggedInUser?.username || currentUser });
-                            conflicts.push(`ℹ️ Satır ${index+2}: <b>${esc(driver)}</b> yüklendi ancak aynı tarihlerde izinli olan <b>${esc(dbConflict.record.driver)}</b> ile <b>${overlap} gün</b> çakışma mevcut.`);
+                            conflicts.push(`ℹ️ Satır ${index+2}: <b>${esc(driver)}</b> yüklendi ancak aynı tarihlerde izinli olan ${namesWithDays} ile çakışma mevcut.`);
                         }
                     } else if (localConflict) {
                         conflicts.push(`Satır ${index+2}: <b>${esc(driver)}</b> ismi Excel tablosunda mükerrer yüklenmiş (${startDate} - ${endDate}).`);
@@ -7175,6 +7197,7 @@
                     const batch = db.batch();
                     toSave.forEach(item => {
                         const ref = cLeaves.doc();
+                        openConflictIds.add(ref.id);
                         batch.set(ref, item);
                     });
                     await batch.commit();
@@ -7297,12 +7320,14 @@
 
     window.renderLeaves = function() {
         const tbody = document.getElementById('leaveTableBody');
+        const mobileList = document.getElementById('leaveMobileList');
         if(!tbody) return;
 
         updateLeaveStats();
 
         if(!leaves.length) {
             tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Sistemde kayıtlı izin bulunmuyor.</td></tr>';
+            if (mobileList) mobileList.innerHTML = '<p class="p-4 text-center text-slate-400 text-xs">Sistemde kayıtlı izin bulunmuyor.</p>';
             return;
         }
         const today = new Date().toISOString().split('T')[0];
@@ -7326,8 +7351,11 @@
 
         if (!displayLeaves.length) {
             tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Arama / filtre kriterine uyan izin kaydı bulunamadı.</td></tr>';
+            if (mobileList) mobileList.innerHTML = '<p class="p-4 text-center text-slate-400 text-xs">Arama / filtre kriterine uyan izin kaydı bulunamadı.</p>';
             return;
         }
+
+        const mobileCards = [];
 
         tbody.innerHTML = displayLeaves.map(l => {
             const isActive = today >= l.startDate && today <= l.endDate;
@@ -7354,19 +7382,62 @@
             }
 
             let overlapWarning = '';
+            let overlapToggle = '';
             let rowBg = '';
             if (overlappingRecords.length > 0) {
                 rowBg = 'bg-amber-50/20';
-                overlapWarning = overlappingRecords.map(other => {
+                const isOpen = openConflictIds.has(l.id);
+                const detailsHtml = overlappingRecords.map(other => {
                     const overlapDays = getOverlapDays(l.startDate, l.endDate, other.startDate, other.endDate);
                     return `<div class="text-[9px] text-amber-700 font-semibold mt-1 bg-amber-100/60 border border-amber-200 rounded px-1.5 py-0.5 inline-flex items-center gap-1">
                         <i class="fa-solid fa-triangle-exclamation mr-1 text-amber-500"></i>
                         <span>Aynı tarihte <b>${esc(other.driver)}</b> de izinli! (Kesişen: <b>${overlapDays} Gün</b>)</span>
                     </div>`;
-                }).join('<br>');
+                }).join('');
+                overlapToggle = `<button type="button" onclick="toggleLeaveConflictDetails('${l.id}')" class="text-[9px] text-amber-700 font-bold mt-1 bg-amber-100 hover:bg-amber-200 border border-amber-200 rounded px-1.5 py-0.5 inline-flex items-center gap-1 transition">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                        <span>${overlappingRecords.length} kişi ile çakışıyor</span>
+                        <i class="fa-solid fa-chevron-${isOpen ? 'up' : 'down'} text-[8px] ml-0.5"></i>
+                    </button>`;
+                overlapWarning = `<div class="${isOpen ? '' : 'hidden'} mt-1 space-y-0.5">${detailsHtml}</div>`;
             }
 
             const tcText = l.tcNo ? `<span class="text-[10px] text-slate-400 font-semibold">TC: ${esc(l.tcNo)}</span>` : '<span class="text-[10px] text-slate-300 font-medium">TC Belirtilmemiş</span>';
+
+            const typeBadge = (() => { const tb = getLeaveTypeBadge(l.description); return `<span class="${tb.cls} px-2 py-0.5 rounded text-[10px] font-bold">${esc(tb.label)}</span>`; })();
+
+            const actionButtons = `
+                <button onclick="editLeave('${l.id}')" class="bg-amber-50 text-amber-600 hover:bg-amber-100 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" title="İzni Düzelt / Düzenle"><i class="fa-solid fa-pen"></i> Düzenle</button>
+                <button onclick="copySignatureLink('${l.id}')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" title="İmza Linkini Kopyala"><i class="fa-solid fa-link"></i> Paylaş</button>
+                ${l.signature ? `<button onclick="downloadSignedLeavePDF('${l.id}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" title="Resmi PDF İndir"><i class="fa-solid fa-file-pdf"></i> PDF</button>` : ''}
+                <button onclick="deleteLeave('${l.id}', '${esc(l.driver)}', '${l.startDate}', '${l.endDate}')" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-2 py-1 rounded text-[10px] font-bold transition">Sil</button>
+            `;
+
+            mobileCards.push(`<div class="border border-slate-200 rounded-xl p-3 ${rowBg || 'bg-white'} space-y-2">
+                <div class="flex items-start justify-between gap-2 flex-wrap">
+                    <div class="flex flex-col gap-0.5 min-w-0">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="font-bold text-slate-800 text-sm break-words">${esc(l.driver)}</span>
+                            <span class="bg-indigo-50 border border-indigo-100 text-indigo-700 text-[9px] font-black px-1.5 py-0.5 rounded-full shrink-0">${currentDuration} Gün İzin</span>
+                        </div>
+                        ${tcText}
+                    </div>
+                    <div class="shrink-0">${statusBdg}</div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-[11px]">
+                    <div>
+                        <p class="text-slate-400 font-bold uppercase text-[9px]">Başlangıç</p>
+                        <p class="font-semibold text-slate-600">${l.startDate}</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 font-bold uppercase text-[9px]">Bitiş</p>
+                        <p class="font-semibold text-slate-600">${l.endDate}</p>
+                    </div>
+                </div>
+                <div>${typeBadge}</div>
+                ${overlapToggle}${overlapWarning}
+                <div class="flex gap-1 flex-wrap pt-2 border-t border-slate-100">${actionButtons}</div>
+            </div>`);
 
             return `<tr class="hover:bg-slate-50 border-b border-slate-100 ${rowBg}">
                 <td class="p-2.5 px-3">
@@ -7377,22 +7448,19 @@
                         </div>
                         ${tcText}
                     </div>
-                    ${overlapWarning ? `<div class="mt-1 space-y-0.5">${overlapWarning}</div>` : ''}
+                    ${overlapToggle}${overlapWarning}
                 </td>
                 <td class="p-2.5 px-3 font-semibold text-slate-600">${l.startDate}</td>
                 <td class="p-2.5 px-3 font-semibold text-slate-600">${l.endDate}</td>
-                <td class="p-2.5 px-3 text-slate-500">${(() => { const tb = getLeaveTypeBadge(l.description); return `<span class="${tb.cls} px-2 py-0.5 rounded text-[10px] font-bold">${esc(tb.label)}</span>`; })()}</td>
+                <td class="p-2.5 px-3 text-slate-500">${typeBadge}</td>
                 <td class="p-2.5 px-3 text-center">${statusBdg}</td>
                 <td class="p-2.5 px-3 text-right">
-                    <div class="flex gap-1 justify-end">
-                        <button onclick="editLeave('${l.id}')" class="bg-amber-50 text-amber-600 hover:bg-amber-100 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" title="İzni Düzelt / Düzenle"><i class="fa-solid fa-pen"></i> Düzenle</button>
-                        <button onclick="copySignatureLink('${l.id}')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" title="İmza Linkini Kopyala"><i class="fa-solid fa-link"></i> Paylaş</button>
-                        ${l.signature ? `<button onclick="downloadSignedLeavePDF('${l.id}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1" title="Resmi PDF İndir"><i class="fa-solid fa-file-pdf"></i> PDF</button>` : ''}
-                        <button onclick="deleteLeave('${l.id}', '${esc(l.driver)}', '${l.startDate}', '${l.endDate}')" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-2 py-1 rounded text-[10px] font-bold transition">Sil</button>
-                    </div>
+                    <div class="flex gap-1 justify-end">${actionButtons}</div>
                 </td>
             </tr>`;
         }).join('');
+
+        if (mobileList) mobileList.innerHTML = mobileCards.join('');
     };
 
     // Sürücü İmza Toplama Ekranı Kurulumu

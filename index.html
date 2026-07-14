@@ -6768,13 +6768,13 @@
                             <input type="text" id="leaveDesc" placeholder="Açıklama / İzin Türü" class="input-style text-xs flex-1">
                             <button type="submit" id="leaveSubmitBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 rounded-lg text-xs font-bold shrink-0" title="İzni Kaydet"><i class="fa-solid fa-plus"></i></button>
                         </div>
-                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2" id="leaveDayTypeRow">
-                            <select id="leaveDayType" onchange="onLeaveDayTypeChange()" class="input-style text-xs font-bold sm:col-span-2" title="Gün Tipi">
+                        <div class="col-span-1 sm:col-span-5 flex flex-wrap gap-2" id="leaveDayTypeRow">
+                            <select id="leaveDayType" onchange="onLeaveDayTypeChange()" class="input-style text-xs font-bold flex-1 min-w-[140px] sm:max-w-[220px]" title="Gün Tipi">
                                 <option value="FULL">📅 Tam Gün</option>
                                 <option value="HALF">🌓 Yarım Gün</option>
                                 <option value="HOURLY">⏱️ Saatlik</option>
                             </select>
-                            <input type="number" id="leaveHours" min="1" max="23" step="1" placeholder="Kaç Saat?" class="input-style text-xs hidden">
+                            <input type="number" id="leaveHours" min="1" max="23" step="1" placeholder="Kaç Saat?" class="input-style text-xs hidden w-28 shrink-0">
                         </div>
                     </form>
                 </div>

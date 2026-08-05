@@ -6619,15 +6619,16 @@
             navigator.serviceWorker.register('service-worker.js').catch(err=>console.log(err));
         });
     }
-// =================================═════════════════════
-//   KAREKARA SÜRÜCÜ İZİN SİSTEMİ (BULLETPROOF KOPYALAMA v11)
-// =================================═════════════════════
+// =========================================================================
+//   KAREKARA SÜRÜCÜ İZİN SİSTEMİ (v16 - İMZA EKRANI VE PDF HESAPLAMA EŞİTLEME)
+// =========================================================================
 (function() {
     const cLeaves = firebase.firestore().collection('kare_leaves');
     let leaves = [];
     let editLeaveId = null;
     let leaveStatusFilter = 'ALL';
     let openConflictIds = new Set();
+    let currentPublicLeaveData = null; // İmza ekranı verisini saklar
 
     window.toggleLeaveConflictDetails = function(id) {
         if (openConflictIds.has(id)) openConflictIds.delete(id); else openConflictIds.add(id);
@@ -6646,7 +6647,6 @@
         renderLeaves();
     };
 
-    // İzin türüne göre renkli rozet üretir (Açıklama metnindeki anahtar kelimelere göre)
     function getLeaveTypeBadge(description) {
         const d = normalizeTurkishStr(description || '');
         if (!d) return { label: 'Belirtilmemiş', cls: 'bg-slate-100 text-slate-500' };
@@ -6658,7 +6658,6 @@
         return { label: description, cls: 'bg-indigo-100 text-indigo-700' };
     }
 
-    // URL parametresini kontrol et
     const urlParams = new URLSearchParams(window.location.search);
     const targetLeaveId = urlParams.get('izin_imza');
 
@@ -6701,7 +6700,6 @@
         document.head.appendChild(style);
     }
 
-    // HTML Arayüzünü otomatik oluştur ve "panel-SURUCU_IZIN" içerisine yerleştir
     document.addEventListener("DOMContentLoaded", function() {
         if (targetLeaveId) {
             injectPublicSignatureScreen();
@@ -6740,7 +6738,7 @@
                     </div>
                     <div class="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-center">
                         <p class="text-lg font-black text-amber-700" id="leaveStatMonthDays">0</p>
-                        <p class="text-[10px] font-bold text-amber-600 uppercase">Bu Ay Toplam Gün</p>
+                        <p class="text-[10px] font-bold text-amber-600 uppercase">Bu Ay Kullanılan İş Günü</p>
                     </div>
                     <div class="bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-center">
                         <p class="text-lg font-black text-slate-700" id="leaveStatTotal">0</p>
@@ -6762,19 +6760,36 @@
                             <input type="text" id="leaveDriver" list="leaveDriverDatalist" required placeholder="Personel / Şoför Adı Yazın" class="w-full input-style text-xs font-bold">
                             <datalist id="leaveDriverDatalist"></datalist>
                         </div>
-                        <input type="date" id="leaveStart" required class="input-style text-xs" title="Başlangıç Tarihi" oninput="if(document.getElementById('leaveDayType') && document.getElementById('leaveDayType').value!=='FULL'){document.getElementById('leaveEnd').value=this.value;}">
-                        <input type="date" id="leaveEnd" required class="input-style text-xs" title="Bitiş Tarihi">
+                        <input type="date" id="leaveStart" required class="input-style text-xs" title="Başlangıç Tarihi" oninput="if(document.getElementById('leaveDayType') && document.getElementById('leaveDayType').value!=='FULL'){document.getElementById('leaveEnd').value=this.value;} updateLeaveFormCalc();">
+                        <input type="date" id="leaveEnd" required class="input-style text-xs" title="Bitiş Tarihi" oninput="updateLeaveFormCalc();">
                         <div class="flex gap-1.5" id="leaveActionBtnContainer">
                             <input type="text" id="leaveDesc" placeholder="Açıklama / İzin Türü" class="input-style text-xs flex-1">
                             <button type="submit" id="leaveSubmitBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 rounded-lg text-xs font-bold shrink-0" title="İzni Kaydet"><i class="fa-solid fa-plus"></i></button>
                         </div>
-                        <div class="col-span-1 sm:col-span-5 flex flex-wrap gap-2" id="leaveDayTypeRow">
-                            <select id="leaveDayType" onchange="onLeaveDayTypeChange()" class="input-style text-xs font-bold flex-1 min-w-[140px] sm:max-w-[220px]" title="Gün Tipi">
-                                <option value="FULL">📅 Tam Gün</option>
-                                <option value="HALF">🌓 Yarım Gün</option>
-                                <option value="HOURLY">⏱️ Saatlik</option>
-                            </select>
-                            <input type="number" id="leaveHours" min="1" max="23" step="1" placeholder="Kaç Saat?" class="input-style text-xs hidden w-28 shrink-0">
+                        
+                        <div class="col-span-1 sm:col-span-5 flex flex-wrap items-center justify-between gap-2 pt-1">
+                            <div class="flex flex-wrap gap-2 flex-1">
+                                <select id="leaveDayType" onchange="onLeaveDayTypeChange(); updateLeaveFormCalc();" class="input-style text-xs font-bold min-w-[130px] sm:max-w-[180px]" title="Gün Tipi">
+                                    <option value="FULL">📅 Tam Gün</option>
+                                    <option value="HALF">🌓 Yarım Gün</option>
+                                    <option value="HOURLY">⏱️ Saatlik</option>
+                                </select>
+                                <input type="number" id="leaveHours" min="1" max="23" step="1" placeholder="Kaç Saat?" class="input-style text-xs hidden w-28 shrink-0" oninput="updateLeaveFormCalc();">
+                            </div>
+
+                            <!-- MODERN AÇMA / KAPAMA TOGGLE SWITCH -->
+                            <label class="inline-flex items-center gap-2 cursor-pointer bg-white border border-slate-200 px-3 py-1.5 rounded-xl hover:border-emerald-500 transition shrink-0 select-none shadow-sm">
+                                <div class="relative inline-block w-8 h-4 align-middle select-none">
+                                    <input type="checkbox" id="leaveExcludeWeekends" checked onchange="updateLeaveFormCalc();" class="peer sr-only">
+                                    <div class="w-8 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600"></div>
+                                </div>
+                                <span class="text-xs font-bold text-slate-700" id="leaveToggleLabelText">Hafta Sonu Hariç (5 Gün)</span>
+                            </label>
+                        </div>
+
+                        <!-- ANLIK İZİN GÜNÜ HESAPLAMA ROZETİ -->
+                        <div id="leaveCalcBadge" class="col-span-1 sm:col-span-5 hidden bg-emerald-50 border border-emerald-200 rounded-lg p-2 text-xs font-bold text-emerald-800 flex items-center justify-between flex-wrap gap-1">
+                            <span><i class="fa-solid fa-calculator text-emerald-600 mr-1.5"></i> Hesaplanan İzin Süresi: <b id="leaveCalcDaysText" class="text-emerald-700 text-sm">0 Gün</b></span>
                         </div>
                     </form>
                 </div>
@@ -6834,7 +6849,6 @@
         }
     });
 
-    // 3. setupApp fonksiyonunu dinleyerek Firestore entegrasyonunu başlatıyoruz
     const originalSetupApp = window.setupApp;
     window.setupApp = function(user) {
         if (originalSetupApp) originalSetupApp(user);
@@ -6849,7 +6863,6 @@
         }
     };
 
-    // 4. updateDriverDropdowns fonksiyonunu dinleyerek öneri datalistini dolduruyoruz
     const originalUpdateDriverDropdowns = window.updateDriverDropdowns;
     window.updateDriverDropdowns = function() {
         if (originalUpdateDriverDropdowns) originalUpdateDriverDropdowns();
@@ -6862,7 +6875,6 @@
         }
     };
 
-    // 5. Harf/Karakter toleranslı ve Tarih Formatı bağımsız koruma fonksiyonları
     function normalizeTurkishStr(str) {
         if (!str) return '';
         return str.trim()
@@ -6903,11 +6915,8 @@
         return Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
     }
 
-    // ===== RESMİ TATİL / HAFTA SONU HARİÇ İŞ GÜNÜ HESABI =====
-    // Her yıl aynı takvim gününe denk gelen sabit resmi/milli bayramlar (ay-gün formatında)
+    // ===== RESMİ TATİL VE HAFTA SONU DİNAMİK HESAPLAMA =====
     const FIXED_HOLIDAYS_MMDD = ['01-01','04-23','05-01','05-19','07-15','08-30','10-29'];
-    // Dini bayramlar (Ramazan/Kurban) her yıl tarih değiştirdiği için manuel tanımlanır.
-    // Yeni yıl geldiğinde Resmi Gazete'den o yılın tarihlerini bu listeye eklemeniz yeterlidir.
     const MOVABLE_RELIGIOUS_HOLIDAYS = {
         2026: ['2026-03-20','2026-03-21','2026-03-22', '2026-05-27','2026-05-28','2026-05-29','2026-05-30'],
         2027: ['2027-03-09','2027-03-10','2027-03-11','2027-03-12', '2027-05-16','2027-05-17','2027-05-18','2027-05-19']
@@ -6920,8 +6929,7 @@
         return list.includes(dateStr);
     }
 
-    // Başlangıç-bitiş arasındaki hafta sonu (Cmt/Paz) ve resmi tatil günlerini hariç tutarak iş günü sayısını döner
-    function getBusinessLeaveDays(start, end) {
+    function getBusinessLeaveDays(start, end, excludeSaturdays = true) {
         const s = getMidnightTimestamp(start);
         const e = getMidnightTimestamp(end);
         if (!s || !e || e < s) return 0;
@@ -6930,26 +6938,85 @@
         while (cursor.getTime() <= e) {
             const dow = cursor.getDay(); // 0=Pazar, 6=Cumartesi
             const iso = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`;
-            if (dow !== 0 && dow !== 6 && !isTurkishHoliday(iso)) count++;
+            
+            let isOffDay = (dow === 0) || isTurkishHoliday(iso);
+            if (excludeSaturdays && dow === 6) {
+                isOffDay = true;
+            }
+
+            if (!isOffDay) count++;
             cursor.setDate(cursor.getDate() + 1);
         }
         return count;
     }
 
-    // Gün tipine (tam gün / yarım gün / saatlik) göre kısa süre metni üretir — PDF, Excel ve imza ekranında ortak kullanılır
+    window.updateLeaveFormCalc = function() {
+        const startVal = document.getElementById('leaveStart')?.value;
+        const endVal = document.getElementById('leaveEnd')?.value;
+        const dayType = document.getElementById('leaveDayType')?.value || 'FULL';
+        const excludeSat = document.getElementById('leaveExcludeWeekends')?.checked !== false;
+        const toggleLabel = document.getElementById('leaveToggleLabelText');
+        const calcBadge = document.getElementById('leaveCalcBadge');
+        const calcText = document.getElementById('leaveCalcDaysText');
+
+        if (toggleLabel) {
+            toggleLabel.innerText = excludeSat ? "Hafta Sonu Hariç (5 Gün)" : "Cumartesi Dahil (6 Gün)";
+        }
+
+        if (!calcBadge || !calcText) return;
+
+        if (!startVal || !endVal) {
+            calcBadge.classList.add('hidden');
+            return;
+        }
+
+        if (dayType === 'HOURLY') {
+            const hours = document.getElementById('leaveHours')?.value || 0;
+            calcText.innerText = `${hours} Saat`;
+            calcBadge.classList.remove('hidden');
+            return;
+        }
+
+        if (dayType === 'HALF') {
+            calcText.innerText = `0.5 Gün (Yarım Gün)`;
+            calcBadge.classList.remove('hidden');
+            return;
+        }
+
+        const totalCalDays = getLeaveDurationDays(startVal, endVal);
+        const bDays = getBusinessLeaveDays(startVal, endVal, excludeSat);
+        const weekendAndHolidays = totalCalDays - bDays;
+
+        const ruleNote = excludeSat 
+            ? "Cumartesi ve Pazar düşülmüştür (5 Günlük Çalışma)." 
+            : "Cumartesi izin gününden sayılmıştır; sadece Pazar ve resmi tatiller düşülmüştür (6 Günlük Çalışma).";
+
+        if (bDays <= 0) {
+            calcText.innerHTML = `<span class="text-rose-600">0 Gün (Seçilen tarih aralığının tamamı tatil!)</span>`;
+        } else {
+            calcText.innerHTML = `${bDays} İş Günü İzin <span class="text-[11px] font-normal text-slate-600 block sm:inline mt-0.5 sm:mt-0">(${ruleNote})</span>`;
+        }
+        calcBadge.classList.remove('hidden');
+    };
+
     function formatLeaveDurationShort(l) {
+        if (!l) return '0 Gün';
         if (l.dayType === 'HOURLY') return `${Number(l.hours) || 0} Saat`;
         if (l.dayType === 'HALF') return 'Yarım Gün';
-        return `${getLeaveDurationDays(l.startDate, l.endDate)} Gün`;
+        const excludeSat = l.excludeWeekends !== false;
+        const bDays = getBusinessLeaveDays(l.startDate, l.endDate, excludeSat);
+        return `${bDays} İş Günü`;
     }
 
-    // Liste rozetlerinde kullanılan, iş günü bilgisini de içeren tam süre etiketi
     function getLeaveDurationLabel(l) {
-        if (l.dayType === 'HOURLY' || l.dayType === 'HALF') return `${formatLeaveDurationShort(l)} İzin`;
+        if (l.dayType === 'HOURLY' || l.dayType === 'HALF') return `${formatLeaveDurationShort(l)}`;
+        const excludeSat = l.excludeWeekends !== false;
         const totalDays = getLeaveDurationDays(l.startDate, l.endDate);
-        const businessDays = getBusinessLeaveDays(l.startDate, l.endDate);
-        if (totalDays > 1 && businessDays !== totalDays) return `${totalDays} Gün İzin (${businessDays} İş Günü)`;
-        return `${totalDays} Gün İzin`;
+        const businessDays = getBusinessLeaveDays(l.startDate, l.endDate, excludeSat);
+        const holidayCount = totalDays - businessDays;
+        const ruleText = excludeSat ? "Cmt/Paz Hariç" : "Cumartesi Dahil";
+        if (holidayCount > 0) return `${businessDays} Gün İzin (${holidayCount} Gün Tatil Düşüldü - ${ruleText})`;
+        return `${businessDays} Gün İzin (${ruleText})`;
     }
 
     function getOverlapDays(start1, end1, start2, end2) {
@@ -6970,9 +7037,6 @@
     function formatDateStandard(val) {
         if (val === null || val === undefined || val === '') return '';
 
-        // Excel'in gerçek tarih hücresi olarak okuduğu değerler (cellDates:true ile JS Date gelir).
-        // Türkçe Excel'de tarihler dd.mm.yyyy biçiminde görünse de SheetJS bunları UTC bazlı Date objesine çevirir,
-        // bu yüzden yerel saat dilimi kaymasını önlemek için UTC alan getter'ları kullanılır.
         if (val instanceof Date && !isNaN(val.getTime())) {
             const y = val.getUTCFullYear();
             const m = String(val.getUTCMonth() + 1).padStart(2, '0');
@@ -6980,7 +7044,6 @@
             return `${y}-${m}-${d}`;
         }
 
-        // cellDates uygulanmamış ham Excel seri tarih numarası (ör. 46000) gelirse
         if (typeof val === 'number' && typeof XLSX !== 'undefined' && XLSX.SSF && XLSX.SSF.parse_date_code) {
             const parsed = XLSX.SSF.parse_date_code(val);
             if (parsed) return `${parsed.y}-${String(parsed.m).padStart(2, '0')}-${String(parsed.d).padStart(2, '0')}`;
@@ -6988,7 +7051,6 @@
 
         val = String(val).trim();
         if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
-        // Türkiye Excel/metin formatı: gg.aa.yyyy, gg/aa/yyyy veya gg-aa-yyyy
         const dmy = val.match(/^(\d{1,2})[\.\/-](\d{1,2})[\.\/-](\d{4})$/);
         if (dmy) {
             return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`;
@@ -7032,7 +7094,6 @@
         return null;
     };
 
-    // Gün tipi (Tam Gün / Yarım Gün / Saatlik) değişince formu buna göre ayarlar
     window.onLeaveDayTypeChange = function() {
         const typeEl = document.getElementById('leaveDayType');
         const type = typeEl ? typeEl.value : 'FULL';
@@ -7054,6 +7115,7 @@
                 endInput.classList.remove('opacity-60');
             }
         }
+        updateLeaveFormCalc();
     };
 
     window.addManualLeave = async function(event) {
@@ -7063,10 +7125,11 @@
         const dayTypeEl = document.getElementById('leaveDayType');
         const dayType = dayTypeEl ? dayTypeEl.value : 'FULL';
         const description = document.getElementById('leaveDesc').value.trim() || 'Yıllık İzin';
+        const excludeWeekends = document.getElementById('leaveExcludeWeekends')?.checked !== false;
 
         let startDate = formatDateStandard(document.getElementById('leaveStart').value);
         let endDate = formatDateStandard(document.getElementById('leaveEnd').value);
-        if (dayType !== 'FULL') endDate = startDate; // Yarım gün / saatlik izin tek gün içinde kalır
+        if (dayType !== 'FULL') endDate = startDate;
 
         if(!driver) { showToast('Lütfen şoför/personel adı yazın!','error'); return; }
         if(!startDate || !endDate) { showToast('Tarihler boş olamaz!','error'); return; }
@@ -7087,10 +7150,10 @@
 
         if(conflict) {
             if (conflict.type === 'SAME_DRIVER') {
-                const totalDuration = getLeaveDurationDays(conflict.record.startDate, conflict.record.endDate);
+                const totalDuration = getBusinessLeaveDays(conflict.record.startDate, conflict.record.endDate, conflict.record.excludeWeekends !== false);
                 const overlap = getOverlapDays(startDate, endDate, conflict.record.startDate, conflict.record.endDate);
                 if(conflictList) {
-                    conflictList.innerHTML = `<li>Giriş Engellendi: <b>${esc(driver)}</b> zaten bu tarihlerde izinli! (Mevcut Kayıt: ${conflict.record.startDate} - ${conflict.record.endDate} arası [${totalDuration} gün] | Kesişen Çakışma: <b>${overlap} gün</b>)</li>`;
+                    conflictList.innerHTML = `<li>Giriş Engellendi: <b>${esc(driver)}</b> zaten bu tarihlerde izinli! (Mevcut Kayıt: ${conflict.record.startDate} - ${conflict.record.endDate} arası [${totalDuration} iş günü] | Kesişen Çakışma: <b>${overlap} gün</b>)</li>`;
                 }
                 if(alertBox) alertBox.classList.remove('hidden');
                 showToast('Hata: Aynı personelin izinleri çakışıyor!','error');
@@ -7100,9 +7163,9 @@
                 const allConflicts = conflict.records || [conflict.record];
                 const namesLine = allConflicts.map(r => `"${r.driver}"`).join(', ');
                 const detailLines = allConflicts.map(r => {
-                    const dur = getLeaveDurationDays(r.startDate, r.endDate);
+                    const dur = getBusinessLeaveDays(r.startDate, r.endDate, r.excludeWeekends !== false);
                     const ov = getOverlapDays(startDate, endDate, r.startDate, r.endDate);
-                    return `• ${r.driver} (${r.startDate} - ${r.endDate}) İzin Süresi: ${dur} Gün | Kesişen Çakışan Gün: ${ov} GÜN`;
+                    return `• ${r.driver} (${r.startDate} - ${r.endDate}) İzin Süresi: ${dur} İş Günü | Kesişen Çakışan Gün: ${ov} GÜN`;
                 }).join('\n');
 
                 const confirmSave = confirm(`⚠️ EŞZAMANLI İZİN UYARISI:\n\nBelirttiğiniz tarihlerde (${startDate} - ${endDate}) zaten ${allConflicts.length} personel izinli görünüyor: ${namesLine}\n\n${detailLines}\n\nBu personellerin aynı tarihte izinli olmasını onaylıyor musunuz?`);
@@ -7122,7 +7185,7 @@
             if (editLeaveId) {
                 const existing = leaves.find(x => x.id === editLeaveId);
                 let updateData = {
-                    tcNo, driver, startDate, endDate, description,
+                    tcNo, driver, startDate, endDate, description, excludeWeekends,
                     dayType, hours: dayType === 'HOURLY' ? hours : null,
                     lastEditedAt: new Date().toISOString(),
                     lastEditedBy: loggedInUser?.username || currentUser
@@ -7145,12 +7208,13 @@
                 const newLeaveRef = cLeaves.doc();
                 openConflictIds.add(newLeaveRef.id);
                 await newLeaveRef.set({
-                    tcNo, driver, startDate, endDate, description,
+                    tcNo, driver, startDate, endDate, description, excludeWeekends,
                     dayType, hours: dayType === 'HOURLY' ? hours : null,
                     createdAt: new Date().toISOString(),
                     createdBy: loggedInUser?.username || currentUser
                 });
                 document.getElementById('manualLeaveForm').reset();
+                if (document.getElementById('leaveExcludeWeekends')) document.getElementById('leaveExcludeWeekends').checked = true;
                 onLeaveDayTypeChange();
                 showToast('İzin başarıyla kaydedildi ✓','success');
             }
@@ -7176,6 +7240,9 @@
         document.getElementById('leaveEnd').value = l.endDate;
         document.getElementById('leaveDesc').value = l.description || '';
 
+        const excludeCheck = document.getElementById('leaveExcludeWeekends');
+        if (excludeCheck) excludeCheck.checked = l.excludeWeekends !== false;
+
         const dayTypeEl = document.getElementById('leaveDayType');
         if (dayTypeEl) dayTypeEl.value = l.dayType || 'FULL';
         const hoursEl = document.getElementById('leaveHours');
@@ -7199,12 +7266,14 @@
             document.getElementById('leaveActionBtnContainer').appendChild(cancelBtn);
         }
 
+        updateLeaveFormCalc();
         document.getElementById('manualLeaveForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
     window.cancelLeaveEdit = function() {
         editLeaveId = null;
         document.getElementById('manualLeaveForm').reset();
+        if (document.getElementById('leaveExcludeWeekends')) document.getElementById('leaveExcludeWeekends').checked = true;
         onLeaveDayTypeChange();
         document.getElementById('leaveFormTitle').innerText = "Hızlı İzin Tanımla";
 
@@ -7217,6 +7286,9 @@
 
         const cancelBtn = document.getElementById('leaveCancelBtn');
         if (cancelBtn) cancelBtn.remove();
+        
+        const calcBadge = document.getElementById('leaveCalcBadge');
+        if (calcBadge) calcBadge.classList.add('hidden');
     };
 
     window.importLeaveExcel = async function(event) {
@@ -7278,13 +7350,13 @@
                                 const ov = getOverlapDays(startDate, endDate, r.startDate, r.endDate);
                                 return `<b>${esc(r.driver)}</b> (${ov} gün)`;
                             }).join(', ');
-                            toSave.push({ tcNo, driver, startDate, endDate, description, createdAt: new Date().toISOString(), createdBy: loggedInUser?.username || currentUser });
+                            toSave.push({ tcNo, driver, startDate, endDate, description, excludeWeekends: true, createdAt: new Date().toISOString(), createdBy: loggedInUser?.username || currentUser });
                             conflicts.push(`ℹ️ Satır ${index+2}: <b>${esc(driver)}</b> yüklendi ancak aynı tarihlerde izinli olan ${namesWithDays} ile çakışma mevcut.`);
                         }
                     } else if (localConflict) {
                         conflicts.push(`Satır ${index+2}: <b>${esc(driver)}</b> ismi Excel tablosunda mükerrer yüklenmiş (${startDate} - ${endDate}).`);
                     } else {
-                        toSave.push({ tcNo, driver, startDate, endDate, description, createdAt: new Date().toISOString(), createdBy: loggedInUser?.username || currentUser });
+                        toSave.push({ tcNo, driver, startDate, endDate, description, excludeWeekends: true, createdAt: new Date().toISOString(), createdBy: loggedInUser?.username || currentUser });
                     }
                 });
 
@@ -7332,7 +7404,6 @@
         } catch(e) { showToast('Hata: '+e.message,'error'); }
     };
 
-    // Tamamen Görünmez ve Mobil Uyumlu Kopyalama Yedek Algoritması (Bypass Alerts)
     function silentCopyFallback(text) {
         const textArea = document.createElement("textarea");
         textArea.value = text;
@@ -7350,7 +7421,6 @@
         textArea.focus();
         textArea.select();
         
-        // iOS Seçim Düzeltmesi
         if (navigator.userAgent.match(/ipad|ipod|iphone/i)) {
             const range = document.createRange();
             range.selectNodeContents(textArea);
@@ -7371,16 +7441,13 @@
         document.body.removeChild(textArea);
     }
 
-    // Link Paylaşım Tetikleyicisi (Senkron Yapı - Odak Kaybını Engeller)
     window.copySignatureLink = function(id) {
-        // file:// uzantılarını temizleyerek tam Vercel/Web domain url'sini elde eder
         let cleanBaseUrl = window.location.origin + window.location.pathname;
         if (cleanBaseUrl.startsWith('file://') || cleanBaseUrl.includes('index%20kopyası')) {
             cleanBaseUrl = 'https://kare-harcirah.vercel.app/index.html';
         }
         const link = cleanBaseUrl + '?izin_imza=' + id;
 
-        // 1. KOPYALAMAYI TIKLAMA ANINDA ANINDA BAŞLAT (Tarayıcı Güvenlik Kuralı Engeli Aşılır)
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(link).then(() => {
                 showToast('İmza linki kopyalandı! (60 Dakika Geçerli) 🔗','success');
@@ -7391,17 +7458,15 @@
             silentCopyFallback(link);
         }
 
-        // 2. VERİTABANI GÜNCELLEMESİNİ ARKA PLANDA SESSİZCE YAP (Süreyi 60 dakikaya ayarlar)
         const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
         cLeaves.doc(id).update({ linkExpiresAt: expiresAt }).catch(err => {
             console.warn("Firestore güncellemesi gecikmeli yapıldı veya atlandı", err);
         });
     };
 
-    // Üst kısımdaki özet istatistik kartlarını (aktif/gelecek/bu ay/toplam) günceller
     function updateLeaveStats() {
         const elActive = document.getElementById('leaveStatActive');
-        if (!elActive) return; // panel henüz DOM'a eklenmemiş
+        if (!elActive) return;
         const today = new Date().toISOString().split('T')[0];
         const curMonth = today.slice(0, 7);
 
@@ -7413,7 +7478,7 @@
             if (isActive) { activeCount++; activeLeaves.push(l); }
             if (isFuture) futureCount++;
             if ((l.startDate || '').slice(0, 7) === curMonth || (l.endDate || '').slice(0, 7) === curMonth) {
-                monthDays += l.dayType === 'HOURLY' ? 0 : (l.dayType === 'HALF' ? 0.5 : getLeaveDurationDays(l.startDate, l.endDate));
+                monthDays += l.dayType === 'HOURLY' ? 0 : (l.dayType === 'HALF' ? 0.5 : getBusinessLeaveDays(l.startDate, l.endDate, l.excludeWeekends !== false));
             }
         });
 
@@ -7422,7 +7487,6 @@
         document.getElementById('leaveStatMonthDays').innerText = monthDays;
         document.getElementById('leaveStatTotal').innerText = leaves.length;
 
-        // Şu an izinde olanların isim listesi
         const namesRow = document.getElementById('leaveActiveNamesRow');
         if (namesRow) {
             if (activeLeaves.length) {
@@ -7450,7 +7514,6 @@
         }
         const today = new Date().toISOString().split('T')[0];
 
-        // Arama ve durum filtresini uygula (alttaki `leaves` verisini bozmadan, sadece görünümü filtreler)
         const searchInput = document.getElementById('leaveSearchInput');
         const searchTerm = normalizeTurkishStr(searchInput ? searchInput.value : '');
         const displayLeaves = leaves.filter(l => {
@@ -7581,14 +7644,12 @@
         if (mobileList) mobileList.innerHTML = mobileCards.join('');
     };
 
-    // Personel bazlı izin geçmişi modalını kapatır
     window.closeLeaveHistoryModal = function() {
         const modal = document.getElementById('leaveHistoryModal');
         if (modal) modal.style.display = 'none';
         if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
     };
 
-    // Bir personelin tüm izin geçmişini ve özet istatistiklerini modal içinde gösterir
     window.openLeaveHistoryModal = function(driverName) {
         let modal = document.getElementById('leaveHistoryModal');
         if (!modal) {
@@ -7617,10 +7678,10 @@
             } else if (l.dayType === 'HALF') {
                 totalHalfDayCount++;
             } else {
-                const d = getLeaveDurationDays(l.startDate, l.endDate);
-                totalCalendarDays += d;
-                totalBusinessDays += getBusinessLeaveDays(l.startDate, l.endDate);
-                if ((l.startDate || '').startsWith(curYear)) thisYearDays += d;
+                const bDays = getBusinessLeaveDays(l.startDate, l.endDate, l.excludeWeekends !== false);
+                totalCalendarDays += getLeaveDurationDays(l.startDate, l.endDate);
+                totalBusinessDays += bDays;
+                if ((l.startDate || '').startsWith(curYear)) thisYearDays += bDays;
             }
         });
 
@@ -7645,9 +7706,9 @@
                 </div>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-                <div class="bg-slate-50 border border-slate-200 rounded-xl p-2 text-center"><p class="text-base font-black text-slate-700">${totalCalendarDays}</p><p class="text-[9px] font-bold text-slate-500 uppercase">Toplam Gün</p></div>
-                <div class="bg-amber-50 border border-amber-200 rounded-xl p-2 text-center"><p class="text-base font-black text-amber-700">${totalBusinessDays}</p><p class="text-[9px] font-bold text-amber-600 uppercase">İş Günü</p></div>
-                <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-2 text-center"><p class="text-base font-black text-indigo-700">${thisYearDays}</p><p class="text-[9px] font-bold text-indigo-600 uppercase">${curYear} Yılı</p></div>
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-2 text-center"><p class="text-base font-black text-slate-700">${totalCalendarDays}</p><p class="text-[9px] font-bold text-slate-500 uppercase">Takvim Günü</p></div>
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-2 text-center"><p class="text-base font-black text-amber-700">${totalBusinessDays}</p><p class="text-[9px] font-bold text-amber-600 uppercase">Net İş Günü</p></div>
+                <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-2 text-center"><p class="text-base font-black text-indigo-700">${thisYearDays}</p><p class="text-[9px] font-bold text-indigo-600 uppercase">${curYear} Yılı İş Günü</p></div>
                 <div class="bg-purple-50 border border-purple-200 rounded-xl p-2 text-center"><p class="text-base font-black text-purple-700">${totalHalfDayCount} / ${totalHourly}s</p><p class="text-[9px] font-bold text-purple-600 uppercase">Yarım / Saatlik</p></div>
             </div>
             <div class="space-y-2 max-h-72 overflow-y-auto pr-0.5">${rowsHtml}</div>
@@ -7657,7 +7718,6 @@
         if (typeof lockBodyScroll === 'function') lockBodyScroll();
     };
 
-    // Sürücü İmza Toplama Ekranı Kurulumu
     function injectPublicSignatureScreen() {
         ['splashScreen', 'truckIntro', 'loginScreen', 'mainHeader', 'mainContent'].forEach(id => {
             const el = document.getElementById(id); if (el) el.style.display = 'none';
@@ -7686,7 +7746,7 @@
                 <div id="pubErrorState" class="hidden text-center py-8 space-y-4">
                     <div class="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-3xl shrink-0"><i class="fa-solid fa-lock"></i></div>
                     <h2 class="text-xl font-black text-slate-900 leading-tight">Güvenli Bağlantı Süresi Doldu</h2>
-                    <p class="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed" id="pubErrorText">Bu tek kullanımlık imza linkinin 60 dakikalık süresi geçmiş veya belge daha önce imzalandığı için bağlantı güvenlik gereği imha edilmiştir. Lütfen yöneticinizden yeni bir bağlantı talep edin.</p>
+                    <p class="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed" id="pubErrorText">Bu tek kullanımlık imza linkinin 60 dakikalık süresi geçmiş veya belge daha önce imzalandığı için bağlantı güvenlik gereği imha edilmiştir.</p>
                 </div>
 
                 <div id="pubMainForm" class="hidden space-y-4">
@@ -7695,7 +7755,7 @@
                         <div class="grid grid-cols-2 gap-3 text-sm">
                             <div class="col-span-2 border-b border-slate-100 pb-2"><p class="text-slate-400 text-xs">TC Kimlik No:</p><p class="font-extrabold text-slate-800 text-base" id="pubDriverTc"></p></div>
                             <div><p class="text-slate-400 text-xs">Personel:</p><p class="font-bold text-slate-800" id="pubDriverName"></p></div>
-                            <div><p class="text-slate-400 text-xs">Toplam İzin:</p><p class="font-black text-indigo-600" id="pubDuration"></p></div>
+                            <div><p class="text-slate-400 text-xs">Net İzin Süresi:</p><p class="font-black text-indigo-600" id="pubDuration"></p></div>
                             <div><p class="text-slate-400 text-xs">Başlangıç:</p><p class="font-bold text-slate-700" id="pubStart"></p></div>
                             <div><p class="text-slate-400 text-xs">Mazeret / Tür:</p><p class="font-semibold text-slate-700" id="pubDesc"></p></div>
                             <div class="col-span-2 border-t border-slate-200 pt-2"><p class="text-slate-400 text-xs">Bitiş Tarihi:</p><p class="font-bold text-emerald-600" id="pubEnd"></p></div>
@@ -7739,21 +7799,19 @@
         `;
         document.body.appendChild(container);
 
-        // Firebase'den ilgili izni çek
         cLeaves.doc(targetLeaveId).get().then(doc => {
             document.getElementById('pubLoading').style.display = 'none';
             if (doc.exists) {
-                const l = doc.data();
+                currentPublicLeaveData = { id: doc.id, ...doc.data() };
+                const l = currentPublicLeaveData;
 
-                // 1. Güvenlik Kontrolü: İmza atılmış mı?
                 if (l.signature) {
                     document.getElementById('pubErrorState').classList.remove('hidden');
                     document.getElementById('pubErrorTitle').innerText = "Bağlantı İmha Edildi";
-                    document.getElementById('pubErrorDesc').innerText = "Bu tek kullanımlık imza bağlantısı, imzalama işlemi daha önce başarıyla tamamlandığı için güvenlik gereği kalıcı olarak imha edilmiştir. Sürücü izin formunuz sisteme güvenli şekilde kaydedilmiştir.";
+                    document.getElementById('pubErrorDesc').innerText = "Bu tek kullanımlık imza bağlantısı, imzalama işlemi daha önce başarıyla tamamlandığı için güvenlik gereği kalıcı olarak imha edilmiştir.";
                     return;
                 }
 
-                // 2. Güvenlik Kontrolü: 60 dakika geçmiş mi?
                 const now = Date.now();
                 const expiryTs = l.linkExpiresAt ? new Date(l.linkExpiresAt).getTime() : 0;
                 if (expiryTs > 0 && now > expiryTs) {
@@ -7769,7 +7827,21 @@
                 document.getElementById('pubStart').innerText = l.startDate;
                 document.getElementById('pubEnd').innerText = l.endDate;
                 document.getElementById('pubDesc').innerText = l.description || 'Yıllık İzin';
-                document.getElementById('pubDuration').innerText = formatLeaveDurationShort(l);
+                
+                const excludeSat = l.excludeWeekends !== false;
+                const bDays = getBusinessLeaveDays(l.startDate, l.endDate, excludeSat);
+                const cDays = getLeaveDurationDays(l.startDate, l.endDate);
+                const wDays = cDays - bDays;
+                const ruleLabel = excludeSat ? "Cumartesi ve Pazar düşüldü" : "Cumartesi dahil, Pazar düşüldü";
+                
+                if (l.dayType === 'HOURLY') {
+                    document.getElementById('pubDuration').innerText = `${Number(l.hours) || 0} Saat`;
+                } else if (l.dayType === 'HALF') {
+                    document.getElementById('pubDuration').innerText = `Yarım Gün`;
+                } else {
+                    document.getElementById('pubDuration').innerHTML = `${bDays} İş Günü <span class="text-[11px] text-slate-500 font-semibold block">(${wDays} gün tatil düşüldü - ${ruleLabel})</span>`;
+                }
+                
                 document.getElementById('pubSignerName').value = l.driver;
             } else {
                 document.getElementById('pubErrorState').classList.remove('hidden');
@@ -7835,21 +7907,6 @@
         canvas.addEventListener('touchend', () => drawing = false);
     }
 
-    function draw(e) {
-        if (!drawing) return;
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        if (e.type === 'mousedown') {
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-        } else {
-            ctx.lineTo(x, y);
-            ctx.stroke();
-        }
-    }
-
     window.clearSignatureCanvas = function() {
         if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
     };
@@ -7869,7 +7926,6 @@
             document.getElementById('pubLoading').style.display = 'block';
             document.getElementById('pubLoading').innerHTML = '<p class="text-slate-500 text-sm animate-pulse">İmzanız kaydediliyor ve bağlantı imha ediliyor...</p>';
 
-            // Belgeyi güncelle
             await cLeaves.doc(targetLeaveId).update({
                 signature: sigData,
                 signedAt: new Date().toISOString(),
@@ -7879,15 +7935,11 @@
             document.getElementById('pubLoading').style.display = 'none';
             document.getElementById('pubSuccess').classList.remove('hidden');
 
-            // Başarılı olduğunda otomatik PDF dökümünü indir
-            downloadSignedLeavePDFDirectly({
-                tcNo: document.getElementById('pubDriverTc').innerText,
-                driver: signerName,
-                startDate: document.getElementById('pubStart').innerText,
-                endDate: document.getElementById('pubEnd').innerText,
-                description: document.getElementById('pubDesc').innerText,
-                signature: sigData
-            });
+            if (currentPublicLeaveData) {
+                currentPublicLeaveData.signature = sigData;
+                currentPublicLeaveData.driver = signerName;
+                downloadSignedLeavePDFDirectly(currentPublicLeaveData);
+            }
 
         } catch (e) {
             alert("İmza kaydedilemedi: " + e.message);
@@ -7898,7 +7950,14 @@
 
     function downloadSignedLeavePDFDirectly(l) {
         const today = new Date().toLocaleDateString('tr-TR');
-        const totalDaysText = formatLeaveDurationShort(l).toUpperCase();
+        const excludeSat = l.excludeWeekends !== false;
+        const bDays = getBusinessLeaveDays(l.startDate, l.endDate, excludeSat);
+        const ruleNote = excludeSat ? "Cumartesi-Pazar Hariç" : "Cumartesi Dahil, Pazar Hariç";
+        
+        let totalDaysText = `${bDays} İş Günü (${ruleNote})`;
+        if (l.dayType === 'HOURLY') totalDaysText = `${Number(l.hours) || 0} SAAT`;
+        if (l.dayType === 'HALF') totalDaysText = `YARIM GÜN`;
+
         const docDefinition = {
             pageSize: 'A4',
             pageMargins: [40, 40, 40, 40],
@@ -7934,7 +7993,7 @@
                             [{ text: 'PERSONEL ADI SOYADI', fillColor: '#F8FAFC', bold: true, margin: [8, 6, 8, 6] }, { text: l.driver, margin: [8, 6, 8, 6], bold: true }],
                             [{ text: 'İZİN BAŞLANGIÇ TARİHİ', fillColor: '#F8FAFC', bold: true, margin: [8, 6, 8, 6] }, { text: l.startDate, margin: [8, 6, 8, 6] }],
                             [{ text: 'İZİN BİTİŞ TARİHİ', fillColor: '#F8FAFC', bold: true, margin: [8, 6, 8, 6] }, { text: l.endDate, margin: [8, 6, 8, 6] }],
-                            [{ text: 'TOPLAM İZİN SÜRESİ', fillColor: '#F8FAFC', bold: true, margin: [8, 6, 8, 6] }, { text: totalDaysText, bold: true, color: '#10B981', margin: [8, 6, 8, 6] }],
+                            [{ text: 'NET İZİN SÜRESİ', fillColor: '#F8FAFC', bold: true, margin: [8, 6, 8, 6] }, { text: totalDaysText, bold: true, color: '#10B981', margin: [8, 6, 8, 6] }],
                             [{ text: 'İZİN MAZERETİ / TÜRÜ', fillColor: '#F8FAFC', bold: true, margin: [8, 6, 8, 6] }, { text: l.description || 'Yıllık İzin', margin: [8, 6, 8, 6] }],
                             [{ text: 'DİJİTAL İMZA TARİHİ', fillColor: '#F8FAFC', bold: true, margin: [8, 6, 8, 6] }, { text: today, margin: [8, 6, 8, 6] }]
                         ]
@@ -7970,7 +8029,6 @@
         pdfMake.createPdf(docDefinition).download(`KareKara_Izin_Formu_${l.driver.replace(/\s+/g,'_')}.pdf`);
     }
 
-    // Tablodan yönetici tıkladığında indirilen imzalı resmi PDF
     window.downloadSignedLeavePDF = async function(id) {
         const doc = await cLeaves.doc(id).get();
         if (doc.exists) {
@@ -7980,7 +8038,6 @@
         }
     };
 
-    // Şablon Excel İndir (TC No Kolonu Eklendi)
     window.downloadLeaveTemplate = function() {
         if(typeof XLSX==='undefined'){showToast('XLSX yüklenmedi','error');return;}
         const headers = [['TC Kimlik No', 'Sürücü', 'Başlangıç Tarihi (gg.aa.yyyy)', 'Bitiş Tarihi (gg.aa.yyyy)', 'Açıklama']];
@@ -7996,7 +8053,6 @@
         showToast('Şablon Excel dosyası indirildi ✓','success');
     };
 
-    // Kayıtlı İzinleri Excel Olarak Yedekle (TC No Eklendi)
     window.exportLeavesExcel = function() {
         if(typeof XLSX==='undefined'){showToast('XLSX yüklenmedi','error');return;}
         if(!leaves.length) { showToast('Dışa aktarılacak izin kaydı yok!','error'); return; }
@@ -8005,15 +8061,16 @@
             'Sürücü / Şoför': l.driver,
             'Başlangıç Tarihi': l.startDate,
             'Bitiş Tarihi': l.endDate,
-            'İzin Süresi': formatLeaveDurationShort(l),
-            'İş Günü (Hafta Sonu/Resmi Tatil Hariç)': (l.dayType === 'HOURLY' || l.dayType === 'HALF') ? '-' : getBusinessLeaveDays(l.startDate, l.endDate),
+            'Net İzin Süresi': (l.dayType === 'HOURLY' || l.dayType === 'HALF') ? '-' : `${getBusinessLeaveDays(l.startDate, l.endDate, l.excludeWeekends !== false)} İş Günü`,
+            'Hafta Sonu Kuralı': l.excludeWeekends !== false ? 'Cmt ve Paz Hariç' : 'Cumartesi Dahil',
+            'Toplam Takvim Günü': (l.dayType === 'HOURLY' || l.dayType === 'HALF') ? '-' : `${getLeaveDurationDays(l.startDate, l.endDate)} Gün`,
             'Açıklama': l.description || '',
             'İmza Durumu': l.signature ? 'İMZALANDI' : 'İMZA BEKLENİYOR',
             'Oluşturan': l.createdBy || '',
             'Oluşturulma Tarihi': l.createdAt || ''
         }));
         const ws = XLSX.utils.json_to_sheet(rows);
-        ws['!cols'] = [{wch:15},{wch:20},{wch:18},{wch:18},{wch:15},{wch:30},{wch:24},{wch:15},{wch:15},{wch:24}];
+        ws['!cols'] = [{wch:15},{wch:20},{wch:18},{wch:18},{wch:20},{wch:20},{wch:18},{wch:24},{wch:15},{wch:15},{wch:24}];
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Kayıtlı İzinler');
         XLSX.writeFile(wb, `KareKara_Aktif_Izinler_${new Date().toISOString().split('T')[0]}.xlsx`);

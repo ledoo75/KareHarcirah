@@ -6620,7 +6620,7 @@
         });
     }
 // =========================================================================
-//   KAREKARA SÜRÜCÜ İZİN SİSTEMİ (v16 - İMZA EKRANI VE PDF HESAPLAMA EŞİTLEME)
+//   KAREKARA SÜRÜCÜ İZİN SİSTEMİ (v17 - DOKUNMATİK EKRAN İMZA DÜZELTME)
 // =========================================================================
 (function() {
     const cLeaves = firebase.firestore().collection('kare_leaves');
@@ -6915,7 +6915,6 @@
         return Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
     }
 
-    // ===== RESMİ TATİL VE HAFTA SONU DİNAMİK HESAPLAMA =====
     const FIXED_HOLIDAYS_MMDD = ['01-01','04-23','05-01','05-19','07-15','08-30','10-29'];
     const MOVABLE_RELIGIOUS_HOLIDAYS = {
         2026: ['2026-03-20','2026-03-21','2026-03-22', '2026-05-27','2026-05-28','2026-05-29','2026-05-30'],
@@ -7779,8 +7778,8 @@
                                 <label class="text-xs font-bold text-slate-500 uppercase block">Ekrana İmzanızı Atın</label>
                                 <button onclick="clearSignatureCanvas()" class="text-[10px] text-rose-500 font-bold hover:underline"><i class="fa-solid fa-eraser"></i> Temizle</button>
                             </div>
-                            <div class="border-2 border-dashed border-slate-300 rounded-2xl overflow-hidden bg-slate-50 h-44 relative">
-                                <canvas id="signatureCanvas" class="w-full h-full block cursor-crosshair touch-none"></canvas>
+                            <div class="border-2 border-dashed border-slate-300 rounded-2xl overflow-hidden bg-slate-50 h-44 relative touch-none select-none">
+                                <canvas id="signatureCanvas" class="w-full h-full block cursor-crosshair touch-none select-none"></canvas>
                             </div>
                         </div>
 
@@ -7861,63 +7860,106 @@
         if (btnStep) btnStep.style.display = 'none';
         if (sigArea) {
             sigArea.style.display = 'block';
-            setTimeout(initCanvas, 80);
+            setTimeout(initCanvas, 100);
         }
     };
 
-    let canvas, ctx, drawing = false;
+    // İMZA CANVAS MOTORU (DOKUNMATİK, FARE VEYA KALEMLE ÇİZİM)
+    let canvas, ctx, drawing = false, hasDrawnSignature = false, lastX = 0, lastY = 0;
+
+    function getCanvasPos(e) {
+        if (!canvas) return { x: 0, y: 0 };
+        const rect = canvas.getBoundingClientRect();
+        let clientX = e.clientX;
+        let clientY = e.clientY;
+
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else if (e.changedTouches && e.changedTouches.length > 0) {
+            clientX = e.changedTouches[0].clientX;
+            clientY = e.changedTouches[0].clientY;
+        }
+
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top
+        };
+    }
+
     function initCanvas() {
         canvas = document.getElementById('signatureCanvas');
         if (!canvas) return;
         ctx = canvas.getContext('2d');
-        
-        const rect = canvas.parentNode.getBoundingClientRect();
-        canvas.width = rect.width;
-        canvas.height = rect.height || 176;
+
+        const parent = canvas.parentNode;
+        const width = parent.clientWidth || 300;
+        const height = parent.clientHeight || 176;
+
+        canvas.width = width;
+        canvas.height = height;
 
         ctx.strokeStyle = '#020617';
         ctx.lineWidth = 3;
         ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
 
-        canvas.addEventListener('mousedown', e => { drawing = true; draw(e); });
-        canvas.addEventListener('mousemove', draw);
-        window.addEventListener('mouseup', () => drawing = false);
+        // Pointer Events (Tüm modern dokunmatik telefon ve fareler için)
+        canvas.onpointerdown = startDrawing;
+        canvas.onpointermove = draw;
+        canvas.onpointerup = stopDrawing;
+        canvas.onpointercancel = stopDrawing;
 
-        canvas.addEventListener('touchstart', e => {
-            drawing = true;
-            const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('mousedown', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-            canvas.dispatchEvent(mouseEvent);
-            e.preventDefault();
-        }, { passive: false });
+        // Eski dokunmatik cihazlar için yedek dinleyiciler
+        canvas.ontouchstart = function(e) { e.preventDefault(); startDrawing(e); };
+        canvas.ontouchmove = function(e) { e.preventDefault(); draw(e); };
+        canvas.ontouchend = function(e) { e.preventDefault(); stopDrawing(); };
 
-        canvas.addEventListener('touchmove', e => {
-            const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('mousemove', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-            canvas.dispatchEvent(mouseEvent);
-            e.preventDefault();
-        }, { passive: false });
+        canvas.onmousedown = startDrawing;
+        canvas.onmousemove = draw;
+        window.onmouseup = stopDrawing;
+    }
 
-        canvas.addEventListener('touchend', () => drawing = false);
+    function startDrawing(e) {
+        drawing = true;
+        const pos = getCanvasPos(e);
+        lastX = pos.x;
+        lastY = pos.y;
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+    }
+
+    function draw(e) {
+        if (!drawing) return;
+        const pos = getCanvasPos(e);
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        lastX = pos.x;
+        lastY = pos.y;
+        hasDrawnSignature = true;
+    }
+
+    function stopDrawing() {
+        drawing = false;
     }
 
     window.clearSignatureCanvas = function() {
-        if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (ctx && canvas) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            hasDrawnSignature = false;
+        }
     };
 
     window.submitDigitalSignature = async function() {
         const signerName = document.getElementById('pubSignerName').value.trim();
         if (!signerName) { alert("Lütfen adınızı ve soyadınızı yazın."); return; }
         
-        const buffer = new Uint32Array(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
-        const isBlank = !buffer.some(color => color !== 0);
-        if (isBlank) { alert("Lütfen imza alanına imzanızı çizin."); return; }
+        if (!hasDrawnSignature) {
+            alert("Lütfen imza alanına imzanızı çizin.");
+            return;
+        }
 
         const sigData = canvas.toDataURL('image/png');
 

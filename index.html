@@ -1546,12 +1546,20 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
             <div class="glass-card p-5 border-l-4 border-cyan-500 lg:col-span-3">
                 <h3 class="font-bold text-slate-800 text-lg mb-1"><i class="fa-solid fa-hard-drive text-cyan-500 mr-2"></i>Sistem Yedekleme & Geri Yükleme</h3>
-                <p class="text-xs text-slate-500 mb-4">Tüm sistem verilerini (seferler, masraflar, avanslar, kullanıcılar) JSON olarak dışa aktarın veya daha önce alınan yedeği geri yükleyin.</p>
+                <p class="text-xs text-slate-500 mb-3">Sistem her gece <b>02:00</b>'de kendini otomatik yedekler ve son <b>5 günlük</b> yedeği saklar. Manuel aldığınız yedekler de otomatik olarak sisteme kaydedilir ve bilgisayarınıza indirilir.</p>
+                <div id="autoBackupInfo" class="mb-4 text-[11px] font-semibold text-cyan-800 bg-cyan-50 border border-cyan-100 rounded-xl px-3 py-2 flex flex-wrap gap-x-4 gap-y-1"><span><i class="fa-solid fa-clock mr-1"></i>Otomatik yedek: her gece 02:00</span></div>
                 <div class="flex flex-col sm:flex-row gap-3">
-                    <button onclick="backupSystem()" class="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-download"></i> Yedeği İndir (.json)</button>
-                    <label class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"><i class="fa-solid fa-upload"></i> Yedekten Geri Yükle<input type="file" id="restoreFileInput" accept=".json" class="hidden" onchange="restoreSystem(event)"></label>
+                    <button onclick="backupSystem()" class="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-cloud-arrow-up"></i> Şimdi Yedekle (Sisteme Kaydet + İndir)</button>
+                    <label class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"><i class="fa-solid fa-upload"></i> Dosyadan Geri Yükle<input type="file" id="restoreFileInput" accept=".json" class="hidden" onchange="restoreSystem(event)"></label>
                 </div>
                 <div id="backupStatus" class="mt-3 text-xs font-semibold text-slate-500"></div>
+                <div class="mt-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-bold text-slate-700 text-sm"><i class="fa-solid fa-server text-cyan-500 mr-1"></i>Sistemdeki Yedekler</h4>
+                        <button onclick="renderSystemBackups()" class="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1"><i class="fa-solid fa-rotate-right"></i> Yenile</button>
+                    </div>
+                    <div id="systemBackupList" class="text-xs text-slate-400 italic">Yükleniyor...</div>
+                </div>
             </div>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
@@ -2107,6 +2115,7 @@
             else switchTab(targetTab);
         },100); 
         checkActiveTrip();
+        initAutoBackup(); // Otomatik gece yedeği (02:00, 5 gün saklama)
     }
     
     function updateDriverDropdowns(){const uSel=document.getElementById('activeUser'); const aSel=document.getElementById('advDriver'); const si=document.getElementById('driverSearchInput'); uSel.innerHTML=''; if(aSel)aSel.innerHTML=''; if(currentRole==='DRIVER'){uSel.innerHTML=`<option value="${esc(loggedInUser.username)}">${esc(loggedInUser.username)}</option>`; uSel.disabled=true; if(si){si.value=''; si.disabled=true; si.classList.add('opacity-60');}}else{uSel.disabled=false; if(si){si.disabled=false; si.classList.remove('opacity-60');} let drvs=getDrivers(); if(drvs.length===0){uSel.innerHTML=`<option value="">Şoför Yok</option>`;} drvs.forEach(d=>{uSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`; if(aSel)aSel.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`;}); uSel.value=currentUser; if(si)si.value=currentUser;} if(currentRole!=='DRIVER'&&getDrivers().length>0&&!getDrivers().includes(currentUser)){currentUser=getDrivers()[0]; uSel.value=currentUser; if(si)si.value=currentUser;} fillCariTarihDrivers();}
@@ -6474,56 +6483,257 @@
         showToast('Filo Raporu (XLSX) İndirildi ✓','success');
     }
     
-    async function backupSystem(){
-        const statusEl=document.getElementById('backupStatus');
+    // ══════════════════════════════════════════════════════════
+    // ── SİSTEM YEDEKLEME: Otomatik (her gece 02:00) + Manuel ──
+    //    • Yedekler Firestore'da "kare_backups" koleksiyonunda tutulur
+    //    • Büyük yedekler 1MB doküman sınırına takılmasın diye parçalara bölünür
+    //    • Otomatik yedeklerden son 5 tanesi (5 gün) saklanır
+    //    • Manuel / geri-yükleme-öncesi yedekler 5 gün sonra silinir
+    // ══════════════════════════════════════════════════════════
+    const cBackups=db.collection('kare_backups');
+    const BACKUP_KEEP_DAYS=5;          // kaç günlük yedek saklanacak
+    const BACKUP_HOUR=2;               // otomatik yedek saati (02:00)
+    const BACKUP_CHUNK=300000;         // parça başına karakter (Firestore 1MB sınırı için güvenli)
+    const BACKUP_ROLES=['ADMIN','PATRON','OPS','OPS_MANAGER','ACCOUNTING','FLEET']; // tüm veriyi okuyabilen roller
+    let _autoBackupTimer=null, _backupBusy=false;
+
+    function _bkDayKey(d=new Date()){const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;}
+    function _bkTs(v){ if(!v) return ''; if(v.toDate) return v.toDate().toISOString(); return typeof v==='string'?v:''; }
+    function _bkRestoreTs(v){ if(v){const d=new Date(v); if(!isNaN(d)) return firebase.firestore.Timestamp.fromDate(d);} return firebase.firestore.FieldValue.serverTimestamp(); }
+    function _bkFmtDate(iso){ try{return new Date(iso).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});}catch(e){return iso;} }
+    function _bkFmtSize(n){ return n>1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB'; }
+    function _bkStatus(html){ const el=document.getElementById('backupStatus'); if(el) el.innerHTML=html; }
+    async function _bkBatchRun(ops){ for(let i=0;i<ops.length;i+=450){ const b=db.batch(); ops.slice(i,i+450).forEach(f=>f(b)); await b.commit(); } }
+    function _bkDownload(backup){
+        const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+        const link=document.createElement('a');
+        link.href=URL.createObjectURL(blob);
+        link.download=`KareKara_Yedek_${backup.type||'manual'}_${(backup.createdAt||new Date().toISOString()).slice(0,16).replace(/[T:]/g,'-')}.json`;
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        setTimeout(()=>URL.revokeObjectURL(link.href),5000);
+    }
+
+    // Tüm veriyi tek bir yedek nesnesine topla
+    async function buildBackupObject(type){
+        const [expSnap,advSnap,tripSnap,userSnap]=await Promise.all([cExpenses.get(),cAdvances.get(),cTrips.get(),cUsers.get()]);
+        const map=snap=>snap.docs.map(d=>{const x=d.data(); return {id:d.id,...x,timestamp:_bkTs(x.timestamp)};});
+        return {
+            version:'1.1', type, createdAt:new Date().toISOString(),
+            createdBy:loggedInUser?loggedInUser.username:'SİSTEM',
+            expenses:map(expSnap), advances:map(advSnap), trips:map(tripSnap),
+            users:userSnap.docs.map(d=>({id:d.id,...d.data()}))
+        };
+    }
+
+    // Yedeği sisteme (Firestore) kaydet — önce parçalar, en son "ready" meta
+    async function saveBackupToSystem(backup,docId){
+        const json=JSON.stringify(backup);
+        const ref=docId?cBackups.doc(docId):cBackups.doc();
+        const chunks=[]; for(let i=0;i<json.length;i+=BACKUP_CHUNK) chunks.push(json.slice(i,i+BACKUP_CHUNK));
+        await _bkBatchRun(chunks.map((c,i)=>b=>b.set(ref.collection('chunks').doc(String(i).padStart(4,'0')),{d:c})));
+        await ref.set({
+            status:'ready', type:backup.type, dayKey:_bkDayKey(new Date(backup.createdAt)),
+            createdAt:backup.createdAt, createdBy:backup.createdBy,
+            chunkCount:chunks.length, sizeBytes:json.length,
+            counts:{expenses:backup.expenses.length,advances:backup.advances.length,trips:backup.trips.length,users:(backup.users||[]).length},
+            savedAt:firebase.firestore.FieldValue.serverTimestamp()
+        },{merge:true});
+        return ref.id;
+    }
+
+    async function loadBackupFromSystem(id){
+        const snap=await cBackups.doc(id).collection('chunks').get();
+        const parts=snap.docs.sort((a,b)=>a.id.localeCompare(b.id)).map(d=>d.data().d);
+        if(!parts.length) throw new Error('Yedek içeriği bulunamadı');
+        return JSON.parse(parts.join(''));
+    }
+
+    async function _bkDeleteFromSystem(id){
+        const ref=cBackups.doc(id);
+        const ch=await ref.collection('chunks').get();
+        await _bkBatchRun(ch.docs.map(d=>b=>b.delete(d.ref)));
+        await ref.delete();
+    }
+
+    // Saklama politikası: son 5 otomatik yedek + 5 günden yeni manuel yedekler
+    async function pruneBackups(){
+        const snap=await cBackups.get();
+        const all=snap.docs.map(d=>({id:d.id,...d.data()}));
+        const limitMs=Date.now()-BACKUP_KEEP_DAYS*24*60*60*1000;
+        const autos=all.filter(x=>x.type==='auto'&&x.status==='ready').sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+        const del=[
+            ...autos.slice(BACKUP_KEEP_DAYS),
+            ...all.filter(x=>x.type!=='auto'&&x.status==='ready'&&new Date(x.createdAt).getTime()<limitMs),
+            ...all.filter(x=>x.status==='running'&&Date.now()-(x.startedAt||0)>24*60*60*1000) // yarım kalmış eski denemeler
+        ];
+        for(const x of del){ try{await _bkDeleteFromSystem(x.id);}catch(e){console.warn('[Yedek] silinemedi',x.id,e);} }
+        return del.length;
+    }
+
+    // ── Otomatik zamanlayıcı ──────────────────────────────────
+    function initAutoBackup(){
+        if(!BACKUP_ROLES.includes(currentRole)||_autoBackupTimer) return;
+        const tick=()=>checkAutoBackup().catch(e=>console.warn('[OtoYedek]',e));
+        setTimeout(tick,15000);                      // girişten 15 sn sonra ilk kontrol (kaçırılan yedeği telafi eder)
+        _autoBackupTimer=setInterval(tick,60*1000);  // sonra her dakika kontrol
+        renderSystemBackups();
+    }
+
+    async function checkAutoBackup(){
+        updateBackupScheduleInfo();
+        const now=new Date();
+        if(now.getHours()<BACKUP_HOUR) return;                 // bugünün 02:00'si henüz gelmedi
+        const day=_bkDayKey(now);
+        if(localStorage.getItem('kk_autobackup_done')===day) return; // bugün zaten alındı
+        await runAutoBackup(day);
+    }
+
+    async function runAutoBackup(day){
+        if(_backupBusy) return; _backupBusy=true;
+        const ref=cBackups.doc('auto_'+day);
+        let locked=false;
         try{
-            statusEl.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-1"></i> Yedek hazırlanıyor...';
-            const [expSnap,advSnap,tripSnap,userSnap]=await Promise.all([
-                cExpenses.get(),cAdvances.get(),cTrips.get(),cUsers.get()
-            ]);
-            const backup={
-                version:'1.0',
-                createdAt:new Date().toISOString(),
-                createdBy:loggedInUser?loggedInUser.username:'',
-                expenses:expSnap.docs.map(d=>({id:d.id,...d.data(),timestamp:d.data().timestamp?.toDate?.()?.toISOString()||''})),
-                advances:advSnap.docs.map(d=>({id:d.id,...d.data(),timestamp:d.data().timestamp?.toDate?.()?.toISOString()||''})),
-                trips:tripSnap.docs.map(d=>({id:d.id,...d.data(),timestamp:d.data().timestamp?.toDate?.()?.toISOString()||''})),
-                users:userSnap.docs.map(d=>({id:d.id,...d.data()}))
-            };
-            const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
-            const link=document.createElement('a');
-            link.href=URL.createObjectURL(blob);
-            link.download=`KareKara_Yedek_${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(link); link.click(); document.body.removeChild(link);
-            statusEl.innerHTML=`<span class="text-emerald-600"><i class="fa-solid fa-circle-check mr-1"></i>Yedek başarıyla indirildi — ${backup.expenses.length} masraf, ${backup.advances.length} avans, ${backup.trips.length} sefer.</span>`;
-        }catch(err){statusEl.innerHTML=`<span class="text-rose-600"><i class="fa-solid fa-circle-exclamation mr-1"></i>Hata: ${err.message}</span>`;}
+            // Kilit: aynı anda açık birden fazla yönetici ekranı aynı günü 2 kez yedeklemesin
+            locked=await db.runTransaction(async tx=>{
+                const s=await tx.get(ref);
+                if(s.exists){
+                    const x=s.data();
+                    if(x.status==='ready') return false;
+                    if(x.status==='running'&&Date.now()-(x.startedAt||0)<15*60*1000) return false;
+                }
+                tx.set(ref,{status:'running',type:'auto',dayKey:day,startedAt:Date.now(),createdBy:loggedInUser?.username||''});
+                return true;
+            });
+            if(!locked){
+                const s=await ref.get();
+                if(s.exists&&s.data().status==='ready') localStorage.setItem('kk_autobackup_done',day);
+                return;
+            }
+            const backup=await buildBackupObject('auto');
+            await saveBackupToSystem(backup,ref.id);
+            const removed=await pruneBackups();
+            localStorage.setItem('kk_autobackup_done',day);
+            addLog('Otomatik Yedek Alındı',loggedInUser?.username||'SİSTEM',0,'','system',{category:'system',severity:'low',detail:`${backup.expenses.length} masraf, ${backup.advances.length} avans, ${backup.trips.length} sefer yedeklendi. ${removed} eski yedek temizlendi.`,affected:'Tüm Sistem'});
+            renderSystemBackups();
+        }catch(e){
+            console.warn('[OtoYedek] hata',e);
+            if(locked){ try{await _bkDeleteFromSystem(ref.id);}catch(_){} } // yarım kalan yedeği temizle, sonraki dakika tekrar dener
+        }finally{ _backupBusy=false; updateBackupScheduleInfo(); }
+    }
+
+    function updateBackupScheduleInfo(lastAuto){
+        const el=document.getElementById('autoBackupInfo'); if(!el) return;
+        const now=new Date(), next=new Date(now);
+        next.setHours(BACKUP_HOUR,0,0,0);
+        if(now>=next) next.setDate(next.getDate()+1);
+        const doneToday=localStorage.getItem('kk_autobackup_done')===_bkDayKey(now);
+        if(lastAuto!==undefined) el.dataset.last=lastAuto||'';
+        const last=el.dataset.last;
+        el.innerHTML=`<span><i class="fa-solid fa-clock mr-1"></i>Otomatik yedek: her gece 0${BACKUP_HOUR}:00</span>
+            <span><i class="fa-solid fa-box-archive mr-1"></i>Saklama: son ${BACKUP_KEEP_DAYS} gün</span>
+            <span><i class="fa-solid fa-circle-check mr-1"></i>Son otomatik: ${last?_bkFmtDate(last):'henüz yok'}</span>
+            <span><i class="fa-solid fa-forward mr-1"></i>Sonraki: ${_bkFmtDate(next.toISOString())}</span>
+            ${_backupBusy?'<span class="text-amber-600"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Yedek alınıyor...</span>':(doneToday?'':'')}`;
+    }
+
+    // ── Sistemdeki yedeklerin listesi ─────────────────────────
+    async function renderSystemBackups(){
+        const box=document.getElementById('systemBackupList'); if(!box) return;
+        try{
+            const snap=await cBackups.get();
+            const list=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.status==='ready').sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+            updateBackupScheduleInfo((list.find(x=>x.type==='auto')||{}).createdAt||'');
+            if(!list.length){ box.innerHTML='<div class="text-slate-400 italic py-2">Sistemde henüz yedek yok. İlk otomatik yedek 02:00\'de (veya 02:00\'den sonraki ilk girişte) alınacak.</div>'; return; }
+            const badge={auto:['Otomatik','bg-cyan-100 text-cyan-700'],manual:['Manuel','bg-indigo-100 text-indigo-700'],pre_restore:['Geri Yükleme Öncesi','bg-amber-100 text-amber-700']};
+            box.innerHTML=`<div class="overflow-x-auto rounded-xl border border-slate-200"><table class="w-full text-xs not-italic">
+                <thead class="bg-slate-50 text-slate-500"><tr><th class="text-left p-2">Tarih</th><th class="text-left p-2">Tür</th><th class="text-left p-2">Alan</th><th class="text-left p-2">İçerik</th><th class="text-left p-2">Boyut</th><th class="text-right p-2">İşlem</th></tr></thead>
+                <tbody>${list.map(x=>{const bd=badge[x.type]||[x.type,'bg-slate-100 text-slate-600']; const c=x.counts||{}; return `<tr class="border-t border-slate-100 text-slate-700">
+                    <td class="p-2 font-semibold whitespace-nowrap">${_bkFmtDate(x.createdAt)}</td>
+                    <td class="p-2"><span class="px-2 py-0.5 rounded-full font-bold ${bd[1]}">${bd[0]}</span></td>
+                    <td class="p-2">${esc(x.createdBy||'')}</td>
+                    <td class="p-2 whitespace-nowrap">${c.expenses||0} masraf · ${c.advances||0} avans · ${c.trips||0} sefer</td>
+                    <td class="p-2">${_bkFmtSize(x.sizeBytes||0)}</td>
+                    <td class="p-2 text-right whitespace-nowrap">
+                        <button onclick="restoreFromSystemBackup('${x.id}')" class="px-2 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold"><i class="fa-solid fa-rotate-left"></i> Geri Yükle</button>
+                        <button onclick="downloadSystemBackup('${x.id}')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold"><i class="fa-solid fa-download"></i></button>
+                        <button onclick="deleteSystemBackup('${x.id}')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold"><i class="fa-solid fa-trash"></i></button>
+                    </td></tr>`;}).join('')}</tbody></table></div>`;
+        }catch(e){ box.innerHTML=`<div class="text-rose-600">Yedek listesi alınamadı: ${esc(e.message)}</div>`; }
+    }
+
+    // ── Manuel yedek: sisteme otomatik kaydet + bilgisayara indir ──
+    async function backupSystem(){
+        if(_backupBusy){ showToast('Şu an başka bir yedekleme sürüyor','error'); return; }
+        _backupBusy=true;
+        try{
+            _bkStatus('<i class="fa-solid fa-spinner fa-spin mr-1"></i> Yedek hazırlanıyor...');
+            const backup=await buildBackupObject('manual');
+            _bkStatus('<i class="fa-solid fa-spinner fa-spin mr-1"></i> Yedek sisteme yükleniyor...');
+            await saveBackupToSystem(backup);
+            _bkDownload(backup);
+            await pruneBackups();
+            addLog('Manuel Yedek Alındı',loggedInUser?.username||'',0,'','system',{category:'system',severity:'medium',detail:`${backup.expenses.length} masraf, ${backup.advances.length} avans, ${backup.trips.length} sefer`,affected:'Tüm Sistem'});
+            _bkStatus(`<span class="text-emerald-600"><i class="fa-solid fa-circle-check mr-1"></i>Yedek sisteme kaydedildi ve indirildi — ${backup.expenses.length} masraf, ${backup.advances.length} avans, ${backup.trips.length} sefer.</span>`);
+            showToast('Yedek sisteme kaydedildi ✓','success');
+        }catch(err){ _bkStatus(`<span class="text-rose-600"><i class="fa-solid fa-circle-exclamation mr-1"></i>Hata: ${esc(err.message)}</span>`); }
+        finally{ _backupBusy=false; renderSystemBackups(); }
+    }
+
+    // ── Geri yükleme (dosyadan veya sistemden ortak) ──────────
+    async function restoreFromBackupObject(backup){
+        if(!backup||!backup.version||!backup.expenses||!backup.advances||!backup.trips) throw new Error('Geçersiz yedek dosyası!');
+        // Güvenlik: geri yüklemeden önce mevcut durumun yedeğini al
+        _bkStatus('<i class="fa-solid fa-spinner fa-spin mr-1"></i> Mevcut durumun güvenlik yedeği alınıyor...');
+        await saveBackupToSystem(await buildBackupObject('pre_restore'));
+
+        _bkStatus('<i class="fa-solid fa-spinner fa-spin mr-1"></i> Mevcut veriler siliniyor...');
+        const [expSnap,advSnap,tripSnap]=await Promise.all([cExpenses.get(),cAdvances.get(),cTrips.get()]);
+        await _bkBatchRun([...expSnap.docs,...advSnap.docs,...tripSnap.docs].map(d=>b=>b.delete(d.ref)));
+
+        _bkStatus('<i class="fa-solid fa-spinner fa-spin mr-1"></i> Yedek geri yükleniyor...');
+        const put=(col,arr)=>arr.map(x=>{const {id,timestamp,...data}=x; return b=>b.set(col.doc(id),{...data,timestamp:_bkRestoreTs(timestamp)});});
+        const ops=[...put(cExpenses,backup.expenses),...put(cAdvances,backup.advances),...put(cTrips,backup.trips)];
+        await _bkBatchRun(ops);
+        addLog('Sistem Yedeği Geri Yüklendi',loggedInUser?.username||'',0,'','system',{category:'system',severity:'critical',detail:`${ops.length} kayıt geri yüklendi. Yedek tarihi: ${backup.createdAt}`,affected:'Tüm Sistem'});
+        return ops.length;
     }
 
     async function restoreSystem(event){
-        const file=event.target.files[0]; if(!file)return;
-        const statusEl=document.getElementById('backupStatus');
-        if(!confirm('⚠️ DİKKAT: Bu işlem mevcut tüm masraf, avans ve sefer verilerini SİLECEK ve yedeği geri yükleyecek. Emin misiniz?')){event.target.value=''; return;}
+        const file=event.target.files[0]; if(!file) return;
+        if(!confirm('⚠️ DİKKAT: Bu işlem mevcut tüm masraf, avans ve sefer verilerini SİLECEK ve yedeği geri yükleyecek.\n(Öncesinde mevcut durumun güvenlik yedeği sisteme kaydedilir.)\n\nEmin misiniz?')){event.target.value=''; return;}
+        if(_backupBusy){ showToast('Şu an başka bir yedekleme sürüyor','error'); event.target.value=''; return; }
+        _backupBusy=true;
         try{
-            statusEl.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-1"></i> Yedek okunuyor...';
-            const text=await file.text();
-            const backup=JSON.parse(text);
-            if(!backup.version||!backup.expenses||!backup.advances||!backup.trips){
-                statusEl.innerHTML='<span class="text-rose-600">Geçersiz yedek dosyası!</span>'; return;
-            }
-            statusEl.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-1"></i> Mevcut veriler siliniyor...';
-            const [expSnap,advSnap,tripSnap]=await Promise.all([cExpenses.get(),cAdvances.get(),cTrips.get()]);
-            const batch1=db.batch(); expSnap.docs.forEach(d=>batch1.delete(d.ref)); await batch1.commit();
-            const batch2=db.batch(); advSnap.docs.forEach(d=>batch2.delete(d.ref)); await batch2.commit();
-            const batch3=db.batch(); tripSnap.docs.forEach(d=>batch3.delete(d.ref)); await batch3.commit();
-            statusEl.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-1"></i> Yedek geri yükleniyor...';
-            let done=0,total=backup.expenses.length+backup.advances.length+backup.trips.length;
-            for(const e of backup.expenses){const {id,timestamp,...data}=e; await cExpenses.doc(id).set({...data,timestamp:firebase.firestore.FieldValue.serverTimestamp()}); done++;}
-            for(const a of backup.advances){const {id,timestamp,...data}=a; await cAdvances.doc(id).set({...data,timestamp:firebase.firestore.FieldValue.serverTimestamp()}); done++;}
-            for(const t of backup.trips){const {id,timestamp,...data}=t; await cTrips.doc(id).set({...data,timestamp:firebase.firestore.FieldValue.serverTimestamp()}); done++;}
-            addLog('Sistem Yedeği Geri Yüklendi',loggedInUser?.username||'',0,'','system',{category:'system',severity:'critical',detail:`${total} kayıt geri yüklendi. Yedek tarihi: ${backup.createdAt}`,affected:'Tüm Sistem'});
-            statusEl.innerHTML=`<span class="text-emerald-600"><i class="fa-solid fa-circle-check mr-1"></i>Geri yükleme tamamlandı! ${total} kayıt yüklendi.</span>`;
-        }catch(err){statusEl.innerHTML=`<span class="text-rose-600"><i class="fa-solid fa-circle-exclamation mr-1"></i>Hata: ${err.message}</span>`;}
-        event.target.value='';
+            _bkStatus('<i class="fa-solid fa-spinner fa-spin mr-1"></i> Yedek okunuyor...');
+            const backup=JSON.parse(await file.text());
+            const total=await restoreFromBackupObject(backup);
+            _bkStatus(`<span class="text-emerald-600"><i class="fa-solid fa-circle-check mr-1"></i>Geri yükleme tamamlandı! ${total} kayıt yüklendi.</span>`);
+        }catch(err){ _bkStatus(`<span class="text-rose-600"><i class="fa-solid fa-circle-exclamation mr-1"></i>Hata: ${esc(err.message)}</span>`); }
+        finally{ _backupBusy=false; event.target.value=''; renderSystemBackups(); }
+    }
+
+    async function restoreFromSystemBackup(id){
+        if(!confirm('⚠️ DİKKAT: Seçilen yedek geri yüklenecek. Mevcut tüm masraf, avans ve sefer verileri SİLİNECEK.\n(Öncesinde mevcut durumun güvenlik yedeği sisteme kaydedilir.)\n\nEmin misiniz?')) return;
+        if(_backupBusy){ showToast('Şu an başka bir yedekleme sürüyor','error'); return; }
+        _backupBusy=true;
+        try{
+            _bkStatus('<i class="fa-solid fa-spinner fa-spin mr-1"></i> Yedek sistemden okunuyor...');
+            const backup=await loadBackupFromSystem(id);
+            const total=await restoreFromBackupObject(backup);
+            _bkStatus(`<span class="text-emerald-600"><i class="fa-solid fa-circle-check mr-1"></i>Geri yükleme tamamlandı! ${total} kayıt yüklendi (yedek: ${_bkFmtDate(backup.createdAt)}).</span>`);
+        }catch(err){ _bkStatus(`<span class="text-rose-600"><i class="fa-solid fa-circle-exclamation mr-1"></i>Hata: ${esc(err.message)}</span>`); }
+        finally{ _backupBusy=false; renderSystemBackups(); }
+    }
+
+    async function downloadSystemBackup(id){
+        try{ _bkStatus('<i class="fa-solid fa-spinner fa-spin mr-1"></i> Yedek indiriliyor...'); _bkDownload(await loadBackupFromSystem(id)); _bkStatus('<span class="text-emerald-600"><i class="fa-solid fa-circle-check mr-1"></i>Yedek indirildi.</span>'); }
+        catch(err){ _bkStatus(`<span class="text-rose-600"><i class="fa-solid fa-circle-exclamation mr-1"></i>Hata: ${esc(err.message)}</span>`); }
+    }
+
+    async function deleteSystemBackup(id){
+        if(!confirm('Bu yedek sistemden kalıcı olarak silinsin mi?')) return;
+        try{ await _bkDeleteFromSystem(id); showToast('Yedek silindi','success'); renderSystemBackups(); }
+        catch(err){ showToast('Silinemedi: '+err.message,'error'); }
     }
 
     function enterApp(){
